@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CodeEditSourceEditor
 import CodeEditLang
 import CodeEditLangPHP
 
@@ -20,6 +21,7 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
     private let lock = NSLock()
     private var indexes: [String: SymbolIndex] = [:]
     private var indexers: [String: PHPProjectIndexer] = [:]
+    private var providers: [URL: PHPProvider] = [:]
 
     /// Returns (creating + building if needed) the symbol index for a workspace root.
     func index(for root: URL) -> SymbolIndex {
@@ -40,6 +42,25 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
             await indexer.buildIndex(at: root)
         }
         return symbolIndex
+    }
+
+    /// Returns a cached PHP provider for a file, stable across SwiftUI view recreations.
+    func provider(
+        for file: URL,
+        root: URL,
+        openLink: @escaping (JumpToDefinitionLink) -> Void
+    ) -> PHPProvider {
+        // Resolve the index first (it takes the lock internally) to avoid nested locking.
+        let symbolIndex = index(for: root)
+
+        lock.lock()
+        defer { lock.unlock() }
+        if let existing = providers[file] {
+            return existing
+        }
+        let provider = PHPProvider(fileURL: file, index: symbolIndex, openLink: openLink)
+        providers[file] = provider
+        return provider
     }
 
     /// Re-indexes a single file (call after saving).

@@ -97,8 +97,7 @@ struct CodeFileView: View {
         if codeFile.getLanguage().id == .php,
            let workspaceRoot = codeFile.findWorkspace()?.fileURL,
            let fileURL = codeFile.fileURL {
-            let index = PHPWorkspaceIndex.shared.index(for: workspaceRoot)
-            self.nativeProvider = PHPProvider(fileURL: fileURL, index: index) { link in
+            self.nativeProvider = PHPWorkspaceIndex.shared.provider(for: fileURL, root: workspaceRoot) { link in
                 guard let url = link.url else { return }
                 CodeEditDocumentController.shared.openDocument(
                     withContentsOf: url,
