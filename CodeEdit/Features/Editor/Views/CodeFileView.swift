@@ -199,7 +199,8 @@ struct CodeFileView: View {
             hoverDelegate: nativeProvider,
             signatureHelpDelegate: nativeProvider,
             codeActionDelegate: nativeProvider,
-            diagnosticsDelegate: nativeProvider
+            diagnosticsDelegate: nativeProvider,
+            symbolsDelegate: nativeProvider
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))
