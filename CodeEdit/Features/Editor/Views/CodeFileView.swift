@@ -10,6 +10,8 @@ import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
 import CodeEditLanguages
+import CodeEditLang
+import CodeEditLangPHP
 import Combine
 
 /// CodeFileView is just a wrapper of the `CodeEditor` dependency
@@ -73,6 +75,9 @@ struct CodeFileView: View {
 
     private let isEditable: Bool
 
+    /// Native language provider for this file, if one exists (currently PHP).
+    private let nativeProvider: PHPProvider?
+
     init(
         editorInstance: EditorInstance,
         codeFile: CodeFileDocument,
@@ -87,6 +92,26 @@ struct CodeFileView: View {
             + [codeFile.contentCoordinator]
             + [codeFile.languageServerObjects.textCoordinator]
         self.isEditable = isEditable
+
+        // Native (in-process) PHP intelligence: completion + jump-to-definition, no LSP.
+        if codeFile.getLanguage().id == .php,
+           let workspaceRoot = codeFile.findWorkspace()?.fileURL,
+           let fileURL = codeFile.fileURL {
+            let index = PHPWorkspaceIndex.shared.index(for: workspaceRoot)
+            self.nativeProvider = PHPProvider(fileURL: fileURL, index: index) { link in
+                guard let url = link.url else { return }
+                CodeEditDocumentController.shared.openDocument(
+                    withContentsOf: url,
+                    display: true
+                ) { document, _, _ in
+                    (document as? CodeFileDocument)?.openOptions = .init(
+                        cursorPositions: [link.targetRange]
+                    )
+                }
+            }
+        } else {
+            self.nativeProvider = nil
+        }
 
         if let openOptions = codeFile.openOptions {
             codeFile.openOptions = nil
@@ -168,7 +193,9 @@ struct CodeFileView: View {
             ),
             highlightProviders: highlightProviders,
             undoManager: undoRegistration.manager(forFile: editorInstance.file),
-            coordinators: textViewCoordinators
+            coordinators: textViewCoordinators,
+            completionDelegate: nativeProvider,
+            jumpToDefinitionDelegate: nativeProvider
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))

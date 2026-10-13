@@ -337,6 +337,8 @@
 				6C76D6D32E15B91E00EF52C3 /* CodeEditSourceEditor */,
 				6CCF6DD22E26D48F00B94F75 /* SwiftTerm */,
 				6CCF73CF2E26DE3200B94F75 /* SwiftTerm */,
+				CE1A0000000000000000C1D2 /* CodeEditLang */,
+				CE1A0000000000000000C3D4 /* CodeEditLangPHP */,
 			);
 			productName = CodeEdit;
 			productReference = B658FB2C27DA9E0F00EA4DBD /* CodeEdit.app */;
@@ -443,6 +445,7 @@
 				5E44855F2DF600D9008BBE69 /* XCLocalSwiftPackageReference "../codeedit-deps/AboutWindow" */,
 				6C76D6D22E15B91E00EF52C3 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSourceEditor" */,
 				6CCF73CE2E26DE3200B94F75 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
+				CE1A0000000000000000A1B2 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditLang" */,
 			);
 			preferredProjectObjectVersion = 55;
 			productRefGroup = B658FB2D27DA9E0F00EA4DBD /* Products */;
@@ -1690,6 +1693,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../codeedit-deps/CodeEditKit";
 		};
+		CE1A0000000000000000A1B2 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditLang" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../codeedit-deps/CodeEditLang";
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1919,6 +1926,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6C85BB3E2C2105ED00EB5DEF /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditKit" */;
 			productName = CodeEditKit;
+		};
+		CE1A0000000000000000C1D2 /* CodeEditLang */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CE1A0000000000000000A1B2 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditLang" */;
+			productName = CodeEditLang;
+		};
+		CE1A0000000000000000C3D4 /* CodeEditLangPHP */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CE1A0000000000000000A1B2 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditLang" */;
+			productName = CodeEditLangPHP;
 		};
 		6C85BB432C210EFD00EB5DEF /* SwiftUIIntrospect */ = {
 			isa = XCSwiftPackageProductDependency;
