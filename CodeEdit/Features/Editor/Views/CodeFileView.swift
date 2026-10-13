@@ -196,7 +196,8 @@ struct CodeFileView: View {
             coordinators: textViewCoordinators,
             completionDelegate: nativeProvider,
             jumpToDefinitionDelegate: nativeProvider,
-            hoverDelegate: nativeProvider
+            hoverDelegate: nativeProvider,
+            signatureHelpDelegate: nativeProvider
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))
