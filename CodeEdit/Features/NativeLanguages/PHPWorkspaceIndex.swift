@@ -37,7 +37,7 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
         lock.unlock()
 
         Task.detached(priority: .utility) {
-            indexer.buildIndex(at: root)
+            await indexer.buildIndex(at: root)
         }
         return symbolIndex
     }
@@ -50,6 +50,21 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
         lock.unlock()
         for (root, indexer) in candidates where path.hasPrefix(root) {
             indexer.refreshFile(at: file)
+        }
+    }
+
+    /// Re-indexes a single file from in-memory content (debounced while editing), so the
+    /// workspace index stays fresh without waiting for a save.
+    func refreshFromSource(file: URL, source: String) {
+        let path = file.path(percentEncoded: false)
+        lock.lock()
+        let candidates = indexers
+        lock.unlock()
+        for (root, indexer) in candidates where path.hasPrefix(root) {
+            Task.detached(priority: .utility) {
+                let info = await PHPParseCache.shared.infoAsync(for: file, source: source)
+                indexer.replace(file: file, with: info.symbols)
+            }
         }
     }
 }

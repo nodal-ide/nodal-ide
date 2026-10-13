@@ -127,6 +127,19 @@ struct CodeFileView: View {
                 codeFile?.updateChangeCount(.changeDone)
             }
             .store(in: &cancellables)
+
+        // Keep the workspace symbol index fresh while editing (debounced).
+        if nativeProvider != nil, let fileURL = codeFile.fileURL {
+            codeFile
+                .contentCoordinator
+                .textUpdatePublisher
+                .debounce(for: .milliseconds(800), scheduler: RunLoop.main)
+                .sink { [weak codeFile] _ in
+                    guard let source = codeFile?.content?.string else { return }
+                    PHPWorkspaceIndex.shared.refreshFromSource(file: fileURL, source: source)
+                }
+                .store(in: &cancellables)
+        }
     }
 
     private var currentTheme: Theme {
