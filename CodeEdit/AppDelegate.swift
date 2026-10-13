@@ -208,12 +208,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
     // MARK: - Open With CodeEdit (Extension) functions
     private func checkForFilesToOpen() {
-        guard let defaults = UserDefaults.init(
-            suiteName: "app.codeedit.CodeEdit.shared"
-        ) else {
-            print("Failed to get/init shared defaults")
-            return
-        }
+        let defaults = UserDefaults.appGroup
 
         // Register enableOpenInCE (enable Open In CodeEdit
         defaults.register(defaults: ["enableOpenInCE": true])

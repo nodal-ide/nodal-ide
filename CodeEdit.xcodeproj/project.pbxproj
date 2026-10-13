@@ -425,7 +425,7 @@
 			);
 			mainGroup = B658FB2327DA9E0F00EA4DBD;
 			packageReferences = (
-				2816F592280CF50500DD548B /* XCRemoteSwiftPackageReference "CodeEditSymbols" */,
+				2816F592280CF50500DD548B /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSymbols" */,
 				287136B1292A407E00E9F5F4 /* XCRemoteSwiftPackageReference "SwiftLintPlugin" */,
 				58F2EB1C292FB954004A9BDE /* XCRemoteSwiftPackageReference "Sparkle" */,
 				583E529A29361BAB001AB554 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
@@ -433,15 +433,15 @@
 				6C6BD6F229CD142C00235D17 /* XCRemoteSwiftPackageReference "collectionconcurrencykit" */,
 				6C66C31129D05CC800DE9ED2 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 				6C0617D42BDB4432008C9C42 /* XCRemoteSwiftPackageReference "LogStream" */,
-				6C85BB3E2C2105ED00EB5DEF /* XCRemoteSwiftPackageReference "CodeEditKit" */,
+				6C85BB3E2C2105ED00EB5DEF /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditKit" */,
 				6C85BB422C210EFD00EB5DEF /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */,
 				303E88452C276FD100EEA8D9 /* XCRemoteSwiftPackageReference "LanguageClient" */,
 				303E88462C276FD600EEA8D9 /* XCRemoteSwiftPackageReference "LanguageServerProtocol" */,
 				6CB94D012CA1205100E8651C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 				30ED7B722DD299E600ACC922 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
-				5EACE6202DF4BF08005E08B8 /* XCRemoteSwiftPackageReference "WelcomeWindow" */,
-				5E44855F2DF600D9008BBE69 /* XCRemoteSwiftPackageReference "AboutWindow" */,
-				6C76D6D22E15B91E00EF52C3 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */,
+				5EACE6202DF4BF08005E08B8 /* XCLocalSwiftPackageReference "../codeedit-deps/WelcomeWindow" */,
+				5E44855F2DF600D9008BBE69 /* XCLocalSwiftPackageReference "../codeedit-deps/AboutWindow" */,
+				6C76D6D22E15B91E00EF52C3 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSourceEditor" */,
 				6CCF73CE2E26DE3200B94F75 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
 			);
 			preferredProjectObjectVersion = 55;
@@ -674,7 +674,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"CodeEdit/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -875,7 +875,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"CodeEdit/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -1148,7 +1148,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"CodeEdit/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -1421,7 +1421,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"CodeEdit/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -1465,7 +1465,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"CodeEdit/Preview Content\"";
 				DEVELOPMENT_TEAM = "";
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -1669,15 +1669,30 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		2816F592280CF50500DD548B /* XCRemoteSwiftPackageReference "CodeEditSymbols" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/CodeEditApp/CodeEditSymbols";
-			requirement = {
-				kind = exactVersion;
-				version = 0.2.3;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		2816F592280CF50500DD548B /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSymbols" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../codeedit-deps/CodeEditSymbols";
 		};
+		5E44855F2DF600D9008BBE69 /* XCLocalSwiftPackageReference "../codeedit-deps/AboutWindow" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../codeedit-deps/AboutWindow";
+		};
+		5EACE6202DF4BF08005E08B8 /* XCLocalSwiftPackageReference "../codeedit-deps/WelcomeWindow" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../codeedit-deps/WelcomeWindow";
+		};
+		6C76D6D22E15B91E00EF52C3 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSourceEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../codeedit-deps/CodeEditSourceEditor";
+		};
+		6C85BB3E2C2105ED00EB5DEF /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../codeedit-deps/CodeEditKit";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
 		287136B1292A407E00E9F5F4 /* XCRemoteSwiftPackageReference "SwiftLintPlugin" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/lukepistrol/SwiftLintPlugin";
@@ -1750,22 +1765,6 @@
 				version = 2.3.0;
 			};
 		};
-		5E44855F2DF600D9008BBE69 /* XCRemoteSwiftPackageReference "AboutWindow" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/CodeEditApp/AboutWindow";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
-		};
-		5EACE6202DF4BF08005E08B8 /* XCRemoteSwiftPackageReference "WelcomeWindow" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/CodeEditApp/WelcomeWindow";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
-		};
 		6C0617D42BDB4432008C9C42 /* XCRemoteSwiftPackageReference "LogStream" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Wouter01/LogStream";
@@ -1798,36 +1797,12 @@
 				minimumVersion = 0.2.0;
 			};
 		};
-		6C76D6D22E15B91E00EF52C3 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/CodeEditApp/CodeEditSourceEditor";
-			requirement = {
-				kind = exactVersion;
-				version = 0.15.1;
-			};
-		};
-		6C85BB3E2C2105ED00EB5DEF /* XCRemoteSwiftPackageReference "CodeEditKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/CodeEditApp/CodeEditKit";
-			requirement = {
-				kind = exactVersion;
-				version = 0.1.2;
-			};
-		};
 		6C85BB422C210EFD00EB5DEF /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/siteline/SwiftUI-Introspect.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.2.0;
-			};
-		};
-		6C9DB9E22D55656300ACD86E /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/CodeEditApp/CodeEditSourceEditor";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.10.0;
 			};
 		};
 		6CB94D012CA1205100E8651C /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
@@ -1851,7 +1826,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		2816F593280CF50500DD548B /* CodeEditSymbols */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 2816F592280CF50500DD548B /* XCRemoteSwiftPackageReference "CodeEditSymbols" */;
+			package = 2816F592280CF50500DD548B /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSymbols" */;
 			productName = CodeEditSymbols;
 		};
 		30818CB42D4E563900967860 /* ZIPFoundation */ = {
@@ -1881,12 +1856,12 @@
 		};
 		5E4485602DF600D9008BBE69 /* AboutWindow */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 5E44855F2DF600D9008BBE69 /* XCRemoteSwiftPackageReference "AboutWindow" */;
+			package = 5E44855F2DF600D9008BBE69 /* XCLocalSwiftPackageReference "../codeedit-deps/AboutWindow" */;
 			productName = AboutWindow;
 		};
 		5EACE6212DF4BF08005E08B8 /* WelcomeWindow */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 5EACE6202DF4BF08005E08B8 /* XCRemoteSwiftPackageReference "WelcomeWindow" */;
+			package = 5EACE6202DF4BF08005E08B8 /* XCLocalSwiftPackageReference "../codeedit-deps/WelcomeWindow" */;
 			productName = WelcomeWindow;
 		};
 		6C0617D52BDB4432008C9C42 /* LogStream */ = {
@@ -1927,7 +1902,7 @@
 		};
 		6C76D6D32E15B91E00EF52C3 /* CodeEditSourceEditor */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 6C76D6D22E15B91E00EF52C3 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */;
+			package = 6C76D6D22E15B91E00EF52C3 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSourceEditor" */;
 			productName = CodeEditSourceEditor;
 		};
 		6C7B1C752A1D57CE005CBBFC /* SwiftLint */ = {
@@ -1942,7 +1917,7 @@
 		};
 		6C85BB3F2C2105ED00EB5DEF /* CodeEditKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 6C85BB3E2C2105ED00EB5DEF /* XCRemoteSwiftPackageReference "CodeEditKit" */;
+			package = 6C85BB3E2C2105ED00EB5DEF /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditKit" */;
 			productName = CodeEditKit;
 		};
 		6C85BB432C210EFD00EB5DEF /* SwiftUIIntrospect */ = {
@@ -1952,7 +1927,7 @@
 		};
 		6C9DB9E32D55656300ACD86E /* CodeEditSourceEditor */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 6C9DB9E22D55656300ACD86E /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */;
+			package = 6C76D6D22E15B91E00EF52C3 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSourceEditor" */;
 			productName = CodeEditSourceEditor;
 		};
 		6CB4463F2B6DFF3A00539ED0 /* CodeEditSourceEditor */ = {

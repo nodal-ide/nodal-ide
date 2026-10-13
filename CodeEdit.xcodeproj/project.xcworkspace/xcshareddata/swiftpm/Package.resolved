@@ -1,15 +1,6 @@
 {
-  "originHash" : "01191ca9685501db65981a6fd21ab2d11c32196633d4cb776b5bb25908ed212f",
+  "originHash" : "ef17db89075ce0ed252cc648b93fc5b71ee41dfd8c3c059296816153c0f1d155",
   "pins" : [
-    {
-      "identity" : "aboutwindow",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CodeEditApp/AboutWindow",
-      "state" : {
-        "revision" : "bdec18efb0dbee79613e7efa446ed3cc8e834842",
-        "version" : "1.0.1"
-      }
-    },
     {
       "identity" : "anycodable",
       "kind" : "remoteSourceControl",
@@ -17,51 +8,6 @@
       "state" : {
         "revision" : "862808b2070cd908cb04f9aafe7de83d35f81b05",
         "version" : "0.6.7"
-      }
-    },
-    {
-      "identity" : "codeeditkit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CodeEditApp/CodeEditKit.git",
-      "state" : {
-        "revision" : "ad28213a968586abb0cb21a8a56a3587227895f1",
-        "version" : "0.1.2"
-      }
-    },
-    {
-      "identity" : "codeeditlanguages",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CodeEditApp/CodeEditLanguages.git",
-      "state" : {
-        "revision" : "331d5dbc5fc8513be5848fce8a2a312908f36a11",
-        "version" : "0.1.20"
-      }
-    },
-    {
-      "identity" : "codeeditsourceeditor",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CodeEditApp/CodeEditSourceEditor",
-      "state" : {
-        "revision" : "ee0c00a2343903df9d6ef45ce53228aca8637369",
-        "version" : "0.15.1"
-      }
-    },
-    {
-      "identity" : "codeeditsymbols",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CodeEditApp/CodeEditSymbols",
-      "state" : {
-        "revision" : "ae69712b08571c4469c2ed5cd38ad9f19439793e",
-        "version" : "0.2.3"
-      }
-    },
-    {
-      "identity" : "codeedittextview",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CodeEditApp/CodeEditTextView.git",
-      "state" : {
-        "revision" : "d7ac3f11f22ec2e820187acce8f3a3fb7aa8ddec",
-        "version" : "0.12.1"
       }
     },
     {
@@ -159,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/Rearrange",
       "state" : {
-        "revision" : "f1d74e1642956f0300756ad8d1d64e9034857bc3",
-        "version" : "2.0.0"
+        "revision" : "4de8be41dba304192e87dc0a11e0aa39e72aa2e8",
+        "version" : "2.1.1"
       }
     },
     {
@@ -287,15 +233,6 @@
       "state" : {
         "revision" : "f2f197b6b27ce75c280c20f131d4f71e906b86f7",
         "version" : "0.25.8"
-      }
-    },
-    {
-      "identity" : "welcomewindow",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CodeEditApp/WelcomeWindow",
-      "state" : {
-        "revision" : "cbd5c0d6f432449e2a8618e2b24e4691acbfcc98",
-        "version" : "1.1.0"
       }
     },
     {

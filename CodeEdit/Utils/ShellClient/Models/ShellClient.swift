@@ -21,9 +21,12 @@ class ShellClient {
     /// - Parameter args: commands to run
     /// - Returns: command output
     func generateProcessAndPipe(_ args: [String]) -> (Process, Pipe) {
-        // Run in an 'interactive' login shell. Because we're passing -c here it won't actually be
-        // interactive but it will source the user's zshrc file as well as the zshprofile.
-        var arguments = ["-lic"]
+        // Run in an non-interactive login shell. Using `-l` keeps the user's login environment
+        // (PATH from `/etc/zprofile` and `~/.zprofile`) so tools like `git`, `php`, and
+        // `node` resolve, while omitting `-i` avoids sourcing `~/.zshrc`. Interactive rc
+        // files (e.g. oh-my-zsh) print startup noise to stdout/stderr which corrupts the
+        // machine-readable output we parse for git status and other commands.
+        var arguments = ["-lc"]
         arguments.append(contentsOf: args)
         let task = Process()
         let pipe = Pipe()

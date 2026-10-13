@@ -18,6 +18,18 @@ import os.log
 class CEOpenWith: FIFinderSync {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "FinderSync")
 
+    /// App-group defaults, or standard defaults when the group isn't provisioned. Avoids noisy
+    /// `cfprefsd` "detaching from cfprefsd" console output in local (unprovisioned) builds.
+    private var sharedDefaults: UserDefaults {
+        let suiteName = "app.codeedit.CodeEdit.shared"
+        guard FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: suiteName
+        ) != nil else {
+            return .standard
+        }
+        return UserDefaults(suiteName: suiteName) ?? .standard
+    }
+
     override init() {
         super.init()
         // Add finder sync
@@ -45,10 +57,10 @@ class CEOpenWith: FIFinderSync {
     /// - Parameter sender: sender
     @objc
     func openInCodeEditAction(_ sender: AnyObject?) {
-        guard let items = FIFinderSyncController.default().selectedItemURLs(),
-              let defaults = UserDefaults.init(suiteName: "app.codeedit.CodeEdit.shared") else {
+        guard let items = FIFinderSyncController.default().selectedItemURLs() else {
             return
         }
+        let defaults = sharedDefaults
 
         // Make values compatible to ArrayLiteralElement
         var files = ""
@@ -73,10 +85,7 @@ class CEOpenWith: FIFinderSync {
 
     // MARK: - Menu and toolbar item support
     override func menu(for menuKind: FIMenuKind) -> NSMenu {
-        guard let defaults = UserDefaults.init(suiteName: "app.codeedit.CodeEdit.shared") else {
-            logger.error("Unable to load defaults")
-            return NSMenu(title: "")
-        }
+        let defaults = sharedDefaults
 
         // Register enableOpenInCE (enable Open In CodeEdit
         defaults.register(defaults: ["enableOpenInCE": true])

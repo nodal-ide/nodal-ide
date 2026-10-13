@@ -22,14 +22,7 @@ struct GeneralSettingsView: View {
     @State private var openInCodeEdit: Bool = true
 
     init() {
-        guard let defaults = UserDefaults.init(
-            suiteName: "app.codeedit.CodeEdit.shared"
-        ) else {
-            print("Failed to get/init shared defaults")
-            return
-        }
-
-        self.openInCodeEdit = defaults.bool(forKey: "enableOpenInCE")
+        self.openInCodeEdit = UserDefaults.appGroup.bool(forKey: "enableOpenInCE")
     }
 
     var body: some View {
@@ -351,14 +344,7 @@ private extension GeneralSettingsView {
     var openInCodeEditToggle: some View {
         Toggle("Show “Open With CodeEdit” option in Finder", isOn: $openInCodeEdit)
             .onChange(of: openInCodeEdit) { _, newValue in
-                guard let defaults = UserDefaults.init(
-                    suiteName: "app.codeedit.CodeEdit.shared"
-                ) else {
-                    print("Failed to get/init shared defaults")
-                    return
-                }
-
-                defaults.set(newValue, forKey: "enableOpenInCE")
+                UserDefaults.appGroup.set(newValue, forKey: "enableOpenInCE")
             }
     }
 
