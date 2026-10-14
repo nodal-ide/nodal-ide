@@ -29,7 +29,6 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
     var quickOpenPanel: SearchPanel?
     var commandPalettePanel: SearchPanel?
     var commandCenterPanel: SearchPanel?
-    var scratchpadPanel: SearchPanel?
     var navigatorSidebarViewModel: NavigatorAreaViewModel?
 
     internal var cancellables = [AnyCancellable]()
@@ -176,27 +175,22 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
         self.panelOpen = true
     }
 
-    /// Opens the scratchpad panel.
+    /// Opens a new untitled scratchpad file (no extension) in an editor tab.
     @IBAction func openScratchpad(_ sender: Any?) {
-        if let scratchpadPanel {
-            if scratchpadPanel.isKeyWindow {
-                scratchpadPanel.close()
-                self.panelOpen = false
-                return
-            }
-            window?.addChildWindow(scratchpadPanel, ordered: .above)
-            scratchpadPanel.makeKeyAndOrderFront(self)
-            self.panelOpen = true
-            return
-        }
+        guard let workspace, let editorManager = workspace.editorManager else { return }
 
-        let panel = SearchPanel()
-        self.scratchpadPanel = panel
-        panel.title = "Scratchpad"
-        panel.contentView = NSHostingView(rootView: ScratchpadView())
-        window?.addChildWindow(panel, ordered: .above)
-        panel.makeKeyAndOrderFront(self)
-        self.panelOpen = true
+        // A fresh, extension-less file in the temp directory. Saving keeps it in the temp dir
+        // until the user chooses to save it elsewhere.
+        let directory = FileManager.default.temporaryDirectory
+        var url = directory.appendingPathComponent("untitled")
+        var counter = 1
+        while FileManager.default.fileExists(atPath: url.path) {
+            counter += 1
+            url = directory.appendingPathComponent("untitled \(counter)")
+        }
+        FileManager.default.createFile(atPath: url.path, contents: Data())
+
+        editorManager.openTab(item: CEWorkspaceFile(url: url))
     }
 
     /// Opens the search navigator and focuses the search field
@@ -279,7 +273,6 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
         quickOpenPanel = nil
         commandPalettePanel = nil
         commandCenterPanel = nil
-        scratchpadPanel = nil
         navigatorSidebarViewModel = nil
         workspace = nil
         return true

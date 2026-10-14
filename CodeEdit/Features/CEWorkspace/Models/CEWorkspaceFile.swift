@@ -269,7 +269,11 @@ final class CEWorkspaceFile: Codable, Comparable, Hashable, Identifiable, Editor
     /// Loads the ``fileDocument`` property with a new ``CodeFileDocument`` and registers it with the shared
     /// ``CodeEditDocumentController``.
     func loadCodeFile() throws {
-        let codeFile = try CodeFileDocument(contentsOf: resolvedURL, ofType: contentType?.identifier ?? "")
+        // Files without a recognizable type (e.g. extension-less scratchpads) load as plain text.
+        let codeFile = try CodeFileDocument(
+            contentsOf: resolvedURL,
+            ofType: contentType?.identifier ?? UTType.plainText.identifier
+        )
         CodeEditDocumentController.shared.addDocument(codeFile)
         self.fileDocument = codeFile
     }
