@@ -167,6 +167,15 @@ final class LSPService: ObservableObject {
         return languageClients[ClientKey(languageId, workspacePath)]?.lspInstance
     }
 
+    /// Whether a language server is available for the given language, either configured (installed) or already running.
+    ///
+    /// Used to decide whether it's worth requesting LSP-backed features (e.g. semantic token highlighting). If no
+    /// server exists we skip those providers entirely instead of waiting on data that will never arrive.
+    func hasServer(for languageId: LanguageIdentifier) -> Bool {
+        languageConfigs[languageId] != nil
+            || languageClients.keys.contains(where: { $0.languageId == languageId })
+    }
+
     /// Gets the language client for the specified language
     func languageClient(for languageId: LanguageIdentifier, workspacePath: String) -> LanguageServerType? {
         return languageClients[ClientKey(languageId, workspacePath)]

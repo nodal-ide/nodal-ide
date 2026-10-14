@@ -23,7 +23,18 @@ struct CodeFileView: View {
 
     /// Any coordinators passed to the view.
     private var textViewCoordinators: [TextViewCoordinator]
-    private var highlightProviders: [any HighlightProviding] = []
+
+    /// Highlight providers for this editor.
+    ///
+    /// The LSP semantic-token provider is only included when a language server actually exists for the file's
+    /// language. Otherwise it would request tokens that never arrive and hold highlight ranges pending forever.
+    private var highlightProviders: [any HighlightProviding] {
+        var providers: [any HighlightProviding] = [treeSitterClient]
+        if let lspLanguage = codeFile.getLanguage().lspLanguage, lspService.hasServer(for: lspLanguage) {
+            providers.insert(codeFile.languageServerObjects.highlightProvider, at: 0)
+        }
+        return providers
+    }
 
     @AppSettings(\.textEditing.defaultTabWidth)
     var defaultTabWidth
@@ -70,6 +81,9 @@ struct CodeFileView: View {
     @ObservedObject private var themeModel: ThemeModel = .shared
 
     @State private var treeSitter = TreeSitterClient()
+
+    /// Provides access to the LSP service to decide whether an LSP-backed highlight provider is worthwhile.
+    @Service var lspService: LSPService
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -119,8 +133,6 @@ struct CodeFileView: View {
             codeFile.openOptions = nil
             editorInstance.cursorPositions = openOptions.cursorPositions
         }
-
-        highlightProviders = [codeFile.languageServerObjects.highlightProvider] + [treeSitterClient]
 
         codeFile
             .contentCoordinator
