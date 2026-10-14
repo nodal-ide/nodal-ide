@@ -30,7 +30,7 @@ struct OpenQuicklyPreviewView: View {
 
     var body: some View {
         if let utType = document.utType, utType.conforms(to: .text) {
-            CodeFileView(editorInstance: editorInstance, codeFile: document, isEditable: false)
+            CodeFileView(editorInstance: editorInstance, codeFile: document, isEditable: false, isPreview: true)
                 .environmentObject(undoRegistration)
         } else {
             NonTextFileView(fileDocument: document)

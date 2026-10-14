@@ -91,6 +91,10 @@ struct CodeFileView: View {
 
     private let isEditable: Bool
 
+    /// Whether this view is a lightweight preview (e.g. in the Command Center / Open Quickly), where editor
+    /// peripherals like the minimap are unnecessary.
+    private let isPreview: Bool
+
     /// Native language provider for this file, if one exists (currently PHP).
     private let nativeProvider: PHPProvider?
 
@@ -98,7 +102,8 @@ struct CodeFileView: View {
         editorInstance: EditorInstance,
         codeFile: CodeFileDocument,
         textViewCoordinators: [TextViewCoordinator] = [],
-        isEditable: Bool = true
+        isEditable: Bool = true,
+        isPreview: Bool = false
     ) {
         self._editorInstance = .init(wrappedValue: editorInstance)
         self._codeFile = .init(wrappedValue: codeFile)
@@ -108,6 +113,7 @@ struct CodeFileView: View {
             + [codeFile.contentCoordinator]
             + [codeFile.languageServerObjects.textCoordinator]
         self.isEditable = isEditable
+        self.isPreview = isPreview
 
         // Native (in-process) PHP intelligence: completion + jump-to-definition, no LSP.
         if codeFile.getLanguage().id == .php,
@@ -196,7 +202,7 @@ struct CodeFileView: View {
                 ),
                 peripherals: .init(
                     showGutter: showGutter,
-                    showMinimap: showMinimap,
+                    showMinimap: isPreview ? false : showMinimap,
                     showReformattingGuide: showReformattingGuide,
                     showFoldingRibbon: showFoldingRibbon,
                     invisibleCharactersConfiguration: invisibleCharactersConfiguration.textViewOption(),
