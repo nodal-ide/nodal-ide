@@ -23,6 +23,13 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
     private var indexers: [String: PHPProjectIndexer] = [:]
     private var providers: [URL: PHPProvider] = [:]
 
+    /// All workspace roots that currently have an index (used when reloading extensions globally).
+    var allRoots: [URL] {
+        lock.lock()
+        defer { lock.unlock() }
+        return indexes.keys.map { URL(fileURLWithPath: $0) }
+    }
+
     /// Returns (creating + building if needed) the symbol index for a workspace root.
     func index(for root: URL) -> SymbolIndex {
         let key = root.path(percentEncoded: false)

@@ -67,4 +67,23 @@ final class LanguageProviderRegistry {
         WorkspaceLanguageExtensions.shared.reload()
         WorkspaceLanguageExtensions.shared.inject(into: index, root: root, language: "php")
     }
+
+    /// Re-evaluates language extensions for all workspaces (after installing, removing, enabling or
+    /// disabling a pack from settings).
+    func reloadAllExtensions() {
+        LanguageExtensionStore.shared.reload()
+
+        let roots = PHPWorkspaceIndex.shared.allRoots
+        for root in roots {
+            let index = PHPWorkspaceIndex.shared.index(for: root)
+            for url in WorkspaceLanguageExtensions.shared.takeInjectedStubURLs(for: root) {
+                index.removeFile(url)
+            }
+        }
+        WorkspaceLanguageExtensions.shared.reload()
+        for root in roots {
+            let index = PHPWorkspaceIndex.shared.index(for: root)
+            WorkspaceLanguageExtensions.shared.inject(into: index, root: root, language: "php")
+        }
+    }
 }

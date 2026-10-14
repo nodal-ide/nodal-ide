@@ -94,6 +94,13 @@ struct SettingsView: View {
         ),
         .init(
             SettingsPage(
+                .extensions,
+                baseColor: Color(hex: "#34C759"), // Green
+                icon: .system("puzzlepiece.extension.fill")
+            )
+        ),
+        .init(
+            SettingsPage(
                 .developer,
                 baseColor: .pink,
                 icon: .system("bolt")
@@ -200,6 +207,8 @@ struct SettingsView: View {
                     LocationsSettingsView()
                 case .languageServers:
                     LanguageServersView()
+                case .extensions:
+                    ExtensionsSettingsView()
                 case .developer:
                     DeveloperSettingsView()
                 default:

@@ -143,6 +143,100 @@ final class LanguageExtensionStore {
             ?? FileManager.default.temporaryDirectory
         return base.appending(path: "CodeEdit/Extensions", directoryHint: .isDirectory)
     }
+
+    // MARK: - Install / remove (global packs)
+
+    /// Installs a pack from a folder containing `extension.json` into the global extensions directory.
+    @discardableResult
+    func install(fromFolder folder: URL) throws -> InstalledLanguageExtension {
+        let data = try Data(contentsOf: folder.appending(path: "extension.json"))
+        guard let manifest = try? JSONDecoder().decode(LanguageExtensionManifest.self, from: data) else {
+            throw LanguageExtensionInstallError.invalidManifest
+        }
+
+        let fileManager = FileManager.default
+        try fileManager.createDirectory(at: Self.globalExtensionsDirectory, withIntermediateDirectories: true)
+        let destination = Self.globalExtensionsDirectory.appending(path: manifest.id, directoryHint: .isDirectory)
+        if fileManager.fileExists(atPath: destination.path(percentEncoded: false)) {
+            try fileManager.removeItem(at: destination)
+        }
+        try fileManager.copyItem(at: folder, to: destination)
+        reload()
+
+        return InstalledLanguageExtension(
+            id: manifest.id,
+            name: manifest.name,
+            version: manifest.version,
+            root: destination,
+            manifest: manifest
+        )
+    }
+
+    /// Installs a pack from a `.zip` archive.
+    @discardableResult
+    func install(fromZip zipURL: URL) throws -> InstalledLanguageExtension {
+        let fileManager = FileManager.default
+        let temp = fileManager.temporaryDirectory.appending(path: "ce-ext-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try fileManager.createDirectory(at: temp, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: temp) }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
+        process.arguments = ["-q", zipURL.path(percentEncoded: false), "-d", temp.path(percentEncoded: false)]
+        try process.run()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else {
+            throw LanguageExtensionInstallError.unzipFailed
+        }
+        guard let manifestURL = findManifest(in: temp) else {
+            throw LanguageExtensionInstallError.invalidManifest
+        }
+        return try install(fromFolder: manifestURL.deletingLastPathComponent())
+    }
+
+    /// Removes a globally installed pack.
+    func remove(_ ext: InstalledLanguageExtension) throws {
+        guard ext.root.path(percentEncoded: false)
+            .hasPrefix(Self.globalExtensionsDirectory.path(percentEncoded: false)) else { return }
+        try FileManager.default.removeItem(at: ext.root)
+        reload()
+    }
+
+    /// Finds `extension.json` in a directory (checking the folder and one level of subfolders).
+    private func findManifest(in directory: URL) -> URL? {
+        let fileManager = FileManager.default
+        let direct = directory.appending(path: "extension.json")
+        if fileManager.fileExists(atPath: direct.path(percentEncoded: false)) {
+            return direct
+        }
+        let subdirectories = (try? fileManager.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )) ?? []
+        for subdirectory in subdirectories {
+            let candidate = subdirectory.appending(path: "extension.json")
+            if fileManager.fileExists(atPath: candidate.path(percentEncoded: false)) {
+                return candidate
+            }
+        }
+        return nil
+    }
+}
+
+/// Errors thrown while installing a language extension.
+enum LanguageExtensionInstallError: LocalizedError {
+    case invalidManifest
+    case unzipFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidManifest:
+            return "The extension has no valid extension.json manifest."
+        case .unzipFailed:
+            return "The archive could not be unzipped."
+        }
+    }
 }
 
 /// Loads the symbols contributed by declarative language extensions for a workspace and injects
@@ -224,10 +318,12 @@ final class WorkspaceLanguageExtensions {
 
     private func build(root: URL, language: String) -> [SymbolInfo] {
         let project = loadProjectSettings(in: root)
+        let disabled = Set(Settings.shared.preferences.extensions.disabledExtensions)
         var result: [SymbolInfo] = []
 
         for ext in LanguageExtensionStore.shared.extensions(forWorkspace: root) {
-            guard ext.manifest.languages?.contains(language) == true,
+            guard !disabled.contains(ext.id),
+                  ext.manifest.languages?.contains(language) == true,
                   isActivated(ext, in: root, project: project),
                   let symbolFiles = ext.manifest.contributes?.symbols, !symbolFiles.isEmpty else {
                 continue
@@ -303,47 +399,17 @@ final class WorkspaceLanguageExtensions {
         return requires.keys.contains { content.contains($0) }
     }
 
-    /// Matches workspace files against activation globs.
+    /// Whether any of the (literal, workspace-relative) activation files exist.
     ///
-    /// Literal patterns (no `*`/`?`) are checked with a single `fileExists` at the workspace root —
-    /// no enumeration. Only wildcard patterns fall back to a bounded recursive walk.
+    /// Activation deliberately never scans the project: a declared project language/framework or a
+    /// literal marker file (`wp-config.php`, `artisan`, `composer.json`, …) is enough. Wildcard
+    /// patterns are ignored — declare the project language instead.
     private func matchesAnyFile(_ patterns: [String], in root: URL) -> Bool {
         let fileManager = FileManager.default
-
-        var wildcardPatterns: [String] = []
-        for pattern in patterns {
-            if pattern.contains("*") || pattern.contains("?") {
-                wildcardPatterns.append(pattern)
-            } else if fileManager.fileExists(atPath: root.appending(path: pattern).path(percentEncoded: false)) {
-                return true
-            }
+        return patterns.contains { pattern in
+            !pattern.contains("*") && !pattern.contains("?")
+                && fileManager.fileExists(atPath: root.appending(path: pattern).path(percentEncoded: false))
         }
-        guard !wildcardPatterns.isEmpty else { return false }
-
-        guard let enumerator = fileManager.enumerator(
-            at: root,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else {
-            return false
-        }
-
-        let rootPath = root.path(percentEncoded: false)
-        var visited = 0
-        let visitLimit = 4000
-
-        for case let url as URL in enumerator {
-            visited += 1
-            if visited > visitLimit { break }
-            if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { continue }
-
-            let path = url.path(percentEncoded: false)
-            let relative = path.hasPrefix(rootPath + "/") ? String(path.dropFirst(rootPath.count + 1)) : path
-            if wildcardPatterns.contains(where: { Glob.matches(pattern: $0, relativePath: relative) }) {
-                return true
-            }
-        }
-        return false
     }
 
     private func stubURL(for ext: InstalledLanguageExtension) -> URL {
@@ -356,57 +422,5 @@ final class WorkspaceLanguageExtensions {
         let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         return base.appending(path: "CodeEdit/ExtensionStubs", directoryHint: .isDirectory)
-    }
-}
-
-/// Minimal glob matcher for extension activation patterns: `*` (any chars except `/`),
-/// `?` (single char), `**` (any chars including `/`).
-enum Glob {
-    /// Matches a workspace-relative path against a glob pattern. Patterns without `/` match the
-    /// file name at any depth.
-    static func matches(pattern: String, relativePath: String) -> Bool {
-        if !pattern.contains("/") {
-            let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
-            return regexMatches(pattern, name)
-        }
-        if regexMatches(pattern, relativePath) {
-            return true
-        }
-        // `**/name.ext` should also match a root-level `name.ext`.
-        if pattern.hasPrefix("**/") {
-            return regexMatches(String(pattern.dropFirst(3)), relativePath)
-        }
-        return false
-    }
-
-    private static func regexMatches(_ pattern: String, _ string: String) -> Bool {
-        guard let regex = try? NSRegularExpression(pattern: globToRegex(pattern)) else { return false }
-        let range = NSRange(string.startIndex..<string.endIndex, in: string)
-        return regex.firstMatch(in: string, range: range) != nil
-    }
-
-    private static func globToRegex(_ pattern: String) -> String {
-        var regex = "^"
-        var index = pattern.startIndex
-        while index < pattern.endIndex {
-            let char = pattern[index]
-            if char == "*" {
-                let next = pattern.index(after: index)
-                if next < pattern.endIndex, pattern[next] == "*" {
-                    regex += ".*"
-                    index = pattern.index(after: next)
-                    continue
-                }
-                regex += "[^/]*"
-            } else if char == "?" {
-                regex += "[^/]"
-            } else if "\\^$.|+()[]{}".contains(char) {
-                regex += "\\\(char)"
-            } else {
-                regex.append(char)
-            }
-            index = pattern.index(after: index)
-        }
-        return regex + "$"
     }
 }
