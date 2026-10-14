@@ -182,13 +182,18 @@ extension CEWorkspaceFileManager {
     }
 
     /// Notify observers that an update occurred in the watched files.
-    func notifyObservers(updatedItems: Set<CEWorkspaceFile>) {
+    /// - Parameter statusOnly: When `true`, only the item's status changed; observers shouldn't reload children.
+    func notifyObservers(updatedItems: Set<CEWorkspaceFile>, statusOnly: Bool = false) {
         observers.allObjects.reversed().forEach { delegate in
             guard let delegate = delegate as? CEWorkspaceFileManagerObserver else {
                 observers.remove(delegate)
                 return
             }
-            delegate.fileManagerUpdated(updatedItems: updatedItems)
+            if statusOnly {
+                delegate.fileManagerStatusUpdated(updatedItems: updatedItems)
+            } else {
+                delegate.fileManagerUpdated(updatedItems: updatedItems)
+            }
         }
     }
 

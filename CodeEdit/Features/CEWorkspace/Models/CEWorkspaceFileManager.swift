@@ -12,6 +12,16 @@ import OSLog
 
 protocol CEWorkspaceFileManagerObserver: AnyObject {
     func fileManagerUpdated(updatedItems: Set<CEWorkspaceFile>)
+
+    /// A status-only change (e.g. git status). Observers should repaint the item's cell without re-querying
+    /// its children (which would flicker/collapse expanded folders in the navigator).
+    func fileManagerStatusUpdated(updatedItems: Set<CEWorkspaceFile>)
+}
+
+extension CEWorkspaceFileManagerObserver {
+    func fileManagerStatusUpdated(updatedItems: Set<CEWorkspaceFile>) {
+        fileManagerUpdated(updatedItems: updatedItems)
+    }
 }
 
 /// This class is used to load, modify, and listen to files on a user's machine.

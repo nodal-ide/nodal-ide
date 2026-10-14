@@ -91,6 +91,17 @@ struct ProjectNavigatorOutlineView: NSViewControllerRepresentable {
             guard let outlineView = controller?.outlineView else { return }
             let selectedRows = outlineView.selectedRowIndexes.compactMap({ outlineView.item(atRow: $0) })
 
+            // Remember which folders are expanded so that reloading their children (below) doesn't collapse
+            // the tree, which would look like the folder closing and reopening right away.
+            let expandedItems = (0..<outlineView.numberOfRows).compactMap { row -> CEWorkspaceFile? in
+                guard let file = outlineView.item(atRow: row) as? CEWorkspaceFile,
+                      file.isFolder,
+                      outlineView.isItemExpanded(file) else {
+                    return nil
+                }
+                return file
+            }
+
             // If some text view inside the outline view is first responder right now, push the update off
             // until editing is finished using the `shouldReloadAfterDoneEditing` flag.
             if outlineView.window?.firstResponder !== outlineView
@@ -101,6 +112,10 @@ struct ProjectNavigatorOutlineView: NSViewControllerRepresentable {
                 for item in updatedItems {
                     outlineView.reloadItem(item, reloadChildren: true)
                 }
+                // Restore expansion (reloading children resets it).
+                for item in expandedItems {
+                    outlineView.expandItem(item)
+                }
             }
 
             // Restore selected items where the files still exist.
@@ -108,6 +123,21 @@ struct ProjectNavigatorOutlineView: NSViewControllerRepresentable {
             controller?.shouldSendSelectionUpdate = false
             outlineView.selectRowIndexes(IndexSet(selectedIndexes), byExtendingSelection: false)
             controller?.shouldSendSelectionUpdate = true
+        }
+
+        /// Status-only update: repaint the affected rows without re-querying their children, so expanding a
+        /// folder doesn't collapse/flicker when git statuses arrive.
+        func fileManagerStatusUpdated(updatedItems: Set<CEWorkspaceFile>) {
+            guard let outlineView = controller?.outlineView else { return }
+            var rows = IndexSet()
+            for item in updatedItems {
+                let row = outlineView.row(forItem: item)
+                if row >= 0 {
+                    rows.insert(row)
+                }
+            }
+            guard !rows.isEmpty else { return }
+            outlineView.reloadData(forRowIndexes: rows, columnIndexes: IndexSet(integer: 0))
         }
 
         deinit {

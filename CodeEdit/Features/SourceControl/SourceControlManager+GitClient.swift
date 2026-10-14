@@ -160,8 +160,8 @@ extension SourceControlManager {
         for folder in folders where !updatedStatusFor.contains(folder) {
             if folder.gitStatus != .modified {
                 folder.gitStatus = .modified
+                updatedStatusFor.insert(folder)
             }
-            updatedStatusFor.insert(folder)
         }
 
         for (_, file) in fileManager.flattenedFileItems
@@ -174,7 +174,7 @@ extension SourceControlManager {
             return
         }
 
-        fileManager.notifyObservers(updatedItems: updatedStatusFor)
+        fileManager.notifyObservers(updatedItems: updatedStatusFor, statusOnly: true)
     }
 
     /// Refresh all changed files and refresh status in file manager
