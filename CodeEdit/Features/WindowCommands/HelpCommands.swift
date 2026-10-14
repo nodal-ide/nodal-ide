@@ -8,8 +8,18 @@
 import SwiftUI
 
 struct HelpCommands: Commands {
+    @Environment(\.openWindow)
+    var openWindow
+
     var body: some Commands {
         CommandGroup(after: .help) {
+            Button("Knowledge Base") {
+                openWindow(sceneID: .knowledge)
+            }
+            .keyboardShortcut("k", modifiers: [.command, .shift])
+
+            Divider()
+
             Button("What's New in CodeEdit") {
 
             }
