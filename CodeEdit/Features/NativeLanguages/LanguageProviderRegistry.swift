@@ -55,4 +55,16 @@ final class LanguageProviderRegistry {
 
         return providers
     }
+
+    /// Re-evaluates language extensions for a workspace after project settings change: removes the
+    /// previously injected pack symbols from the index and re-injects with the new activation.
+    func reloadExtensions(for root: URL) {
+        LanguageExtensionStore.shared.reload()
+        let index = PHPWorkspaceIndex.shared.index(for: root)
+        for url in WorkspaceLanguageExtensions.shared.takeInjectedStubURLs(for: root) {
+            index.removeFile(url)
+        }
+        WorkspaceLanguageExtensions.shared.reload()
+        WorkspaceLanguageExtensions.shared.inject(into: index, root: root, language: "php")
+    }
 }

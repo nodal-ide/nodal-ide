@@ -31,6 +31,30 @@ struct CEWorkspaceSettingsView: View {
                 }
 
                 Section {
+                    TextField(
+                        "Language",
+                        text: $workspaceSettingsManager.settings.project.language,
+                        prompt: Text("php")
+                    )
+                    .accessibilityLabel("Project Language")
+
+                    TextField(
+                        "Frameworks",
+                        text: frameworksBinding,
+                        prompt: Text("laravel/framework, symfony/symfony")
+                    )
+                    .accessibilityLabel("Project Frameworks")
+
+                    Text("Comma-separated. Activates matching language extensions without scanning the project.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("Languages")
+                }
+                .onChange(of: workspaceSettingsManager.settings.project.language) { _, _ in reloadExtensions() }
+                .onChange(of: workspaceSettingsManager.settings.project.frameworks) { _, _ in reloadExtensions() }
+
+                Section {
                     CEWorkspaceSettingsTaskListView(
                         settings: workspaceSettingsManager.settings,
                         selectedTaskID: $selectedTaskID,
@@ -78,6 +102,24 @@ struct CEWorkspaceSettingsView: View {
                 AddCETaskView()
             }
         }
+    }
+
+    /// Comma-separated editing binding over the frameworks array.
+    private var frameworksBinding: Binding<String> {
+        Binding {
+            workspaceSettingsManager.settings.project.frameworks.joined(separator: ", ")
+        } set: { newValue in
+            workspaceSettingsManager.settings.project.frameworks = newValue
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+        }
+    }
+
+    /// Re-evaluates language extensions for this workspace after the project language/frameworks change.
+    private func reloadExtensions() {
+        guard let root = workspace.fileURL else { return }
+        LanguageProviderRegistry.shared.reloadExtensions(for: root)
     }
 }
 
