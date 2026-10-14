@@ -29,6 +29,7 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
     var quickOpenPanel: SearchPanel?
     var commandPalettePanel: SearchPanel?
     var commandCenterPanel: SearchPanel?
+    var knowledgePanel: SearchPanel?
     var navigatorSidebarViewModel: NavigatorAreaViewModel?
 
     internal var cancellables = [AnyCancellable]()
@@ -177,6 +178,33 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
             self.commandCenterPanel = nil
         }.environmentObject(workspace)
 
+        panel.contentView = NSHostingView(rootView: SettingsInjector { contentView })
+        window?.addChildWindow(panel, ordered: .above)
+        panel.makeKeyAndOrderFront(self)
+        self.panelOpen = true
+    }
+
+    /// Opens the knowledge base quick-lookup palette (⌥⌘K).
+    @IBAction func openKnowledgeSearch(_ sender: Any?) {
+        if let knowledgePanel {
+            if knowledgePanel.isKeyWindow {
+                knowledgePanel.close()
+                self.panelOpen = false
+                return
+            }
+            window?.addChildWindow(knowledgePanel, ordered: .above)
+            knowledgePanel.makeKeyAndOrderFront(self)
+            self.panelOpen = true
+            return
+        }
+
+        let panel = SearchPanel()
+        self.knowledgePanel = panel
+        let contentView = KnowledgeQuickSearchView {
+            panel.close()
+            self.panelOpen = false
+            self.knowledgePanel = nil
+        }
         panel.contentView = NSHostingView(rootView: SettingsInjector { contentView })
         window?.addChildWindow(panel, ordered: .above)
         panel.makeKeyAndOrderFront(self)

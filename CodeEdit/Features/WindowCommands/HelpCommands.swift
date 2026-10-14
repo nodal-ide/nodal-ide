@@ -18,6 +18,11 @@ struct HelpCommands: Commands {
             }
             .keyboardShortcut("k", modifiers: [.command, .shift])
 
+            Button("Search Knowledge Base…") {
+                NSApp.sendAction(#selector(CodeEditWindowController.openKnowledgeSearch(_:)), to: nil, from: nil)
+            }
+            .keyboardShortcut("k", modifiers: [.command, .option])
+
             Divider()
 
             Button("What's New in CodeEdit") {

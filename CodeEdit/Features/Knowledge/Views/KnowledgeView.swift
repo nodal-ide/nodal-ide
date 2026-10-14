@@ -61,11 +61,11 @@ struct KnowledgeView: View {
     @ViewBuilder private var tocContent: some View {
         if !model.trimmedSearchText.isEmpty {
             if model.searchResults.isEmpty {
-                Text("No matching pages")
+                Text("No matches")
                     .foregroundStyle(.secondary)
             } else {
-                List(model.searchResults) { item in
-                    tocButton(item)
+                List(model.searchResults) { result in
+                    searchResultRow(result)
                 }
             }
         } else if let source = model.selectedSource {
@@ -78,6 +78,26 @@ struct KnowledgeView: View {
             Text("No source selected")
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func searchResultRow(_ result: KnowledgeSearchResult) -> some View {
+        Button {
+            model.open(path: result.path)
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(result.title)
+                    .fontWeight(.medium)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if !result.snippet.isEmpty {
+                    Text(result.snippet)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func tocRows(_ item: KnowledgeIndex.TOCItem) -> AnyView {

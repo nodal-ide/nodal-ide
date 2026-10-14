@@ -12,13 +12,40 @@ final class KnowledgeViewModel: ObservableObject {
     @Published var selectedSourceID: String?
     @Published var currentPath: String?
     @Published var fragment: String?
-    @Published var searchText: String = ""
+    @Published var searchText: String = "" {
+        didSet { recomputeSearch() }
+    }
+    @Published private(set) var searchResults: [KnowledgeSearchResult] = []
 
     private(set) var history: [String] = []
     private var historyIndex = -1
+    private var openObserver: NSObjectProtocol?
 
     init() {
         reload()
+
+        openObserver = NotificationCenter.default.addObserver(
+            forName: KnowledgeRouter.didRequestOpen,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let request = notification.object as? KnowledgeRouter.Request else { return }
+            MainActor.assumeIsolated {
+                self?.apply(request)
+                KnowledgeRouter.shared.clearPending()
+            }
+        }
+
+        // If this window was created in response to a request, honor it.
+        if let pending = KnowledgeRouter.shared.consumePending() {
+            apply(pending)
+        }
+    }
+
+    deinit {
+        if let openObserver {
+            NotificationCenter.default.removeObserver(openObserver)
+        }
     }
 
     func reload() {
@@ -57,7 +84,6 @@ final class KnowledgeViewModel: ObservableObject {
         if resolved.isEmpty {
             resolved = source.homePage
         }
-        // Allow links without an extension to resolve to a Markdown page.
         if source.content(for: resolved) == nil, !resolved.contains(".") {
             let markdown = resolved + ".md"
             if source.content(for: markdown) != nil {
@@ -96,15 +122,6 @@ final class KnowledgeViewModel: ObservableObject {
         open(path: source.homePage)
     }
 
-    /// Pages whose title or path match the current search text.
-    var searchResults: [KnowledgeIndex.TOCItem] {
-        guard let source = selectedSource, !trimmedSearchText.isEmpty else { return [] }
-        return source.pages.filter {
-            $0.title.localizedCaseInsensitiveContains(trimmedSearchText)
-                || ($0.path?.localizedCaseInsensitiveContains(trimmedSearchText) ?? false)
-        }
-    }
-
     var trimmedSearchText: String {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -113,5 +130,25 @@ final class KnowledgeViewModel: ObservableObject {
     var currentHTML: String? {
         guard let source = selectedSource, let path = currentPath else { return nil }
         return KnowledgeRenderer.html(forPath: path, source: source)
+    }
+
+    // MARK: - Private
+
+    private func recomputeSearch() {
+        let query = trimmedSearchText
+        guard !query.isEmpty, let source = selectedSource else {
+            searchResults = []
+            return
+        }
+        searchResults = KnowledgeSearchIndex.shared.search(query, in: source)
+    }
+
+    private func apply(_ request: KnowledgeRouter.Request) {
+        if let sourceID = request.sourceID,
+           let source = sources.first(where: { $0.id == sourceID }),
+           source.id != selectedSourceID {
+            selectSource(source)
+        }
+        open(path: request.path)
     }
 }
