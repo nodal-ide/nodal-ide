@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import LanguageServerProtocol
 import CodeEditSourceEditor
 import CodeEditLangPHP
 
@@ -38,6 +39,15 @@ final class LanguageProviderRegistry {
             openLink: openLink
         ))
 
+        // Language server (lowest priority) — only when a server is configured/running for this language
+        // and the language isn't handled by a native engine.
+        providers.append(contentsOf: lspProviders(
+            for: file,
+            root: root,
+            languageID: languageID,
+            openLink: openLink
+        ))
+
         // Declarative packs are folded into the workspace index and served by the built-in engine.
         if languageID == "php",
            InternalLanguage.isEnabled(.php, in: Settings.shared.preferences.developerSettings) {
@@ -47,6 +57,30 @@ final class LanguageProviderRegistry {
         }
 
         return providers
+    }
+
+    /// Providers backed by a running language server for the file's language.
+    private func lspProviders(
+        for file: URL,
+        root: URL,
+        languageID: String,
+        openLink: @escaping (JumpToDefinitionLink) -> Void
+    ) -> [any LanguageProvider] {
+        MainActor.assumeIsolated { () -> [any LanguageProvider] in
+            guard let lsp = ServiceContainer.resolve(.singleton, LSPService.self),
+                  let language = LanguageIdentifier(rawValue: languageID),
+                  !lsp.usesInternalLanguage(language),
+                  lsp.hasServer(for: language) else {
+                return []
+            }
+            let provider: any LanguageProvider = LSPLanguageProvider(
+                languageID: languageID,
+                fileURL: file,
+                workspacePath: root.absolutePath,
+                openLink: openLink
+            )
+            return [provider]
+        }
     }
 
     /// Re-evaluates language extensions for a workspace after project settings change: removes the
