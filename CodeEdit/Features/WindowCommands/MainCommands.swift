@@ -12,6 +12,8 @@ struct MainCommands: Commands {
     @Environment(\.openWindow)
     var openWindow
 
+    @UpdatingWindowController var windowController
+
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
             Button("About CodeEdit") {
@@ -28,6 +30,11 @@ struct MainCommands: Commands {
                 openWindow(sceneID: .settings)
             }
             .keyboardShortcut(",")
+
+            Button("Project Settings...") {
+                NSApp.sendAction(#selector(CodeEditWindowController.openWorkspaceSettings(_:)), to: nil, from: nil)
+            }
+            .disabled(windowController?.workspace == nil)
         }
     }
 }
