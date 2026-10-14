@@ -95,8 +95,13 @@ struct CodeFileView: View {
     /// peripherals like the minimap are unnecessary.
     private let isPreview: Bool
 
-    /// Native language provider for this file, if one exists (currently PHP).
+    /// Native language provider for this file, if one exists (currently PHP). Kept for wiring
+    /// diagnostics + the debounced index refresh.
     private let nativeProvider: PHPProvider?
+
+    /// The delegate object passed to the editor: either a single provider or an aggregator that
+    /// merges several (extensions + built-in engine).
+    private let languageDelegate: (any LanguageDelegate)?
 
     init(
         editorInstance: EditorInstance,
@@ -115,27 +120,43 @@ struct CodeFileView: View {
         self.isEditable = isEditable
         self.isPreview = isPreview
 
-        // Native (in-process) PHP intelligence: completion + jump-to-definition, no LSP.
-        if codeFile.getLanguage().id == .php,
-           InternalLanguage.isEnabled(.php, in: Settings.shared.preferences.developerSettings),
-           let workspaceRoot = codeFile.findWorkspace()?.fileURL,
-           let fileURL = codeFile.fileURL {
-            self.nativeProvider = PHPWorkspaceIndex.shared.provider(for: fileURL, root: workspaceRoot) { link in
-                guard let url = link.url else { return }
-                CodeEditDocumentController.shared.openDocument(
-                    withContentsOf: url,
-                    display: true
-                ) { document, _, _ in
-                    (document as? CodeFileDocument)?.openOptions = .init(
-                        cursorPositions: [link.targetRange]
-                    )
-                }
+        // Route jump-to-definition through the app, which owns the editor/document model.
+        let openLink: (JumpToDefinitionLink) -> Void = { link in
+            guard let url = link.url else { return }
+            CodeEditDocumentController.shared.openDocument(
+                withContentsOf: url,
+                display: true
+            ) { document, _, _ in
+                (document as? CodeFileDocument)?.openOptions = .init(
+                    cursorPositions: [link.targetRange]
+                )
             }
-            self.nativeProvider?.onDiagnostics = { url, diagnostics in
-                DiagnosticsStore.shared.update(file: url, diagnostics: diagnostics)
-            }
-        } else {
-            self.nativeProvider = nil
+        }
+
+        // Build the language-provider pipeline (extensions + built-in engine).
+        var providers: [any LanguageProvider] = []
+        if let workspaceRoot = codeFile.findWorkspace()?.fileURL, let fileURL = codeFile.fileURL {
+            providers = LanguageProviderRegistry.shared.providers(
+                for: fileURL,
+                root: workspaceRoot,
+                languageID: codeFile.getLanguage().id.rawValue,
+                openLink: openLink
+            )
+        }
+
+        let phpProvider = providers.compactMap { $0 as? PHPProvider }.first
+        self.nativeProvider = phpProvider
+        phpProvider?.onDiagnostics = { url, diagnostics in
+            DiagnosticsStore.shared.update(file: url, diagnostics: diagnostics)
+        }
+
+        switch providers.count {
+        case 0:
+            self.languageDelegate = nil
+        case 1:
+            self.languageDelegate = providers[0]
+        default:
+            self.languageDelegate = LanguageProviderAggregator(providers: providers)
         }
 
         if let openOptions = codeFile.openOptions {
@@ -230,13 +251,13 @@ struct CodeFileView: View {
             highlightProviders: highlightProviders,
             undoManager: undoRegistration.manager(forFile: editorInstance.file),
             coordinators: textViewCoordinators,
-            completionDelegate: nativeProvider,
-            jumpToDefinitionDelegate: nativeProvider,
-            hoverDelegate: nativeProvider,
-            signatureHelpDelegate: nativeProvider,
-            codeActionDelegate: nativeProvider,
-            diagnosticsDelegate: nativeProvider,
-            symbolsDelegate: nativeProvider
+            completionDelegate: languageDelegate,
+            jumpToDefinitionDelegate: languageDelegate,
+            hoverDelegate: languageDelegate,
+            signatureHelpDelegate: languageDelegate,
+            codeActionDelegate: languageDelegate,
+            diagnosticsDelegate: languageDelegate,
+            symbolsDelegate: languageDelegate
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))
