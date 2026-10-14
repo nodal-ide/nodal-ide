@@ -17,9 +17,17 @@ enum KnowledgeRenderer {
                 source: source
             )
         }
-        return document(title: title(forPath: path, source: source),
-                        body: renderMarkdown(markdown, currentPath: path),
-                        source: source)
+        let title = title(forPath: path, source: source)
+        // HTML pages (e.g. imported docsets) are passed through untouched.
+        if isHTMLPage(path) {
+            return document(title: title, body: markdown, source: source)
+        }
+        return document(title: title, body: renderMarkdown(markdown, currentPath: path), source: source)
+    }
+
+    static func isHTMLPage(_ path: String) -> Bool {
+        let ext = (path as NSString).pathExtension.lowercased()
+        return ext == "html" || ext == "htm"
     }
 
     private static func title(forPath path: String, source: KnowledgeSource) -> String {
@@ -351,5 +359,6 @@ enum KnowledgeRenderer {
     th { background: color-mix(in srgb, currentColor 5%, transparent); }
     hr { border: none; border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent); margin: 2em 0; }
     img { max-width: 100%; }
+    mark.kh { background: rgba(255, 214, 0, 0.45); border-radius: 2px; }
     """
 }

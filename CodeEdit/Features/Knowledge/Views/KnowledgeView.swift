@@ -10,6 +10,8 @@ import AppKit
 struct KnowledgeView: View {
     @ObservedObject var model: KnowledgeViewModel
 
+    @State private var importError: String?
+
     var body: some View {
         NavigationSplitView {
             List(selection: sourceSelectionBinding) {
@@ -44,9 +46,53 @@ struct KnowledgeView: View {
                 Button { model.goHome() } label: { Image(systemName: "house") }
                     .help("Home")
             }
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button("Import Docset…") { importDocset() }
+                    Button("Reveal Sources Folder") {
+                        let directory = KnowledgeRegistry.userKnowledgeDirectory
+                        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                        NSWorkspace.shared.activateFileViewerSelecting([directory])
+                    }
+                    Divider()
+                    Button("Reload Sources") { reloadSources() }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
+        }
+        .alert(
+            "Import Failed",
+            isPresented: Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })
+        ) {
+            Button("OK") { importError = nil }
+        } message: {
+            Text(importError ?? "")
         }
         .navigationTitle(model.selectedSource?.title ?? "Knowledge")
-        .onChange(of: model.selectedSourceID) { _, _ in }
+    }
+
+    private func importDocset() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Import"
+        panel.message = "Choose a .docset bundle"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        do {
+            try KnowledgeRegistry.shared.importDocset(from: url)
+            model.reload()
+        } catch {
+            importError = error.localizedDescription
+        }
+    }
+
+    private func reloadSources() {
+        KnowledgeSearchIndex.shared.invalidate()
+        KnowledgeRegistry.shared.reload()
+        model.reload()
     }
 
     private var sourceSelectionBinding: Binding<String?> {
@@ -146,6 +192,7 @@ struct KnowledgeView: View {
                 html: html,
                 baseURL: model.selectedSource?.baseURL,
                 fragment: model.fragment,
+                highlight: model.trimmedSearchText.isEmpty ? nil : model.trimmedSearchText,
                 onNavigate: { model.open(path: $0) },
                 onExternal: { NSWorkspace.shared.open($0) }
             )

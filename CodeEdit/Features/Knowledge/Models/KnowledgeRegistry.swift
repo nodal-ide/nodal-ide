@@ -23,10 +23,43 @@ final class KnowledgeRegistry {
         var result: [KnowledgeSource] = [BuiltinKnowledge.source]
         result.append(contentsOf: extensionSources())
         result.append(contentsOf: userSources())
+        result.append(contentsOf: docsetSources())
         sources = result
     }
 
+    /// Imports a Dash/Zeal `.docset` bundle into the user knowledge folder.
+    func importDocset(from source: URL) throws {
+        let fileManager = FileManager.default
+        try fileManager.createDirectory(at: Self.docsetDirectory, withIntermediateDirectories: true)
+        let destination = Self.docsetDirectory.appending(path: source.lastPathComponent)
+        if fileManager.fileExists(atPath: destination.path(percentEncoded: false)) {
+            try fileManager.removeItem(at: destination)
+        }
+        try fileManager.copyItem(at: source, to: destination)
+        KnowledgeSearchIndex.shared.invalidate()
+        reload()
+    }
+
     // MARK: - Private
+
+    private func docsetSources() -> [KnowledgeSource] {
+        let entries = (try? FileManager.default.contentsOfDirectory(
+            at: Self.docsetDirectory,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        )) ?? []
+
+        return entries.filter { $0.pathExtension == "docset" }.compactMap { url in
+            guard let result = DocsetBuilder.load(url) else { return nil }
+            return KnowledgeSource(
+                id: "docset/\(url.deletingPathExtension().lastPathComponent)",
+                title: result.title,
+                subtitle: "Docset",
+                storage: .disk(root: result.documents),
+                index: result.index
+            )
+        }
+    }
 
     private func extensionSources() -> [KnowledgeSource] {
         var result: [KnowledgeSource] = []
@@ -82,5 +115,9 @@ final class KnowledgeRegistry {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         return base.appending(path: "CodeEdit/Knowledge", directoryHint: .isDirectory)
+    }
+
+    static var docsetDirectory: URL {
+        userKnowledgeDirectory.appending(path: "Docsets", directoryHint: .isDirectory)
     }
 }
