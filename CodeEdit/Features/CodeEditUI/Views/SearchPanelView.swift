@@ -18,6 +18,9 @@ struct SearchPanelView<RowView: View, PreviewView: View, Option: Identifiable & 
     @State var selection: Option?
     @State var previewVisible: Bool = true
 
+    /// Focus state so the search field can become first responder as soon as the panel appears.
+    @FocusState private var isSearchFocused: Bool
+
     let title: String
     let image: Image
     let hasPreview: Bool
@@ -63,6 +66,7 @@ struct SearchPanelView<RowView: View, PreviewView: View, Option: Identifiable & 
                     TextField(title, text: $text)
                         .font(.system(size: 20, weight: .light, design: .default))
                         .textFieldStyle(.plain)
+                        .focused($isSearchFocused)
                         .onSubmit {
                             if let selection {
                                 onRowClick(selection)
@@ -137,6 +141,13 @@ struct SearchPanelView<RowView: View, PreviewView: View, Option: Identifiable & 
         }
         .overlay {
             keyHandlers
+        }
+        .onAppear {
+            // Move focus to the search field so the user can type immediately without clicking. The async hop
+            // ensures the field is in the view hierarchy (and its window is key) before we request focus.
+            DispatchQueue.main.async {
+                isSearchFocused = true
+            }
         }
         .background(EffectView(.sidebar, blendingMode: .behindWindow))
         .edgesIgnoringSafeArea(.vertical)
