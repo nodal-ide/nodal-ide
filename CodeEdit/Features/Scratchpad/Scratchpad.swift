@@ -50,15 +50,16 @@ enum Scratchpad {
             return
         }
 
-        // Remove the temp file and mark the document saved so it closes without prompting.
-        try? FileManager.default.removeItem(at: file.url)
-        file.fileDocument?.updateChangeCount(.changeCleared)
-
-        editor?.closeTab(file: file)
-
-        if let newFile = workspace.workspaceFileManager?.getFile(target.path, createIfNotFound: true) {
+        // Open the saved file *before* closing the scratch tab, so the editor always has a tab and the
+        // saved file stays open.
+        if let newFile = workspace.workspaceFileManager?.getFile(target.relativePath, createIfNotFound: true) {
             workspace.editorManager?.activeEditor.openTab(file: newFile, asTemporary: false)
             workspace.listenerModel.highlightedFileItem = newFile
         }
+
+        // Remove the temp file and close the scratch tab without prompting.
+        file.fileDocument?.updateChangeCount(.changeCleared)
+        try? FileManager.default.removeItem(at: file.url)
+        editor?.closeTab(file: file)
     }
 }
