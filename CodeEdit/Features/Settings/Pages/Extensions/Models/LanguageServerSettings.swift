@@ -15,6 +15,7 @@ extension SettingsData {
             [
                 "Language Servers",
                 "LSP Binaries",
+                "Internal Languages",
                 "Linters",
                 "Formatters",
                 "Debug Protocol",

@@ -16,6 +16,9 @@ struct LanguageServersView: View {
 
     @State private var showingInfoPanel = false
 
+    @AppSettings(\.developerSettings.internalLanguages)
+    var internalLanguages
+
     var body: some View {
         Group {
             SettingsForm {
@@ -26,6 +29,19 @@ struct LanguageServersView: View {
                             .controlSize(.small)
                         Spacer()
                     }
+                }
+
+                Section {
+                    ForEach(InternalLanguage.allCases) { language in
+                        Toggle(language.displayName, isOn: binding(for: language))
+                    }
+                } header: {
+                    Text("Internal Languages")
+                    Text(
+                        "These languages are handled by the app's built-in engine, so no language server is "
+                        + "downloaded or started for them — they work out of the box. Turn a language off here "
+                        + "to use an external language server from the list below instead."
+                    )
                 }
 
                 Section {
@@ -79,5 +95,19 @@ struct LanguageServersView: View {
         }
 
         return attrString
+    }
+
+    /// Binding for whether an internal language is enabled. Writes the whole array so the setting persists.
+    private func binding(for language: InternalLanguage) -> Binding<Bool> {
+        Binding {
+            internalLanguages.contains(language.rawValue)
+        } set: { isEnabled in
+            var languages = internalLanguages
+            languages.removeAll { $0 == language.rawValue }
+            if isEnabled {
+                languages.append(language.rawValue)
+            }
+            internalLanguages = languages
+        }
     }
 }

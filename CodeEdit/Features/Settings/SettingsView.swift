@@ -16,7 +16,7 @@ struct SettingsView: View {
     /// Variables for the selected Page, the current search text and software updater
     @State private var selectedPage: SettingsPage = Self.pages[0].page
     @State private var searchText: String = ""
-    @State private var showDeveloperSettings: Bool = false
+    @State private var showDeveloperSettings: Bool = true
 
     @Environment(\.presentationMode)
     var presentationMode
