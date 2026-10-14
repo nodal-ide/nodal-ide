@@ -74,6 +74,11 @@ final class ProjectNavigatorViewController: NSViewController {
         workspace?.navigatorFilter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true
     }
 
+    /// Whether any navigator filter (name text, source control, or recents) is active.
+    var isFilteringActive: Bool {
+        workspace?.sourceControlFilter == true || workspace?.recentsFilter == true || !filterIsEmpty
+    }
+
     /// Setup the ``scrollView`` and ``outlineView``
     override func loadView() {
         self.scrollView = NSScrollView()
@@ -214,9 +219,9 @@ final class ProjectNavigatorViewController: NSViewController {
     private var lastFilterWasActive: Bool?
 
     func handleFilterChange() {
-        guard let workspace else { return }
+        guard workspace != nil else { return }
 
-        let isFiltering = workspace.sourceControlFilter || !filterIsEmpty
+        let isFiltering = isFilteringActive
         let wasFiltering = lastFilterWasActive
         lastFilterWasActive = isFiltering
 
@@ -260,7 +265,7 @@ final class ProjectNavigatorViewController: NSViewController {
 
     /// Checks if the given filter matches the name of the item or any of its children.
     func fileSearchMatches(_ filter: String, for item: CEWorkspaceFile, sourceControlFilter: Bool) -> Bool {
-        guard !filterIsEmpty || sourceControlFilter else {
+        guard !filterIsEmpty || sourceControlFilter || workspace?.recentsFilter == true else {
             return true
         }
         if let cached = fileMatchMemo[item] {
@@ -276,15 +281,27 @@ final class ProjectNavigatorViewController: NSViewController {
         item: CEWorkspaceFile,
         sourceControlFilter: Bool
     ) -> Bool {
-        if sourceControlFilter {
-            if item.gitStatus != nil && item.gitStatus != GitStatus.none &&
-                (filterIsEmpty || item.name.localizedCaseInsensitiveContains(filter)) {
+        let recentsFilter = workspace?.recentsFilter == true
+
+        if item.isFolder {
+            // A folder matches the name filter directly (only when no status/recents filter is on);
+            // its contents are then shown in full. Otherwise we descend to find matching children.
+            if !sourceControlFilter, !recentsFilter, !filterIsEmpty,
+               item.name.localizedCaseInsensitiveContains(filter) {
                 saveAllContentChildren(for: item)
                 return true
             }
-        } else if item.name.localizedCaseInsensitiveContains(filter) {
-            saveAllContentChildren(for: item)
-            return true
+        } else {
+            var matches = filterIsEmpty || item.name.localizedCaseInsensitiveContains(filter)
+            if sourceControlFilter {
+                matches = matches && item.gitStatus != nil && item.gitStatus != GitStatus.none
+            }
+            if recentsFilter {
+                matches = matches && isRecent(item)
+            }
+            if matches {
+                return true
+            }
         }
 
         if let children = workspace?.workspaceFileManager?.childrenOfFile(item) {
@@ -292,6 +309,15 @@ final class ProjectNavigatorViewController: NSViewController {
         }
 
         return false
+    }
+
+    /// Files modified within this window are treated as "recent".
+    private static let recentFileInterval: TimeInterval = 60 * 60 * 24
+
+    /// Whether the given file was modified within ``recentFileInterval``.
+    private func isRecent(_ item: CEWorkspaceFile) -> Bool {
+        guard let modified = item.url.contentModificationDate else { return false }
+        return modified >= Date().addingTimeInterval(-Self.recentFileInterval)
     }
 
     /// Saves all children of a given folder item to the filtered content cache.

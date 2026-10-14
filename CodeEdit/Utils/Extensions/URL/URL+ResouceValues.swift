@@ -24,4 +24,9 @@ extension URL {
     var contentType: UTType? {
         resourceValues?.contentType
     }
+
+    /// The content modification date of the file, if available.
+    var contentModificationDate: Date? {
+        (try? self.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+    }
 }

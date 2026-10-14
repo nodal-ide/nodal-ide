@@ -18,6 +18,8 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     @Published var navigatorFilter: String = ""
     /// Whether the workspace only shows files with changes.
     @Published var sourceControlFilter = false
+    /// Whether the workspace only shows files modified recently.
+    @Published var recentsFilter = false
 
     private var workspaceState: [String: Any] {
         get {

@@ -71,7 +71,11 @@ struct ProjectNavigatorOutlineView: NSViewControllerRepresentable {
                     self?.controller?.handleFilterChange()
                 }
                 .store(in: &cancellables)
-            Publishers.Merge(workspace.$sourceControlFilter, workspace.$sortFoldersOnTop)
+            Publishers.Merge3(
+                workspace.$sourceControlFilter,
+                workspace.$recentsFilter,
+                workspace.$sortFoldersOnTop
+            )
                 .debounce(for: .milliseconds(150), scheduler: RunLoop.main)
                 .sink { [weak self] _ in
                     self?.controller?.handleFilterChange()
