@@ -6,6 +6,21 @@
   "commit": false,
   "contributors": [
     {
+      "login": "acidlake",
+      "name": "Jeremias Nunez",
+      "avatar_url": "https://avatars.githubusercontent.com/acidlake?v=4",
+      "profile": "https://github.com/acidlake",
+      "contributions": [
+        "code",
+        "bug",
+        "design",
+        "infra",
+        "test",
+        "maintenance",
+        "plugin"
+      ]
+    },
+    {
       "login": "austincondiff",
       "name": "Austin Condiff",
       "avatar_url": "https://avatars.githubusercontent.com/u/806104?v=4",
@@ -117,7 +132,7 @@
     },
     {
       "login": "Jeehut",
-      "name": "Cihat Gündüz",
+      "name": "Cihat G\u00fcnd\u00fcz",
       "avatar_url": "https://avatars.githubusercontent.com/u/6942160?v=4",
       "profile": "https://twitch.tv/Jeehut",
       "contributions": [
@@ -596,7 +611,7 @@
     },
     {
       "login": "dvandyy",
-      "name": "Tomáš Boďa",
+      "name": "Tom\u00e1\u0161 Bo\u010fa",
       "avatar_url": "https://avatars.githubusercontent.com/u/40064599?v=4",
       "profile": "http://tomasboda.com",
       "contributions": [
@@ -671,7 +686,7 @@
     },
     {
       "login": "ibrahimcetin",
-      "name": "İbrahim Çetin",
+      "name": "\u0130brahim \u00c7etin",
       "avatar_url": "https://avatars.githubusercontent.com/u/33904390?v=4",
       "profile": "http://ibrahimcetin.dev",
       "contributions": [
@@ -839,21 +854,6 @@
       "profile": "http://zhr.is",
       "contributions": [
         "code"
-      ]
-    },
-    {
-      "login": "acidlake",
-      "name": "Jeremias Nunez",
-      "avatar_url": "https://avatars.githubusercontent.com/acidlake?v=4",
-      "profile": "https://github.com/acidlake",
-      "contributions": [
-        "code",
-        "bug",
-        "design",
-        "infra",
-        "test",
-        "maintenance",
-        "plugin"
       ]
     }
   ],

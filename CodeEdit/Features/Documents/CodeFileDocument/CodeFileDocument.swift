@@ -200,23 +200,20 @@ final class CodeFileDocument: NSDocument, ObservableObject {
     /// Triggered when change occurred
     override func updateChangeCount(_ change: NSDocument.ChangeType) {
         super.updateChangeCount(change)
-
-        if CodeFileDocument.autosavesInPlace {
-            return
-        }
-
-        self.isDocumentEditedSubject.send(self.isDocumentEdited)
+        // Always report — even with autosave-in-place there's a window with unsaved changes, and the tab
+        // indicator relies on this signal.
+        self.isDocumentEditedSubject.send(self.hasUnsavedChanges)
     }
 
     /// Triggered when changes saved
     override func updateChangeCount(withToken changeCountToken: Any, for saveOperation: NSDocument.SaveOperationType) {
         super.updateChangeCount(withToken: changeCountToken, for: saveOperation)
+        self.isDocumentEditedSubject.send(self.hasUnsavedChanges)
+    }
 
-        if CodeFileDocument.autosavesInPlace {
-            return
-        }
-
-        self.isDocumentEditedSubject.send(self.isDocumentEdited)
+    /// Whether the document has changes that haven't been written to disk (covers autosave-in-place).
+    var hasUnsavedChanges: Bool {
+        isDocumentEdited || hasUnautosavedChanges
     }
 
     /// If ``hasUnautosavedChanges`` is `true` and an autosave has not already been scheduled, schedules a new autosave.

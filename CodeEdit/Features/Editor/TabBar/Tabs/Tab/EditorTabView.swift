@@ -224,7 +224,7 @@ struct EditorTabView: View {
         }
         .onReceive(tabFile.fileDocumentPublisher) { _ in
             documentRefreshID += 1
-            isDocumentEdited = tabFile.fileDocument?.isDocumentEdited ?? false
+            isDocumentEdited = tabFile.fileDocument?.hasUnsavedChanges ?? false
         }
         .onReceive(
             tabFile.fileDocument?.isDocumentEditedPublisher ?? Empty<Bool, Never>().eraseToAnyPublisher()
