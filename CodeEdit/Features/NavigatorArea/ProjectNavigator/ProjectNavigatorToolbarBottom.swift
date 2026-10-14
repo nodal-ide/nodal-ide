@@ -126,10 +126,8 @@ struct ProjectNavigatorToolbarBottom: View {
                     alert.runModal()
                 }
             }
-        } label: {}
-        .background {
+        } label: {
             Image(systemName: "plus")
-                .accessibilityHidden(true)
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)

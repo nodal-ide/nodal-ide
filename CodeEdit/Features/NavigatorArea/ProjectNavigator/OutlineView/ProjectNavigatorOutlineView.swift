@@ -64,13 +64,15 @@ struct ProjectNavigatorOutlineView: NSViewControllerRepresentable {
                 }
                 .store(in: &cancellables)
             workspace.$navigatorFilter
-                .throttle(for: 0.1, scheduler: RunLoop.main, latest: true)
+                // Debounce so we don't walk the whole tree on every keystroke (freezes on large
+                // projects).
+                .debounce(for: .milliseconds(250), scheduler: RunLoop.main)
                 .sink { [weak self] _ in
                     self?.controller?.handleFilterChange()
                 }
                 .store(in: &cancellables)
             Publishers.Merge(workspace.$sourceControlFilter, workspace.$sortFoldersOnTop)
-                .throttle(for: 0.1, scheduler: RunLoop.main, latest: true)
+                .debounce(for: .milliseconds(150), scheduler: RunLoop.main)
                 .sink { [weak self] _ in
                     self?.controller?.handleFilterChange()
                 }
