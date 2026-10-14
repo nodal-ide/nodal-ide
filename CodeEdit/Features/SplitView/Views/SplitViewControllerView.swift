@@ -148,6 +148,23 @@ final class SplitViewController: NSSplitViewController {
         return super.splitView(splitView, shouldHideDividerAt: dividerIndex)
     }
 
+    /// Enlarges the draggable region around a divider.
+    ///
+    /// Dividers can be as thin as a single pixel, which makes them very hard to grab. This widens the
+    /// effective (grab) rect without changing how the divider is drawn.
+    override func splitView(
+        _ splitView: NSSplitView,
+        effectiveRect proposedEffectiveRect: NSRect,
+        forDrawnRect drawnRect: NSRect,
+        ofDividerAt dividerIndex: Int
+    ) -> NSRect {
+        let extra: CGFloat = 4
+        if splitView.isVertical {
+            return proposedEffectiveRect.insetBy(dx: -extra, dy: 0)
+        }
+        return proposedEffectiveRect.insetBy(dx: 0, dy: -extra)
+    }
+
     func setDividerStyle(_ dividerStyle: CodeEditDividerStyle) {
         guard let splitView = splitView as? CustomSplitView else {
             return
