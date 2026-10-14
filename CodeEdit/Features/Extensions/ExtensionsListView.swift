@@ -76,9 +76,9 @@ struct ExtensionsListView: View {
                 .help("Browse app extensions")
             }
         }
-        .onAppear { selectFirstIfNeeded() }
-        .onChange(of: languageManager.extensions) { _, _ in selectFirstIfNeeded() }
-        .onChange(of: manager.extensions) { _, _ in selectFirstIfNeeded() }
+        .onAppear { pruneSelectionAndSelectFirst() }
+        .onChange(of: languageManager.extensions) { _, _ in pruneSelectionAndSelectFirst() }
+        .onChange(of: manager.extensions) { _, _ in pruneSelectionAndSelectFirst() }
         .alert(
             "Extension Error",
             isPresented: Binding(
@@ -156,10 +156,14 @@ struct ExtensionsListView: View {
         }
     }
 
-    /// Selects the first available extension when nothing is selected.
-    private func selectFirstIfNeeded() {
-        guard selection.isEmpty, let first = (languageItems + appItems).first else { return }
-        selection = [first]
+    /// Drops selection entries that no longer exist (e.g. a removed extension) and selects the first
+    /// item when nothing is selected.
+    private func pruneSelectionAndSelectFirst() {
+        let items = languageItems + appItems
+        selection.formIntersection(Set(items))
+        if selection.isEmpty, let first = items.first {
+            selection = [first]
+        }
     }
 
     private func installFromFolder() {

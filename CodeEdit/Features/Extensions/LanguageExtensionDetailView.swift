@@ -59,11 +59,17 @@ struct LanguageExtensionDetailView: View {
             }
 
             Section {
-                Button("Reveal in Finder") {
-                    NSWorkspace.shared.activateFileViewerSelecting([ext.root])
-                }
-                Button("Remove Extension", role: .destructive) {
-                    try? languageManager.remove(ext)
+                HStack {
+                    Button("Reveal in Finder") {
+                        NSWorkspace.shared.activateFileViewerSelecting([ext.root])
+                    }
+                    Spacer()
+                    Button(role: .destructive) {
+                        try? languageManager.remove(ext)
+                    } label: {
+                        Text("Remove Extension")
+                            .foregroundStyle(.red)
+                    }
                 }
             }
         }
