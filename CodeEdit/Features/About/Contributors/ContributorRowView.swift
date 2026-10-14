@@ -20,7 +20,7 @@ struct ContributorRowView: View {
                     Text(contributor.name)
                         .font(.headline)
                 }
-                HStack(spacing: 3) {
+                FlowLayout(spacing: 4) {
                     ForEach(contributor.contributions, id: \.self) { item in
                         tag(item)
                     }
@@ -88,6 +88,50 @@ struct ContributorRowView: View {
             .onHover { hover in
                 hovering = hover
             }
+        }
+    }
+}
+
+/// A minimal flow layout that wraps its subviews onto multiple lines.
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 4
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var cursorX: CGFloat = 0
+        var cursorY: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if cursorX + size.width > maxWidth, cursorX > 0 {
+                cursorX = 0
+                cursorY += rowHeight + spacing
+                rowHeight = 0
+            }
+            cursorX += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
+
+        let width = maxWidth.isFinite ? maxWidth : max(0, cursorX - spacing)
+        return CGSize(width: width, height: cursorY + rowHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var cursorX = bounds.minX
+        var cursorY = bounds.minY
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if cursorX + size.width > bounds.maxX, cursorX > bounds.minX {
+                cursorX = bounds.minX
+                cursorY += rowHeight + spacing
+                rowHeight = 0
+            }
+            subview.place(at: CGPoint(x: cursorX, y: cursorY), proposal: ProposedViewSize(size))
+            cursorX += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
         }
     }
 }

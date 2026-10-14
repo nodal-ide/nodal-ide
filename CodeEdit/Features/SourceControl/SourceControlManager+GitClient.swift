@@ -147,6 +147,23 @@ extension SourceControlManager {
             updatedStatusFor.insert(file)
         }
 
+        // Folders containing changed files get an aggregated indicator (like Xcode), so they aren't only
+        // visible once expanded.
+        var folders: Set<CEWorkspaceFile> = []
+        for file in updatedStatusFor {
+            var parent = file.parent
+            while let folder = parent {
+                folders.insert(folder)
+                parent = folder.parent
+            }
+        }
+        for folder in folders where !updatedStatusFor.contains(folder) {
+            if folder.gitStatus != .modified {
+                folder.gitStatus = .modified
+            }
+            updatedStatusFor.insert(folder)
+        }
+
         for (_, file) in fileManager.flattenedFileItems
         where !updatedStatusFor.contains(file) && file.gitStatus != nil {
             file.gitStatus = nil
