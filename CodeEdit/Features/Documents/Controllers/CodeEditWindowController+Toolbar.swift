@@ -31,6 +31,7 @@ extension CodeEditWindowController {
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         var items: [NSToolbarItem.Identifier] = [
             .toggleFirstSidebarItem,
+            .commandCenterItem,
             .flexibleSpace,
         ]
 
@@ -76,6 +77,7 @@ extension CodeEditWindowController {
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         var items: [NSToolbarItem.Identifier] = [
             .toggleFirstSidebarItem,
+            .commandCenterItem,
             .sidebarTrackingSeparator,
             .flexibleSpace,
             .itemListTrackingSeparator,
@@ -143,6 +145,18 @@ extension CodeEditWindowController {
                 accessibilityDescription: nil
             )?.withSymbolConfiguration(.init(scale: .large))
 
+            return toolbarItem
+        case .commandCenterItem:
+            let toolbarItem = NSToolbarItem(itemIdentifier: .commandCenterItem)
+            toolbarItem.paletteLabel = "Command Center"
+            toolbarItem.toolTip = "Search files, symbols, and commands (⌘K)"
+            toolbarItem.isBordered = true
+            toolbarItem.target = self
+            toolbarItem.action = #selector(self.openCommandCenter(_:))
+            toolbarItem.image = NSImage(
+                systemSymbolName: "magnifyingglass",
+                accessibilityDescription: "Command Center"
+            )?.withSymbolConfiguration(.init(scale: .large))
             return toolbarItem
         case .toggleLastSidebarItem:
             let toolbarItem = NSToolbarItem(itemIdentifier: NSToolbarItem.Identifier.toggleLastSidebarItem)

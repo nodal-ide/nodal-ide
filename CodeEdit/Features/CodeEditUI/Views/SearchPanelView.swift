@@ -119,6 +119,10 @@ struct SearchPanelView<RowView: View, PreviewView: View, Option: Identifiable & 
                         } else {
                             if let selection, let previewViewBuilder {
                                 previewViewBuilder(selection)
+                                    // Force a fresh preview when the selection changes; without
+                                    // this, stateful previews (e.g. OpenQuicklyPreviewView's
+                                    // @StateObject document) keep showing the first item.
+                                    .id(selection)
                                     .clipped()
                                     .frame(maxWidth: .infinity)
                                     .transition(.move(edge: .trailing))
