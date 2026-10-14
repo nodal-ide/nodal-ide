@@ -90,6 +90,7 @@ extension ProjectNavigatorMenu {
             if let newFile = try workspace?.workspaceFileManager?.addFile(fileName: "untitled", toFile: item) {
                 workspace?.listenerModel.highlightedFileItem = newFile
                 workspace?.editorManager?.openTab(item: newFile)
+                startRename(newFile)
             }
         } catch {
             let alert = NSAlert(error: error)
@@ -102,16 +103,35 @@ extension ProjectNavigatorMenu {
     @objc
     func renameFile() {
         guard let newFile = workspace?.listenerModel.highlightedFileItem else { return }
-        let row = sender.outlineView.row(forItem: newFile)
-        guard row > 0,
-              let cell = sender.outlineView.view(
-                atColumn: 0,
-                row: row,
-                makeIfNecessary: false
-              ) as? ProjectNavigatorTableViewCell else {
-            return
+        startRename(newFile)
+    }
+
+    /// Begins renaming `file`: expands its parents, selects its row, then focuses the name field with the
+    /// current name selected so the user can type a new one immediately.
+    func startRename(_ file: CEWorkspaceFile) {
+        guard let outlineView = sender.outlineView else { return }
+
+        var parent = file.parent
+        while let current = parent {
+            outlineView.expandItem(current)
+            parent = current.parent
         }
-        sender.outlineView.window?.makeFirstResponder(cell.textField)
+        outlineView.reloadData()
+
+        let row = outlineView.row(forItem: file)
+        guard row >= 0 else { return }
+        outlineView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        outlineView.scrollRowToVisible(row)
+
+        // The cell may not be materialized yet; wait a runloop turn, then focus the name field.
+        DispatchQueue.main.async {
+            guard let cell = outlineView.view(atColumn: 0, row: row, makeIfNecessary: true)
+                as? ProjectNavigatorTableViewCell, let textField = cell.textField else {
+                return
+            }
+            outlineView.window?.makeFirstResponder(textField)
+            textField.selectText(nil)
+        }
     }
 
     // TODO: Automatically identified the file type
@@ -130,7 +150,7 @@ extension ProjectNavigatorMenu {
                 ) {
                 workspace?.listenerModel.highlightedFileItem = newFile
                 workspace?.editorManager?.openTab(item: newFile)
-                renameFile()
+                startRename(newFile)
             }
         } catch {
             let alert = NSAlert(error: error)
@@ -147,6 +167,7 @@ extension ProjectNavigatorMenu {
         do {
             if let newFolder = try workspace?.workspaceFileManager?.addFolder(folderName: "untitled", toFile: item) {
                 workspace?.listenerModel.highlightedFileItem = newFolder
+                startRename(newFolder)
             }
         } catch {
             let alert = NSAlert(error: error)
