@@ -48,6 +48,11 @@ struct EditorCommands: Commands {
             Button("Find All References") {
                 windowController?.findReferences()
             }
+
+            Button("Code Actions…") {
+                editor?.selectedTab?.rangeTranslator.controller?.showCodeActions()
+            }
+            .keyboardShortcut(".", modifiers: [.command])
         }
     }
 }

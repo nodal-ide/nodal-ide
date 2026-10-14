@@ -199,10 +199,47 @@ final class LSPLanguageProvider: LanguageProvider {
         }
     }
 
-    // MARK: - Code actions (not yet available over LSP here)
+    // MARK: - Code actions
 
     @MainActor
-    func codeActions(forRange range: NSRange, textView: TextViewController) async -> [CodeActionInfo] { [] }
+    func codeActions(forRange range: NSRange, textView: TextViewController) async -> [CodeActionInfo] {
+        guard let server = server,
+              let lspRange = textView.textView.lspRangeFrom(nsRange: range) else {
+            return []
+        }
+        let diagnostics = (try? await server.requestPullDiagnostics(document: documentURI))?.items ?? []
+        let context = CodeActionContext(diagnostics: diagnostics, only: nil)
+        guard let response = try? await server.requestCodeActions(
+            for: documentURI,
+            range: lspRange,
+            context: context
+        ) else {
+            return []
+        }
+
+        var actions: [CodeActionInfo] = []
+        for option in response ?? [] {
+            guard case .optionB(var action) = option else { continue }
+            if action.edit == nil, action.data != nil,
+               let resolved = try? await server.requestCodeActionResolve(action) {
+                action = resolved
+            }
+            guard let edit = action.edit else { continue }
+            let edits = codeActionEdits(edit, in: textView.textView)
+            guard !edits.isEmpty else { continue }
+            actions.append(CodeActionInfo(title: action.title, kind: action.kind, edits: edits))
+        }
+        return actions
+    }
+
+    /// Extracts text edits that apply to the open document (cross-file edits are not shown here).
+    private func codeActionEdits(_ edit: WorkspaceEdit, in textView: TextView) -> [CodeActionEdit] {
+        guard let textEdits = edit.changes?[documentURI] else { return [] }
+        return textEdits.compactMap { textEdit in
+            guard let range = textView.nsRange(fromLSP: textEdit.range) else { return nil }
+            return CodeActionEdit(range: range, text: textEdit.newText)
+        }
+    }
 
     // MARK: - Completion
 

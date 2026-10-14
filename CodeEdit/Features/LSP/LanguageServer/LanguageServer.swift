@@ -172,6 +172,26 @@ class LanguageServer<DocumentType: LanguageServerDocument> {
                         itemDefaults: ["default1", "default2"]
                     )
                 ),
+                codeAction: CodeActionClientCapabilities(
+                    dynamicRegistration: false,
+                    codeActionLiteralSupport: CodeActionClientCapabilities.CodeActionLiteralSupport(
+                        codeActionKind: ValueSet(valueSet: [
+                            CodeActionKind.Quickfix,
+                            CodeActionKind.Refactor,
+                            CodeActionKind.RefactorExtract,
+                            CodeActionKind.RefactorInline,
+                            CodeActionKind.RefactorRewrite,
+                            CodeActionKind.Source,
+                            CodeActionKind.SourceOrganizeImports,
+                            CodeActionKind.SourceFixAll
+                        ])
+                    ),
+                    isPreferredSupport: true,
+                    disabledSupport: true,
+                    dataSupport: true,
+                    resolveSupport: CodeActionClientCapabilities.ResolveSupport(properties: ["edit"]),
+                    honorsChangeAnnotations: false
+                ),
                 // swiftlint:disable:next line_length
                 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokensClientCapabilities
                 semanticTokens: SemanticTokensClientCapabilities(
