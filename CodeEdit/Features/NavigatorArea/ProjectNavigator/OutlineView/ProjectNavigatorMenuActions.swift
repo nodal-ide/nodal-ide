@@ -124,11 +124,23 @@ extension ProjectNavigatorMenu {
         outlineView.scrollRowToVisible(row)
 
         // The cell may not be materialized yet; wait a runloop turn, then focus the name field.
-        DispatchQueue.main.async {
-            guard let cell = outlineView.view(atColumn: 0, row: row, makeIfNecessary: true)
-                as? ProjectNavigatorTableViewCell, let textField = cell.textField else {
-                return
+        DispatchQueue.main.async { [weak self] in
+            self?.focusRenameField(outlineView, row, force: true)
+            // When the file's editor tab opens, the editor takes first responder as it appears. Re-assert
+            // the rename focus once shortly after, but only if the field actually lost focus.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+                self?.focusRenameField(outlineView, row, force: false)
             }
+        }
+    }
+
+    private func focusRenameField(_ outlineView: NSOutlineView, _ row: Int, force: Bool) {
+        guard let cell = outlineView.view(atColumn: 0, row: row, makeIfNecessary: true)
+            as? ProjectNavigatorTableViewCell, let textField = cell.textField else {
+            return
+        }
+        // Only steal focus back if we're forcing it (first attempt) or the field lost its editor.
+        if force || textField.currentEditor() == nil {
             outlineView.window?.makeFirstResponder(textField)
             textField.selectText(nil)
         }
