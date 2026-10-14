@@ -13,6 +13,7 @@ extension CodeLanguage {
         switch self.id {
         case .agda,
                 .bash,
+                .dotenv,
                 .haskell,
                 .julia,
                 .kotlin,
