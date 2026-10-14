@@ -317,14 +317,12 @@ final class WorkspaceLanguageExtensions {
     }
 
     private func build(root: URL, language: String) -> [SymbolInfo] {
-        let project = loadProjectSettings(in: root)
-        let disabled = Set(Settings.shared.preferences.extensions.disabledExtensions)
         var result: [SymbolInfo] = []
 
         for ext in LanguageExtensionStore.shared.extensions(forWorkspace: root) {
-            guard !disabled.contains(ext.id),
+            guard LanguageExtensionActivation.isEnabled(ext),
                   ext.manifest.languages?.contains(language) == true,
-                  isActivated(ext, in: root, project: project),
+                  LanguageExtensionActivation.isActivated(ext, in: root),
                   let symbolFiles = ext.manifest.contributes?.symbols, !symbolFiles.isEmpty else {
                 continue
             }
@@ -349,67 +347,6 @@ final class WorkspaceLanguageExtensions {
         }
 
         return result
-    }
-
-    /// Whether a pack is active in a workspace.
-    ///
-    /// 1. If the project declares `frameworks` in `.codeedit/settings.json`, that is authoritative and
-    ///    no filesystem scanning happens: framework packs activate only when their framework is
-    ///    listed, and language-only packs always activate.
-    /// 2. Otherwise, detect from `activation`:
-    ///    - `framework`: the marker file (`composer.json` by default) must exist and match `requires`.
-    ///    - `files`: at least one workspace file must match a glob (only checked when no framework
-    ///      is declared — so framework packs never trigger the scan).
-    /// 3. No `activation` block → always active for the language.
-    private func isActivated(
-        _ ext: InstalledLanguageExtension,
-        in root: URL,
-        project: ProjectSettings?
-    ) -> Bool {
-        if let declared = project?.frameworks, !declared.isEmpty {
-            guard let name = ext.manifest.frameworkName else { return true }
-            return declared.contains { name == $0 || name.contains($0) || $0.contains(name) }
-        }
-
-        guard let activation = ext.manifest.activation else { return true }
-
-        if let framework = activation.framework {
-            return frameworkMatches(framework, in: root)
-        }
-        if let files = activation.files, !files.isEmpty {
-            return matchesAnyFile(files, in: root)
-        }
-        return true
-    }
-
-    private func loadProjectSettings(in root: URL) -> ProjectSettings? {
-        let url = root.appending(path: ".codeedit/settings.json")
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        struct ProjectFile: Codable { var project: ProjectSettings? }
-        return (try? JSONDecoder().decode(ProjectFile.self, from: data))?.project
-    }
-
-    private func frameworkMatches(
-        _ framework: LanguageExtensionManifest.Activation.Framework,
-        in root: URL
-    ) -> Bool {
-        let fileURL = root.appending(path: framework.file ?? "composer.json")
-        guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else { return false }
-        guard let requires = framework.requires, !requires.isEmpty else { return true }
-        return requires.keys.contains { content.contains($0) }
-    }
-
-    /// Whether any of the (literal, workspace-relative) activation files exist.
-    ///
-    /// Activation deliberately never scans the project: a declared project language/framework or a
-    /// literal marker file (`wp-config.php`, `artisan`, `composer.json`, …) is enough. Wildcard
-    /// patterns are ignored — declare the project language instead.
-    private func matchesAnyFile(_ patterns: [String], in root: URL) -> Bool {
-        let fileManager = FileManager.default
-        return patterns.contains { pattern in
-            !pattern.contains("*") && !pattern.contains("?")
-                && fileManager.fileExists(atPath: root.appending(path: pattern).path(percentEncoded: false))
-        }
     }
 
     private func stubURL(for ext: InstalledLanguageExtension) -> URL {

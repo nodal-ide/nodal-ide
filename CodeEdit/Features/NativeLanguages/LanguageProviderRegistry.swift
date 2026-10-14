@@ -15,21 +15,11 @@ typealias LanguageDelegate = CodeSuggestionDelegate & JumpToDefinitionDelegate &
 
 /// Resolves the ordered list of ``LanguageProvider``s for an open file.
 ///
-/// Order: user language extensions (highest) → built-in engine. The app registers extension
-/// factories; the built-in engine for a language is added here.
+/// Order: extension providers (highest) → built-in engine.
 final class LanguageProviderRegistry {
     static let shared = LanguageProviderRegistry()
 
-    /// Factories that may contribute providers for a file. Registration lets the extension
-    /// loader plug in without the registry knowing about it.
-    private var extensionFactories: [(URL, URL) -> [any LanguageProvider]] = []
-
     private init() {}
-
-    /// Registers a factory that can contribute providers for a file (called with file URL, workspace root).
-    func registerExtensionFactory(_ factory: @escaping (URL, URL) -> [any LanguageProvider]) {
-        extensionFactories.append(factory)
-    }
 
     /// Returns providers for a file, ordered by priority (highest first).
     func providers(
@@ -40,14 +30,17 @@ final class LanguageProviderRegistry {
     ) -> [any LanguageProvider] {
         var providers: [any LanguageProvider] = []
 
-        for factory in extensionFactories {
-            providers.append(contentsOf: factory(file, root))
-        }
+        // Programmatic providers contributed by extensions (out-of-process).
+        providers.append(contentsOf: ExtensionProviderManager.shared.providers(
+            for: file,
+            root: root,
+            languageID: languageID,
+            openLink: openLink
+        ))
 
+        // Declarative packs are folded into the workspace index and served by the built-in engine.
         if languageID == "php",
            InternalLanguage.isEnabled(.php, in: Settings.shared.preferences.developerSettings) {
-            // Fold declarative language-extension symbols into the workspace index so the built-in
-            // engine completes/hovers/jumps to framework symbols too.
             let index = PHPWorkspaceIndex.shared.index(for: root)
             WorkspaceLanguageExtensions.shared.inject(into: index, root: root, language: "php")
             providers.append(PHPWorkspaceIndex.shared.provider(for: file, root: root, openLink: openLink))
@@ -60,6 +53,7 @@ final class LanguageProviderRegistry {
     /// previously injected pack symbols from the index and re-injects with the new activation.
     func reloadExtensions(for root: URL) {
         LanguageExtensionStore.shared.reload()
+        ExtensionProviderManager.shared.shutdownAll()
         let index = PHPWorkspaceIndex.shared.index(for: root)
         for url in WorkspaceLanguageExtensions.shared.takeInjectedStubURLs(for: root) {
             index.removeFile(url)
@@ -72,6 +66,7 @@ final class LanguageProviderRegistry {
     /// disabling a pack from settings).
     func reloadAllExtensions() {
         LanguageExtensionStore.shared.reload()
+        ExtensionProviderManager.shared.shutdownAll()
 
         let roots = PHPWorkspaceIndex.shared.allRoots
         for root in roots {
