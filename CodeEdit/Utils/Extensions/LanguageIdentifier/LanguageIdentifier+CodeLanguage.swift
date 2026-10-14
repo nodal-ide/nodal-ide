@@ -12,8 +12,10 @@ extension CodeLanguage {
     var lspLanguage: LanguageIdentifier? {
         switch self.id {
         case .agda,
+                .apacheconf,
                 .bash,
                 .dotenv,
+                .gitignore,
                 .haskell,
                 .julia,
                 .kotlin,
