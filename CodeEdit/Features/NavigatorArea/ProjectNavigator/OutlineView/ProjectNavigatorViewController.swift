@@ -205,14 +205,29 @@ final class ProjectNavigatorViewController: NSViewController {
         }
     }
 
-    func handleFilterChange() {
-        filteredContentChildren.removeAll()
-        outlineView.reloadData()
+    /// Tracks whether the previous `handleFilterChange` pass was filtering, so we only do the
+    /// expensive expand/collapse work on transitions (not on every keystroke).
+    private var lastFilterWasActive: Bool?
 
+    func handleFilterChange() {
         guard let workspace else { return }
 
-        /// If the filter is empty, show all items and restore the expanded state.
-        if workspace.sourceControlFilter || !filterIsEmpty {
+        let isFiltering = workspace.sourceControlFilter || !filterIsEmpty
+        let wasFiltering = lastFilterWasActive
+        lastFilterWasActive = isFiltering
+
+        filteredContentChildren.removeAll()
+
+        // No transition: expand/collapse state is already correct — just refresh the rows.
+        if isFiltering == wasFiltering {
+            outlineView.reloadData()
+            updateNoResultsLabel()
+            return
+        }
+
+        outlineView.reloadData()
+
+        if isFiltering {
             outlineView.autosaveExpandedItems = false
             /// Expand all items for search.
             outlineView.expandItem(outlineView.item(atRow: 0), expandChildren: true)
@@ -221,6 +236,11 @@ final class ProjectNavigatorViewController: NSViewController {
             outlineView.autosaveExpandedItems = true
         }
 
+        updateNoResultsLabel()
+    }
+
+    /// Shows/hides the "No Filter Results" label based on the currently filtered children.
+    private func updateNoResultsLabel() {
         if let root = content.first(where: { $0.isRoot }), let children = filteredContentChildren[root] {
             if children.isEmpty {
                 noResultsLabel.isHidden = false
@@ -228,6 +248,8 @@ final class ProjectNavigatorViewController: NSViewController {
             } else {
                 noResultsLabel.isHidden = true
             }
+        } else {
+            noResultsLabel.isHidden = true
         }
     }
 
