@@ -182,6 +182,10 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     // MARK: Close Workspace
 
     override func close() {
+        // Drop this workspace's diagnostics so they don't leak into other workspaces.
+        if let root = workspaceFileManager?.folderUrl ?? fileURL {
+            DiagnosticsStore.shared.clear(under: root)
+        }
         super.close()
         editorManager?.saveRestorationState(self)
         utilityAreaModel?.saveRestorationState(self)

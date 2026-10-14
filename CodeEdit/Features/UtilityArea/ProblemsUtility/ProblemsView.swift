@@ -11,15 +11,22 @@ import CodeEditTextView
 
 struct ProblemsView: View {
     @ObservedObject private var store = DiagnosticsStore.shared
+    @EnvironmentObject private var workspace: WorkspaceDocument
+
+    /// Only the current workspace's problems — the store is shared across workspaces.
+    private var problems: [EditorProblem] {
+        guard let root = workspace.fileURL else { return store.problems }
+        return store.problems(in: root)
+    }
 
     var body: some View {
         Group {
-            if store.problems.isEmpty {
+            if problems.isEmpty {
                 Text("No problems")
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                List(store.problems) { problem in
+                List(problems) { problem in
                     ProblemRow(problem: problem)
                         .contentShape(Rectangle())
                         .onTapGesture { open(problem) }

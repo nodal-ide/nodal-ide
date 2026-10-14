@@ -50,6 +50,28 @@ final class DiagnosticsStore: ObservableObject {
         rebuild()
     }
 
+    /// Problems for files that belong to the given workspace root.
+    func problems(in root: URL) -> [EditorProblem] {
+        let rootPath = root.path(percentEncoded: false)
+        return problems.filter { Self.isInside($0.fileURL, rootPath: rootPath) }
+    }
+
+    /// Removes all diagnostics for files inside the given workspace root (called when a workspace closes).
+    func clear(under root: URL) {
+        let rootPath = root.path(percentEncoded: false)
+        let removed = byFile.keys.filter { Self.isInside($0, rootPath: rootPath) }
+        guard !removed.isEmpty else { return }
+        for key in removed {
+            byFile[key] = nil
+        }
+        rebuild()
+    }
+
+    private static func isInside(_ url: URL, rootPath: String) -> Bool {
+        let path = url.path(percentEncoded: false)
+        return path == rootPath || path.hasPrefix(rootPath + "/")
+    }
+
     private func rebuild() {
         problems = byFile.values.flatMap { $0 }.sorted { lhs, rhs in
             if lhs.fileURL != rhs.fileURL { return lhs.fileURL.path < rhs.fileURL.path }
