@@ -840,6 +840,21 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "acidlake",
+      "name": "Jeremias Nunez",
+      "avatar_url": "https://avatars.githubusercontent.com/acidlake?v=4",
+      "profile": "https://github.com/acidlake",
+      "contributions": [
+        "code",
+        "bug",
+        "design",
+        "infra",
+        "test",
+        "maintenance",
+        "plugin"
+      ]
     }
   ],
   "contributorsPerLine": 7,
