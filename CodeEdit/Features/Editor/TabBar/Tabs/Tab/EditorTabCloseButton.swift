@@ -25,10 +25,10 @@ struct EditorTabCloseButton: View {
 
     var body: some View {
         HStack(alignment: .center) {
-            Image(systemName: isDocumentEdited && !isHoveringTab ? "circlebadge.fill" : "xmark")
+            Image(systemName: "xmark")
                 .font(
                     .system(
-                        size: isDocumentEdited && !isHoveringTab ? 9.5 : 11.5,
+                        size: 11.5,
                         weight: .regular,
                         design: .rounded
                     )
@@ -73,7 +73,7 @@ struct EditorTabCloseButton: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel(Text("Close"))
         // Only show when the mouse is hovering and there is no tab dragging.
-        .opacity((isHoveringTab || isDocumentEdited == true) && !isDragging ? 1 : 0)
+        .opacity(isHoveringTab && !isDragging ? 1 : 0)
         .animation(.easeInOut(duration: 0.08), value: isHoveringTab)
         .padding(.leading, 4)
     }

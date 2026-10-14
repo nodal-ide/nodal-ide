@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct EditorTabView: View {
 
@@ -48,6 +49,11 @@ struct EditorTabView: View {
 
     @State private var keyMonitor: Any?
 
+    /// Tracks whether the underlying document has unsaved changes (for the tab indicator).
+    @State private var isDocumentEdited: Bool = false
+    /// Bumped when the file document becomes available so we re-subscribe to its edited publisher.
+    @State private var documentRefreshID: Int = 0
+
     /// The id associating with the tab that is currently being dragged.
     ///
     /// When `nil`, then there is no tab being dragged.
@@ -85,6 +91,12 @@ struct EditorTabView: View {
     /// I use the name `inHoldingState` to avoid any confusion with `isPressing` and `isDragging`.
     private var inHoldingState: Bool {
         isPressing || isDragging
+    }
+
+    private var tabIndicatorColor: Color {
+        isActive && isActiveEditor && colorScheme != .dark
+            ? Color(nsColor: .controlAccentColor)
+            : .secondary
     }
 
     /// Switch the active tab to current tab.
@@ -145,6 +157,15 @@ struct EditorTabView: View {
                     )
                     .lineLimit(1)
                     .strikethrough(fileObserver.isDeleted, color: .primary)
+
+                // Unsaved-changes indicator.
+                if isDocumentEdited {
+                    Circle()
+                        .fill(tabIndicatorColor)
+                        .frame(width: 6, height: 6)
+                        .padding(.leading, 2)
+                        .accessibilityLabel("Unsaved changes")
+                }
             }
             .frame(maxHeight: .infinity) // To max-out the parent (tab bar) area.
             .accessibilityElement(children: .ignore)
@@ -200,6 +221,15 @@ struct EditorTabView: View {
                     NSCursor.pop()
                 }
             }
+        }
+        .onReceive(tabFile.fileDocumentPublisher) { _ in
+            documentRefreshID += 1
+            isDocumentEdited = tabFile.fileDocument?.isDocumentEdited ?? false
+        }
+        .onReceive(
+            tabFile.fileDocument?.isDocumentEditedPublisher ?? Empty<Bool, Never>().eraseToAnyPublisher()
+        ) { newValue in
+            isDocumentEdited = newValue
         }
         .onAppear {
             keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .otherMouseDown) { event in

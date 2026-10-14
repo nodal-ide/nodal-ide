@@ -38,6 +38,11 @@ struct ViewCommands: Commands {
             }
             .keyboardShortcut("k")
 
+            Button("Scratchpad") {
+                NSApp.sendAction(#selector(CodeEditWindowController.openScratchpad(_:)), to: nil, from: nil)
+            }
+            .keyboardShortcut("s", modifiers: [.command, .option])
+
             Button("Open Search Navigator") {
                 NSApp.sendAction(#selector(CodeEditWindowController.openSearchNavigator(_:)), to: nil, from: nil)
             }

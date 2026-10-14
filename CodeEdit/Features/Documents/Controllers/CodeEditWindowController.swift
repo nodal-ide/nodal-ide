@@ -29,6 +29,7 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
     var quickOpenPanel: SearchPanel?
     var commandPalettePanel: SearchPanel?
     var commandCenterPanel: SearchPanel?
+    var scratchpadPanel: SearchPanel?
     var navigatorSidebarViewModel: NavigatorAreaViewModel?
 
     internal var cancellables = [AnyCancellable]()
@@ -175,6 +176,29 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
         self.panelOpen = true
     }
 
+    /// Opens the scratchpad panel.
+    @IBAction func openScratchpad(_ sender: Any?) {
+        if let scratchpadPanel {
+            if scratchpadPanel.isKeyWindow {
+                scratchpadPanel.close()
+                self.panelOpen = false
+                return
+            }
+            window?.addChildWindow(scratchpadPanel, ordered: .above)
+            scratchpadPanel.makeKeyAndOrderFront(self)
+            self.panelOpen = true
+            return
+        }
+
+        let panel = SearchPanel()
+        self.scratchpadPanel = panel
+        panel.title = "Scratchpad"
+        panel.contentView = NSHostingView(rootView: ScratchpadView())
+        window?.addChildWindow(panel, ordered: .above)
+        panel.makeKeyAndOrderFront(self)
+        self.panelOpen = true
+    }
+
     /// Opens the search navigator and focuses the search field
     @IBAction func openSearchNavigator(_ sender: Any? = nil) {
         if navigatorCollapsed {
@@ -255,6 +279,7 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
         quickOpenPanel = nil
         commandPalettePanel = nil
         commandCenterPanel = nil
+        scratchpadPanel = nil
         navigatorSidebarViewModel = nil
         workspace = nil
         return true
