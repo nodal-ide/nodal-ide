@@ -44,6 +44,10 @@ struct EditorCommands: Commands {
                 LSPEditorActions.renameSymbol(workspace: windowController?.workspace)
             }
             .keyboardShortcut("r", modifiers: [.control, .command])
+
+            Button("Find All References") {
+                windowController?.findReferences()
+            }
         }
     }
 }
