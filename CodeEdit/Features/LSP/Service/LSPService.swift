@@ -124,6 +124,10 @@ final class LSPService: ObservableObject {
     @AppSettings(\.developerSettings.lspBinaries)
     var lspBinaries
 
+    /// Language identifiers handled by a native, in-process implementation. No language server is started for these.
+    @AppSettings(\.developerSettings.internalLanguages)
+    var internalLanguages
+
     @Environment(\.openWindow)
     private var openWindow
 
@@ -176,6 +180,11 @@ final class LSPService: ObservableObject {
             || languageClients.keys.contains(where: { $0.languageId == languageId })
     }
 
+    /// Whether the given language is handled by a native, in-process implementation rather than a language server.
+    func usesInternalLanguage(_ languageId: LanguageIdentifier) -> Bool {
+        internalLanguages.contains(languageId.rawValue)
+    }
+
     /// Gets the language client for the specified language
     func languageClient(for languageId: LanguageIdentifier, workspacePath: String) -> LanguageServerType? {
         return languageClients[ClientKey(languageId, workspacePath)]
@@ -222,7 +231,9 @@ final class LSPService: ObservableObject {
     func openDocument(_ document: CodeFileDocument) {
         guard let workspace = document.findWorkspace(),
               let workspacePath = workspace.fileURL?.absolutePath,
-              let lspLanguage = document.getLanguage().lspLanguage else {
+              let lspLanguage = document.getLanguage().lspLanguage,
+              !internalLanguages.contains(lspLanguage.rawValue),
+              hasServer(for: lspLanguage) else {
             return
         }
         Task {

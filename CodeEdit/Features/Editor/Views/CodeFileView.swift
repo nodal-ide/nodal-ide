@@ -30,7 +30,9 @@ struct CodeFileView: View {
     /// language. Otherwise it would request tokens that never arrive and hold highlight ranges pending forever.
     private var highlightProviders: [any HighlightProviding] {
         var providers: [any HighlightProviding] = [treeSitterClient]
-        if let lspLanguage = codeFile.getLanguage().lspLanguage, lspService.hasServer(for: lspLanguage) {
+        if let lspLanguage = codeFile.getLanguage().lspLanguage,
+           !lspService.usesInternalLanguage(lspLanguage),
+           lspService.hasServer(for: lspLanguage) {
             providers.insert(codeFile.languageServerObjects.highlightProvider, at: 0)
         }
         return providers
@@ -109,6 +111,7 @@ struct CodeFileView: View {
 
         // Native (in-process) PHP intelligence: completion + jump-to-definition, no LSP.
         if codeFile.getLanguage().id == .php,
+           InternalLanguage.isEnabled(.php, in: Settings.shared.preferences.developerSettings),
            let workspaceRoot = codeFile.findWorkspace()?.fileURL,
            let fileURL = codeFile.fileURL {
             self.nativeProvider = PHPWorkspaceIndex.shared.provider(for: fileURL, root: workspaceRoot) { link in

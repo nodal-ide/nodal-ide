@@ -16,6 +16,7 @@ extension SettingsData {
                 "Developer",
                 "Language Server Protocol",
                 "LSP Binaries",
+                "Internal Languages",
                 "Show Internal Development Inspector"
             ]
             .map { NSLocalizedString($0, comment: "") }
@@ -23,6 +24,10 @@ extension SettingsData {
 
         /// A dictionary that stores a file type and a path to an LSP binary
         var lspBinaries: [String: String] = [:]
+
+        /// Language identifiers that should use the app's built-in (native) language implementation instead of an
+        /// external language server. Defaults to `php`, which ships with a native engine.
+        var internalLanguages: [String] = InternalLanguage.defaultEnabledIdentifiers
 
         /// Toggle for showing the internal development inspector
         var showInternalDevelopmentInspector: Bool = false
@@ -38,6 +43,11 @@ extension SettingsData {
                 [String: String].self,
                 forKey: .lspBinaries
             ) ?? [:]
+
+            self.internalLanguages = try container.decodeIfPresent(
+                [String].self,
+                forKey: .internalLanguages
+            ) ?? InternalLanguage.defaultEnabledIdentifiers
 
             self.showInternalDevelopmentInspector = try container.decodeIfPresent(
                 Bool.self,
