@@ -13,7 +13,7 @@ class SoftwareUpdater: NSObject, ObservableObject, SPUUpdaterDelegate {
     private var automaticallyChecksForUpdatesObservation: NSKeyValueObservation?
     private var lastUpdateCheckDateObservation: NSKeyValueObservation?
     private var appcastURL = URL(
-        string: "https://github.com/CodeEditApp/CodeEdit/releases/download/latest/appcast.xml"
+        string: "https://github.com/upperdo/CodeEdit/releases/download/latest/appcast.xml"
     )!
 
     @Published var automaticallyChecksForUpdates = false {
@@ -33,7 +33,7 @@ class SoftwareUpdater: NSObject, ObservableObject, SPUUpdaterDelegate {
     private var feedURLTask: Task<(), Never>?
 
     private func setFeedURL() async {
-        let url = URL(string: "https://api.github.com/repos/CodeEditApp/CodeEdit/releases/latest")!
+        let url = URL(string: "https://api.github.com/repos/upperdo/CodeEdit/releases/latest")!
         let request = URLRequest(url: url)
         guard let data = try? await URLSession.shared.data(for: request),
               let result = try? JSONDecoder().decode(GHAPIResult.self, from: data.0) else {
@@ -44,7 +44,7 @@ class SoftwareUpdater: NSObject, ObservableObject, SPUUpdaterDelegate {
         }
         await MainActor.run {
             appcastURL = URL(
-                string: "https://github.com/CodeEditApp/CodeEdit/releases/download/\(result.tagName)/appcast.xml"
+                string: "https://github.com/upperdo/CodeEdit/releases/download/\(result.tagName)/appcast.xml"
             )!
             self.updater?.setFeedURL(appcastURL)
         }
