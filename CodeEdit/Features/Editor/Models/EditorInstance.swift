@@ -126,6 +126,9 @@ class EditorInstance: ObservableObject, Hashable {
     class RangeTranslator: TextViewCoordinator {
         private weak var textViewController: TextViewController?
 
+        /// The text view controller for this editor instance, if it has appeared.
+        var controller: TextViewController? { textViewController }
+
         init() { }
 
         func prepareCoordinator(controller: TextViewController) {

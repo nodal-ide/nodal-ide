@@ -28,6 +28,22 @@ struct EditorCommands: Commands {
                 }
                 .keyboardShortcut("]", modifiers: [.command, .option])
             }
+
+            Divider()
+
+            Button("Format Document") {
+                LSPEditorActions.formatDocument(workspace: windowController?.workspace)
+            }
+            .keyboardShortcut("f", modifiers: [.option, .shift])
+
+            Button("Format Selection") {
+                LSPEditorActions.formatSelection(workspace: windowController?.workspace)
+            }
+
+            Button("Rename Symbol…") {
+                LSPEditorActions.renameSymbol(workspace: windowController?.workspace)
+            }
+            .keyboardShortcut("r", modifiers: [.control, .command])
         }
     }
 }
