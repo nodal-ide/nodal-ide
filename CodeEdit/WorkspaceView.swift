@@ -123,10 +123,13 @@ struct WorkspaceView: View {
                     .onReceive(NotificationCenter.default.publisher(for: .codeEditCycleTab)) { note in
                         guard window?.isKeyWindow ?? true else { return }
                         let backwards = (note.userInfo?["backwards"] as? Bool) ?? false
-                        if backwards {
-                            editorManager.activeEditor.selectPreviousTab()
-                        } else {
-                            editorManager.activeEditor.selectNextTab()
+                        // Defer so we don't mutate editor state during a view update.
+                        DispatchQueue.main.async {
+                            if backwards {
+                                editorManager.activeEditor.selectPreviousTab()
+                            } else {
+                                editorManager.activeEditor.selectNextTab()
+                            }
                         }
                     }
                 }
