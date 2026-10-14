@@ -6,18 +6,8 @@
 import Foundation
 
 extension SettingsData {
-    /// Settings for installed language extensions (declarative packs).
-    struct ExtensionsSettings: Codable, Hashable, SearchableSettingsPage {
-        /// The search keys
-        var searchKeys: [String] {
-            [
-                "Extensions",
-                "Language Extensions",
-                "Language Packs",
-            ]
-            .map { NSLocalizedString($0, comment: "") }
-        }
-
+    /// Installed language-extension preferences (edited from the Extensions window, not a settings page).
+    struct ExtensionsSettings: Codable, Hashable {
         /// Ids of installed extensions the user has disabled. Extensions are enabled by default.
         var disabledExtensions: [String] = []
 

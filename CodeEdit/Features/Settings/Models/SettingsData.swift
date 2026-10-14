@@ -120,8 +120,6 @@ struct SettingsData: Codable, Hashable {
             }
         case .developer:
             developerSettings.searchKeys.forEach { settings.append(.init(name, isSetting: true, settingName: $0)) }
-        case .extensions:
-            extensions.searchKeys.forEach { settings.append(.init(name, isSetting: true, settingName: $0)) }
         case .behavior: return [.init(name, settingName: "Error")]
         case .components: return [.init(name, settingName: "Error")]
         case .keybindings: return [.init(name, settingName: "Error")]

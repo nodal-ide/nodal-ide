@@ -9,24 +9,33 @@ import SwiftUI
 
 struct ExtensionManagerWindow: Scene {
     @ObservedObject var manager = ExtensionManager.shared
+    @ObservedObject var languageManager = LanguageExtensionManager.shared
 
-    @State var selection = Set<ExtensionInfo>()
+    @State var selection = Set<ExtensionItem>()
 
     var body: some Scene {
         Window("Extensions", id: SceneID.extensions.rawValue) {
             NavigationSplitView {
                 ExtensionsListView(selection: $selection)
             } detail: {
-                switch selection.count {
-                case 0:
-                    Text("Select an extension")
-                case 1:
-                    ExtensionDetailView(ext: selection.first!)
-                default:
-                    Text("\(selection.count) selected")
+                Group {
+                    if selection.isEmpty {
+                        Text("Select an extension")
+                    } else if selection.count == 1, let item = selection.first {
+                        switch item {
+                        case .app(let info):
+                            ExtensionDetailView(ext: info)
+                        case .language(let ext):
+                            LanguageExtensionDetailView(ext: ext)
+                        }
+                    } else {
+                        Text("\(selection.count) selected")
+                    }
                 }
+                .navigationSplitViewColumnWidth(min: 320, ideal: 480)
             }
             .environmentObject(manager)
+            .environmentObject(languageManager)
             .focusedObject(manager)
         }
     }
