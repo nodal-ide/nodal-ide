@@ -38,6 +38,11 @@ struct FileCommands: Commands {
                     NSApp.sendAction(#selector(CodeEditWindowController.openQuickly(_:)), to: nil, from: nil)
                 }
                 .keyboardShortcut("o", modifiers: [.command, .shift])
+
+                Button("Command Center…") {
+                    NSApp.sendAction(#selector(CodeEditWindowController.openCommandCenter(_:)), to: nil, from: nil)
+                }
+                .keyboardShortcut("k")
             }
         }
 

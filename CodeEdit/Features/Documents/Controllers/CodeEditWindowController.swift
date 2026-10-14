@@ -28,6 +28,7 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
     var workspaceSettingsWindow: NSWindow?
     var quickOpenPanel: SearchPanel?
     var commandPalettePanel: SearchPanel?
+    var commandCenterPanel: SearchPanel?
     var navigatorSidebarViewModel: NavigatorAreaViewModel?
 
     internal var cancellables = [AnyCancellable]()
@@ -143,6 +144,37 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
         }
     }
 
+    /// Opens the ⌘K command center (files, symbols, commands).
+    @IBAction func openCommandCenter(_ sender: Any?) {
+        guard let workspace, let workspaceURL = workspace.fileURL else { return }
+
+        if let commandCenterPanel {
+            if commandCenterPanel.isKeyWindow {
+                commandCenterPanel.close()
+                self.panelOpen = false
+                return
+            }
+            window?.addChildWindow(commandCenterPanel, ordered: .above)
+            commandCenterPanel.makeKeyAndOrderFront(self)
+            self.panelOpen = true
+            return
+        }
+
+        let panel = SearchPanel()
+        self.commandCenterPanel = panel
+        let state = CommandPaletteViewModel(workspaceURL: workspaceURL)
+        let contentView = CommandPaletteView(state: state) {
+            panel.close()
+            self.panelOpen = false
+            self.commandCenterPanel = nil
+        }.environmentObject(workspace)
+
+        panel.contentView = NSHostingView(rootView: SettingsInjector { contentView })
+        window?.addChildWindow(panel, ordered: .above)
+        panel.makeKeyAndOrderFront(self)
+        self.panelOpen = true
+    }
+
     /// Opens the search navigator and focuses the search field
     @IBAction func openSearchNavigator(_ sender: Any? = nil) {
         if navigatorCollapsed {
@@ -222,6 +254,7 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
         workspaceSettingsWindow = nil
         quickOpenPanel = nil
         commandPalettePanel = nil
+        commandCenterPanel = nil
         navigatorSidebarViewModel = nil
         workspace = nil
         return true
