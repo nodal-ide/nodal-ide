@@ -55,11 +55,8 @@ struct StatusBarView: View {
                     utilityAreaViewModel.selectedTab = tab
                 } label: {
                     Image(systemName: tab.systemImage)
-                        .foregroundStyle(Color(
-                            utilityAreaViewModel.selectedTab == tab ? .controlAccentColor : .secondaryLabelColor
-                        ))
                 }
-                .buttonStyle(.icon)
+                .buttonStyle(.icon(isActive: utilityAreaViewModel.selectedTab == tab))
                 .help(tab.title)
             }
 //            StatusBarBreakpointButton()
