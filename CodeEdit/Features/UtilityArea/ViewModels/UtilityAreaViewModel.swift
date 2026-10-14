@@ -19,7 +19,7 @@ class UtilityAreaViewModel: ObservableObject {
     @Published var selectedTerminals: Set<UtilityAreaTerminal.ID> = []
 
     /// Indicates whether debugger is collapse or not
-    @Published var isCollapsed: Bool = false
+    @Published var isCollapsed: Bool = true
 
     /// Indicates whether collapse animation should be enabled when utility area is toggled
     @Published var animateCollapse: Bool = true
@@ -39,7 +39,7 @@ class UtilityAreaViewModel: ObservableObject {
     // MARK: - State Restoration
 
     func restoreFromState(_ workspace: WorkspaceDocument) {
-        isCollapsed = workspace.getFromWorkspaceState(.utilityAreaCollapsed) as? Bool ?? false
+        isCollapsed = workspace.getFromWorkspaceState(.utilityAreaCollapsed) as? Bool ?? true
         currentHeight = workspace.getFromWorkspaceState(.utilityAreaHeight) as? Double ?? 300.0
         isMaximized = workspace.getFromWorkspaceState(.utilityAreaMaximized) as? Bool ?? false
     }
