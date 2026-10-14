@@ -10,12 +10,15 @@ import SwiftUI
 enum UtilityAreaTab: WorkspacePanelTab, CaseIterable {
     var id: Self { self }
 
+    case problems
     case terminal
     case debugConsole
     case output
 
     var title: String {
         switch self {
+        case .problems:
+            return "Problems"
         case .terminal:
             return "Terminal"
         case .debugConsole:
@@ -27,6 +30,8 @@ enum UtilityAreaTab: WorkspacePanelTab, CaseIterable {
 
     var systemImage: String {
         switch self {
+        case .problems:
+            return "exclamationmark.triangle"
         case .terminal:
             return "terminal"
         case .debugConsole:
@@ -38,6 +43,8 @@ enum UtilityAreaTab: WorkspacePanelTab, CaseIterable {
 
     var body: some View {
         switch self {
+        case .problems:
+            ProblemsView()
         case .terminal:
             UtilityAreaTerminalView()
         case .debugConsole:

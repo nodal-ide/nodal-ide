@@ -2,16 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>com.apple.security.files.user-selected.read-write</key>
-	<true/>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>$(TeamIdentifierPrefix)</string>
+		<string>app.codeedit.CodeEdit.shared</string>
+		<string>group.CY-E53D5924-AF01-11E9-860F-58B035EE8E04.com.cydia.Extender</string>
+	</array>
 	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>
 	<key>com.apple.security.network.client</key>
 	<true/>
-	<key>com.apple.security.application-groups</key>
-	<array>
-		<string>app.codeedit.CodeEdit.shared</string>
-		<string>$(TeamIdentifierPrefix)</string>
-	</array>
 </dict>
 </plist>

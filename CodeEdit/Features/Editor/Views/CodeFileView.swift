@@ -108,6 +108,9 @@ struct CodeFileView: View {
                     )
                 }
             }
+            self.nativeProvider?.onDiagnostics = { url, diagnostics in
+                DiagnosticsStore.shared.update(file: url, diagnostics: diagnostics)
+            }
         } else {
             self.nativeProvider = nil
         }
