@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import CodeEditSourceEditor
 
 struct WorkspaceView: View {
     @Environment(\.window.value)
@@ -114,6 +115,18 @@ struct WorkspaceView: View {
                                 key: .workspaceWindowSize,
                                 value: NSStringFromRect(window.frame)
                             )
+                        }
+                    }
+
+                    // MARK: - Cycle Editor Tabs (Ctrl+Tab / Ctrl+Shift+Tab)
+
+                    .onReceive(NotificationCenter.default.publisher(for: .codeEditCycleTab)) { note in
+                        guard window?.isKeyWindow ?? true else { return }
+                        let backwards = (note.userInfo?["backwards"] as? Bool) ?? false
+                        if backwards {
+                            editorManager.activeEditor.selectPreviousTab()
+                        } else {
+                            editorManager.activeEditor.selectNextTab()
                         }
                     }
                 }
