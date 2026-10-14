@@ -10,50 +10,8 @@ import Foundation
 import AppKit
 import CodeEditLang
 
-/// The `extension.json` manifest of a declarative language extension.
-///
-/// Required: `id`, `name`. Everything else is optional. For a pack that contributes anything the
-/// `languages` and `contributes` keys are expected too; `author`, `url` and `icon` are display-only.
-struct LanguageExtensionManifest: Codable {
-    var schemaVersion: Int?
-    var id: String
-    var name: String
-    var version: String?
-    var type: String?
-    var description: String?
-    var author: String?
-    var url: String?
-    var icon: String?
-    var languages: [String]?
-    var framework: String?
-    var activation: Activation?
-    var contributes: Contributes?
-
-    struct Activation: Codable {
-        var files: [String]?
-        var framework: Framework?
-
-        struct Framework: Codable {
-            var file: String?
-            var requires: [String: String]?
-        }
-    }
-
-    struct Contributes: Codable {
-        var symbols: [String]?
-        var snippets: [String]?
-        var stubRoots: [String]?
-    }
-
-    /// The framework this pack targets — the top-level `framework`, or the first
-    /// `activation.framework.requires` key.
-    var frameworkName: String? {
-        if let framework, !framework.isEmpty {
-            return framework
-        }
-        return activation?.framework?.requires?.keys.first
-    }
-}
+/// `LanguageExtensionManifest` (the `extension.json` model) lives in `CodeEditLang` so the app and
+/// the `codeedit-ext` authoring tool share it.
 
 /// An installed declarative language extension (a pack on disk).
 struct InstalledLanguageExtension: Identifiable, Hashable {
