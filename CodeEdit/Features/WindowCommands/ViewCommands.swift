@@ -33,6 +33,11 @@ struct ViewCommands: Commands {
             }
             .keyboardShortcut("p", modifiers: [.shift, .command])
 
+            Button("Command Center…") {
+                NSApp.sendAction(#selector(CodeEditWindowController.openCommandCenter(_:)), to: nil, from: nil)
+            }
+            .keyboardShortcut("k")
+
             Button("Open Search Navigator") {
                 NSApp.sendAction(#selector(CodeEditWindowController.openSearchNavigator(_:)), to: nil, from: nil)
             }
