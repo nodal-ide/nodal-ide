@@ -110,6 +110,14 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
     }
 
     @IBAction func saveDocument(_ sender: Any) {
+        // Untitled scratchpads prompt for a project location instead of saving to the temp file.
+        if let workspace,
+           let file = workspace.editorManager?.activeEditor.selectedTab?.file,
+           Scratchpad.isScratchpad(file.url) {
+            Scratchpad.saveAs(file: file, workspace: workspace, editor: workspace.editorManager?.activeEditor)
+            return
+        }
+
         guard let codeFile = getSelectedCodeFile() else { return }
         codeFile.save(sender)
         workspace?.editorManager?.activeEditor.temporaryTab = nil
