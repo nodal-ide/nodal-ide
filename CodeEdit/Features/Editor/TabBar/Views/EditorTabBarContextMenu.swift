@@ -79,6 +79,12 @@ struct EditorTabBarContextMenu: ViewModifier {
                         tabs.temporaryTab = nil
                     }
                 }
+
+                if Self.isScratchpad(item) {
+                    Button("Save As…") {
+                        saveScratchpadAs()
+                    }
+                }
             }
 
             Divider()
@@ -125,6 +131,60 @@ struct EditorTabBarContextMenu: ViewModifier {
                 moveToNewSplit(.trailing)
             }
         })
+    }
+
+    // MARK: - Scratchpad
+
+    /// True when the file is an unsaved scratchpad (a temp file named `untitled`).
+    static func isScratchpad(_ item: CEWorkspaceFile) -> Bool {
+        let temp = FileManager.default.temporaryDirectory.standardizedFileURL.path
+        return item.url.deletingLastPathComponent().standardizedFileURL.path == temp
+            && item.name.hasPrefix("untitled")
+    }
+
+    /// Prompts for a project-relative path and moves the scratchpad content there,
+    /// creating intermediate directories as needed.
+    private func saveScratchpadAs() {
+        guard let root = workspace.workspaceFileManager?.folderUrl else { return }
+
+        let alert = NSAlert()
+        alert.messageText = "Save As"
+        alert.informativeText = "Enter a name or a path relative to the project (e.g. src/notes.md)."
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
+
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
+        field.stringValue = item.name
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let input = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !input.isEmpty else { return }
+
+        let target = root.appendingPathComponent(input).standardizedFileURL
+        do {
+            try FileManager.default.createDirectory(
+                at: target.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            let content = (try? Data(contentsOf: item.url)) ?? Data()
+            try content.write(to: target)
+        } catch {
+            NSAlert(error: error).runModal()
+            return
+        }
+
+        // Remove the temp file and mark the document saved so it closes without prompting.
+        try? FileManager.default.removeItem(at: item.url)
+        item.fileDocument?.updateChangeCount(.changeCleared)
+
+        tabs.closeTab(file: item)
+
+        if let newFile = workspace.workspaceFileManager?.getFile(target.path, createIfNotFound: true) {
+            workspace.editorManager?.activeEditor.openTab(file: newFile, asTemporary: false)
+            workspace.listenerModel.highlightedFileItem = newFile
+        }
     }
 
     // MARK: - Actions

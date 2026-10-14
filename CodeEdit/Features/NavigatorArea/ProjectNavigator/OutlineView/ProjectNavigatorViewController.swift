@@ -35,6 +35,10 @@ final class ProjectNavigatorViewController: NSViewController {
     var filteredContentChildren: [CEWorkspaceFile: [CEWorkspaceFile]] = [:]
     var expandedItems: Set<CEWorkspaceFile> = []
 
+    /// Memoizes `fileSearchMatches` per item so a filter pass walks each node once (O(n)) instead
+    /// of re-walking subtrees for every child (O(n²), the cause of the filter freeze).
+    private var fileMatchMemo: [CEWorkspaceFile: Bool] = [:]
+
     weak var workspace: WorkspaceDocument?
     weak var editor: Editor?
 
@@ -217,6 +221,7 @@ final class ProjectNavigatorViewController: NSViewController {
         lastFilterWasActive = isFiltering
 
         filteredContentChildren.removeAll()
+        fileMatchMemo.removeAll()
 
         // No transition: expand/collapse state is already correct — just refresh the rows.
         if isFiltering == wasFiltering {
@@ -258,7 +263,19 @@ final class ProjectNavigatorViewController: NSViewController {
         guard !filterIsEmpty || sourceControlFilter else {
             return true
         }
+        if let cached = fileMatchMemo[item] {
+            return cached
+        }
+        let result = computeFileSearchMatches(filter, item: item, sourceControlFilter: sourceControlFilter)
+        fileMatchMemo[item] = result
+        return result
+    }
 
+    private func computeFileSearchMatches(
+        _ filter: String,
+        item: CEWorkspaceFile,
+        sourceControlFilter: Bool
+    ) -> Bool {
         if sourceControlFilter {
             if item.gitStatus != nil && item.gitStatus != GitStatus.none &&
                 (filterIsEmpty || item.name.localizedCaseInsensitiveContains(filter)) {
