@@ -54,23 +54,30 @@ extension WorkspaceDocument.SearchState {
     /// Except its using the word boundary anchor(\b) instead of the asterisk(\*).
     /// This is needed to highlight the search results correctly.
     func getRegexPattern(_ query: String) -> String {
-        let newQuery = NSRegularExpression.escapedPattern(for: query.trimmingCharacters(in: .whitespacesAndNewlines))
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // In regular-expression mode the pattern is the query verbatim (do not escape it).
+        if selectedMode.second == .RegularExpression {
+            return trimmed
+        }
+
+        let escaped = NSRegularExpression.escapedPattern(for: trimmed)
 
         guard let mode = selectedMode.third else {
-            return newQuery
+            return escaped
         }
 
         switch mode {
         case .Containing:
-            return "\(newQuery)"
+            return escaped
         case .StartingWith:
-            return "\\b\(newQuery)"
+            return "(?<!\\w)\(escaped)"
         case .EndingWith:
-            return "\(newQuery)\\b"
+            return "\(escaped)(?!\\w)"
         case .MatchingWord:
-            return "\\b\(newQuery)\\b"
+            return "(?<!\\w)\(escaped)(?!\\w)"
         default:
-            return newQuery
+            return escaped
         }
     }
 
@@ -97,6 +104,12 @@ extension WorkspaceDocument.SearchState {
 
         let searchQuery = getSearchTerm(query)
         let regexPattern = getRegexPattern(query)
+
+        // The SearchKit index can't evaluate regular expressions, so scan the workspace files directly.
+        if selectedMode.second == .RegularExpression {
+            await searchAllFiles(regexPattern: regexPattern)
+            return
+        }
 
         guard let indexer = indexer else {
             await setStatus(.failed(errorMessage: "No index found. Try rebuilding the index."))
@@ -141,6 +154,30 @@ extension WorkspaceDocument.SearchState {
             Task { @MainActor [weak self] in
                 self?.setSearchResults()
             }
+        }
+    }
+
+    /// Searches every file in the workspace with a regular expression (used for regular-expression mode,
+    /// which the SearchKit index can't handle).
+    private func searchAllFiles(regexPattern: String) async {
+        guard let fileManager = workspace.workspaceFileManager else {
+            await setStatus(.failed(errorMessage: "No workspace files found."))
+            return
+        }
+
+        let files = fileManager.flattenedFileItems.values.filter { !$0.isFolder }
+        for file in files {
+            if let result = await evaluateSearchResult(
+                fileURL: file.url,
+                fileScore: 0,
+                regexPattern: regexPattern
+            ) {
+                await appendNewResultsToTempResults(newResult: result)
+            }
+        }
+
+        await MainActor.run {
+            self.setSearchResults()
         }
     }
 

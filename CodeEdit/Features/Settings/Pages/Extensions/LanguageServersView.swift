@@ -68,8 +68,9 @@ struct LanguageServersView: View {
                     }
                 } header: {
                     Label(
-                        "Warning: Language server installation is experimental. Use at your own risk.",
-                        systemImage: "exclamationmark.triangle.fill"
+                        "Language servers are installed from the Mason Registry. Downloads and installs can "
+                        + "take a moment and this flow may still change.",
+                        systemImage: "arrow.down.circle"
                     )
                 }
             }
@@ -84,8 +85,9 @@ struct LanguageServersView: View {
         let string = "CodeEdit makes use of the Mason Registry for language server installation. To install a package, "
         + "CodeEdit uses the package manager directed by the Mason Registry, and installs a copy of "
         + "the language server in Application Support.\n\n"
-        + "Language server installation is still experimental, there may be bugs and expect this flow "
-        + "to change over time."
+        + "Once installed, a language server provides completion, diagnostics, hover, go-to-definition, "
+        + "formatting, rename/refactor, references, call hierarchy, inlay hints and snippets. The installation "
+        + "flow may still change over time."
 
         var attrString = AttributedString(string)
 
