@@ -11,6 +11,14 @@ extension RegistryItem {
         let asset: AssetContainer?
         let build: BuildContainer?
         let versionOverrides: [VersionOverride]?
+        /// Extra packages the installer must install alongside the main package (e.g. `typescript@6.0.3`).
+        let extraPackages: [String]?
+
+        enum CodingKeys: String, CodingKey {
+            case id, asset, build
+            case versionOverrides = "version_overrides"
+            case extraPackages = "extra_packages"
+        }
 
         enum AssetContainer: Codable {
             case single(Asset)

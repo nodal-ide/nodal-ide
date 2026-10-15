@@ -15,6 +15,9 @@ extension LSPService {
     /// Manual developer-setting binaries take precedence over registry-installed servers. The spawned servers
     /// get an augmented `PATH` so `node`/`python`-based servers resolve their interpreter.
     func reloadConfigurations() {
+        // Configurations changed: allow previously-failed servers to be retried.
+        failedClientKeys.removeAll()
+
         var environment = ProcessInfo.processInfo.environment
         environment["PATH"] = ShellEnvironment.augmentedPath()
 

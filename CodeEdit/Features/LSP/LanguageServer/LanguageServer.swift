@@ -100,7 +100,14 @@ class LanguageServer<DocumentType: LanguageServerDocument> {
             server: connection,
             initializeParamsProvider: getInitParams(workspacePath: workspacePath)
         )
-        let initializationResponse = try await server.initializeIfNeeded()
+        let initializationResponse: InitializationResponse
+        do {
+            initializationResponse = try await server.initializeIfNeeded()
+        } catch {
+            // Don't leak the spawned server process when initialization fails.
+            process.terminate()
+            throw error
+        }
 
         return LanguageServer(
             languageId: languageId,

@@ -122,6 +122,9 @@ final class LSPService: ObservableObject {
     /// Holds all the event listeners for each active language client
     var eventListeningTasks: [ClientKey: Task<Void, Never>] = [:]
 
+    /// Language/workspace combinations whose server failed to start (avoids respawning on every tab).
+    var failedClientKeys: Set<ClientKey> = []
+
     @AppSettings(\.developerSettings.lspBinaries)
     var lspBinaries
 
@@ -232,18 +235,21 @@ final class LSPService: ObservableObject {
               hasServer(for: lspLanguage) else {
             return
         }
+        let key = ClientKey(lspLanguage, workspacePath)
+        guard !failedClientKeys.contains(key) else { return }
         Task {
             let languageServer: LanguageServerType
             do {
-                if let server = self.languageClients[ClientKey(lspLanguage, workspacePath)] {
+                if let server = self.languageClients[key] {
                     languageServer = server
                 } else {
                     languageServer = try await self.startServer(for: lspLanguage, workspacePath: workspacePath)
                 }
             } catch {
+                self.failedClientKeys.insert(key)
                 notifyToInstallLanguageServer(language: lspLanguage)
                 // swiftlint:disable:next line_length
-                self.logger.error("Failed to find/start server for language: \(lspLanguage.rawValue), workspace: \(workspacePath, privacy: .private)")
+                self.logger.error("Failed to start \(lspLanguage.rawValue) server for \(workspacePath, privacy: .private): \(error.localizedDescription)")
                 return
             }
             do {

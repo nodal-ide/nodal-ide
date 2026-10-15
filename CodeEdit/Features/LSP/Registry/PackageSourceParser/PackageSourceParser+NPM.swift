@@ -23,6 +23,9 @@ extension PackageSourceParser {
 
         // Parse parameters as options
         var options: [String: String] = ["buildTool": "npm"]
+        if let extraPackages = entry.source.extraPackages, !extraPackages.isEmpty {
+            options["extraPackages"] = extraPackages.joined(separator: ",")
+        }
         var repositoryUrl: String?
         var gitReference: PackageSource.GitReference?
 
