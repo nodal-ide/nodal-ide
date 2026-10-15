@@ -77,6 +77,82 @@ struct UtilityAreaTerminalView: View {
         return utilityAreaViewModel.terminals.first(where: { $0.id == selectedTerminalID })
     }
 
+    /// Finds the split (secondary) terminal, if any.
+    private func getSplitTerminal() -> UtilityAreaTerminal? {
+        guard let id = utilityAreaViewModel.splitTerminalID else { return nil }
+        return utilityAreaViewModel.terminals.first(where: { $0.id == id })
+    }
+
+    private func isFocused(_ terminal: UtilityAreaTerminal) -> Bool {
+        let focused = utilityAreaViewModel.focusedTerminalID ?? utilityAreaViewModel.selectedTerminals.first
+        return focused == terminal.id
+    }
+
+    @ViewBuilder private var terminalContent: some View {
+        if utilityAreaViewModel.isSplit,
+           let primary = getSelectedTerminal(),
+           let secondary = getSplitTerminal() {
+            switch utilityAreaViewModel.splitAxis {
+            case .horizontal:
+                HSplitView {
+                    pane(primary, fill: true)
+                    pane(secondary, fill: true)
+                }
+            case .vertical:
+                VSplitView {
+                    pane(primary, fill: true)
+                    pane(secondary, fill: true)
+                }
+            }
+        } else if let terminal = getSelectedTerminal() {
+            pane(terminal, fill: false)
+        } else {
+            CEContentUnavailableView("No Selection")
+        }
+    }
+
+    /// Renders a single terminal pane. When `fill` is `false` the terminal is aligned to the bottom of the pane.
+    private func pane(_ terminal: UtilityAreaTerminal, fill: Bool) -> some View {
+        GeometryReader { geometry in
+            let containerHeight = geometry.size.height
+            let totalFontHeight = fontTotalHeight(nsFont: font).rounded(.up)
+            let constrainedHeight = totalFontHeight > 0
+                ? containerHeight - containerHeight.truncatingRemainder(dividingBy: totalFontHeight)
+                : containerHeight
+            VStack(spacing: 0) {
+                if !fill {
+                    Spacer(minLength: 0).frame(minHeight: 0)
+                }
+                TerminalEmulatorView(
+                    url: terminal.url,
+                    terminalID: terminal.id,
+                    shellType: terminal.shell,
+                    onTitleChange: { newTitle in
+                        // This can be called whenever, even in a view update so it needs to be dispatched.
+                        DispatchQueue.main.async { [weak utilityAreaViewModel] in
+                            utilityAreaViewModel?.updateTerminal(terminal.id, title: newTitle)
+                        }
+                    }
+                )
+                .frame(height: fill ? nil : max(0, constrainedHeight - 1))
+                .id(terminal.id)
+                .accessibilityIdentifier("terminal")
+            }
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 2)
+                .strokeBorder(
+                    utilityAreaViewModel.isSplit && isFocused(terminal) ? Color.accentColor.opacity(0.5) : .clear,
+                    lineWidth: 1
+                )
+        }
+        .onHover { hovering in
+            if hovering {
+                utilityAreaViewModel.focusTerminal(terminal.id)
+            }
+        }
+    }
+
     /// Estimate the font's height for keeping the terminal aligned with the bottom.
     /// - Parameter nsFont: The font being used in the terminal.
     /// - Returns: The height in pixels of the font.
@@ -94,35 +170,7 @@ struct UtilityAreaTerminalView: View {
                 // Keeps the sidebar from changing sizes because TerminalEmulatorView takes a µs to load in
                 HStack { Spacer() }
 
-                if let selectedTerminal = getSelectedTerminal() {
-                    GeometryReader { geometry in
-                        let containerHeight = geometry.size.height
-                        let totalFontHeight = fontTotalHeight(nsFont: font).rounded(.up)
-                        let constrainedHeight = containerHeight - containerHeight.truncatingRemainder(
-                            dividingBy: totalFontHeight
-                        )
-                        VStack(spacing: 0) {
-                            Spacer(minLength: 0).frame(minHeight: 0)
-                            TerminalEmulatorView(
-                                url: selectedTerminal.url,
-                                terminalID: selectedTerminal.id,
-                                shellType: selectedTerminal.shell,
-                                onTitleChange: { [weak selectedTerminal] newTitle in
-                                    guard let id = selectedTerminal?.id else { return }
-                                    // This can be called whenever, even in a view update so it needs to be dispatched.
-                                    DispatchQueue.main.async { [weak utilityAreaViewModel] in
-                                        utilityAreaViewModel?.updateTerminal(id, title: newTitle)
-                                    }
-                                }
-                            )
-                            .frame(height: max(0, constrainedHeight - 1))
-                            .id(selectedTerminal.id)
-                            .accessibilityIdentifier("terminal")
-                        }
-                    }
-                } else {
-                    CEContentUnavailableView("No Selection")
-                }
+                terminalContent
             }
             .padding(.horizontal, 10)
             .paneToolbar {
@@ -145,13 +193,26 @@ struct UtilityAreaTerminalView: View {
                     }
                     .help("Reset the terminal")
                     .disabled(getSelectedTerminal() == nil)
-                    Button {
-                        // split terminal
+                    Menu {
+                        Button("Split Right") {
+                            utilityAreaViewModel.splitFocusedTerminal(axis: .horizontal)
+                        }
+                        Button("Split Down") {
+                            utilityAreaViewModel.splitFocusedTerminal(axis: .vertical)
+                        }
+                        if utilityAreaViewModel.isSplit {
+                            Divider()
+                            Button("Close Split") {
+                                utilityAreaViewModel.closeSplit()
+                            }
+                        }
                     } label: {
                         Image(systemName: "square.split.2x1")
                     }
-                    .help("Implementation Needed")
-                    .disabled(true)
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                    .disabled(getSelectedTerminal() == nil)
+                    .help("Split the terminal")
                 }
             }
             .background {
