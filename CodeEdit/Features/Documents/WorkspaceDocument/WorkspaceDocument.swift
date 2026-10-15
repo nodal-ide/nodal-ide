@@ -44,6 +44,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     var sourceControlManager: SourceControlManager?
 
     var taskManager: TaskManager?
+    var runConfigurationStore: RunConfigurationStore?
     var workspaceSettingsManager: CEWorkspaceSettings?
     var taskNotificationHandler: TaskNotificationHandler = TaskNotificationHandler()
 
@@ -166,6 +167,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
                 workspaceURL: url
             )
         }
+        self.runConfigurationStore = RunConfigurationStore(workspaceURL: url)
         self.taskNotificationHandler.workspaceURL = url
 
         workspaceFileManager?.addObserver(undoRegistration)
