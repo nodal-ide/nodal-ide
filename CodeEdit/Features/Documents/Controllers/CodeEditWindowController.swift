@@ -31,6 +31,7 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
     var commandCenterPanel: SearchPanel?
     var knowledgePanel: SearchPanel?
     var referencesPanel: SearchPanel?
+    var callHierarchyPanel: CallHierarchyPanel?
     var navigatorSidebarViewModel: NavigatorAreaViewModel?
 
     internal var cancellables = [AnyCancellable]()
@@ -245,6 +246,29 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
         window?.addChildWindow(panel, ordered: .above)
         panel.makeKeyAndOrderFront(self)
         self.panelOpen = true
+    }
+
+    /// Shows the call hierarchy for the symbol at the cursor in a dedicated panel.
+    @MainActor
+    func showCallHierarchy() {
+        guard let workspace else { return }
+
+        if let callHierarchyPanel {
+            callHierarchyPanel.makeKeyAndOrderFront(self)
+            return
+        }
+
+        let panel = CallHierarchyPanel()
+        self.callHierarchyPanel = panel
+        let model = CallHierarchyViewModel(workspace: workspace)
+        let contentView = CallHierarchyView(model: model) {
+            panel.close()
+            self.callHierarchyPanel = nil
+        }
+        panel.contentView = NSHostingView(rootView: SettingsInjector { contentView })
+        window?.addChildWindow(panel, ordered: .above)
+        panel.center()
+        panel.makeKeyAndOrderFront(self)
     }
 
     /// Opens a new untitled scratchpad file (no extension) in an editor tab.

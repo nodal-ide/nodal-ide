@@ -61,6 +61,10 @@ struct EditorCommands: Commands {
                 windowController?.findReferences()
             }
 
+            Button("Show Call Hierarchy") {
+                windowController?.showCallHierarchy()
+            }
+
             Button("Code Actions…") {
                 editor?.selectedTab?.rangeTranslator.controller?.showCodeActions()
             }
