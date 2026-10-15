@@ -76,6 +76,8 @@ struct CEWorkspaceSettingsView: View {
                     }
                 }
 
+                WorkspaceRuntimesSection()
+
                 if let store = workspace.runConfigurationStore {
                     Section {
                         RunConfigurationListView(

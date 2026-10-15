@@ -45,6 +45,8 @@ struct CodeEditApp: App {
 
             ExtensionManagerWindow()
 
+            RuntimeManagerWindow()
+
             KnowledgeWindow()
 
             AboutWindow(
