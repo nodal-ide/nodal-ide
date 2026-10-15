@@ -43,9 +43,31 @@ struct DiffHunk: Identifiable, Hashable {
 struct FileDiff: Hashable {
     let oldPath: String?
     let newPath: String?
+    /// The file header (`diff --git`, `index`, `---`, `+++`), needed to build applyable patches.
+    let header: String
     let hunks: [DiffHunk]
 
     var isEmpty: Bool { hunks.isEmpty }
     var additions: Int { hunks.reduce(0) { $0 + $1.lines.filter { $0.kind == .addition }.count } }
     var deletions: Int { hunks.reduce(0) { $0 + $1.lines.filter { $0.kind == .deletion }.count } }
+
+    /// Builds a `git apply`-able patch for a single hunk.
+    func patch(for hunk: DiffHunk) -> String {
+        header + hunk.patchText
+    }
+}
+
+extension DiffHunk {
+    /// The hunk rendered as unified-diff text (header + prefixed lines).
+    var patchText: String {
+        var result = header + "\n"
+        for line in lines {
+            switch line.kind {
+            case .addition: result += "+" + line.text + "\n"
+            case .deletion: result += "-" + line.text + "\n"
+            case .context: result += " " + line.text + "\n"
+            }
+        }
+        return result
+    }
 }

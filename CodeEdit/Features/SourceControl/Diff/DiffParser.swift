@@ -15,6 +15,8 @@ enum DiffParser {
         var oldPath: String?
         var newPath: String?
         var hunks: [DiffHunk] = []
+        var headerLines: [String] = []
+        var inHunks = false
 
         var currentLines: [DiffLine] = []
         var hunkOldStart = 0
@@ -42,6 +44,7 @@ enum DiffParser {
             let line = String(rawLine)
 
             if line.hasPrefix("@@") {
+                inHunks = true
                 flushHunk()
                 if let header = parseHunkHeader(line) {
                     hunkOldStart = header.oldStart
@@ -79,11 +82,19 @@ enum DiffParser {
             } else if line.hasPrefix("\\") {
                 // "\ No newline at end of file" — ignore.
                 continue
+            } else if !inHunks, !line.isEmpty {
+                headerLines.append(line)
             }
         }
         flushHunk()
 
-        return FileDiff(oldPath: stripPrefix(oldPath), newPath: stripPrefix(newPath), hunks: hunks)
+        let header = headerLines.isEmpty ? "" : headerLines.joined(separator: "\n") + "\n"
+        return FileDiff(
+            oldPath: stripPrefix(oldPath),
+            newPath: stripPrefix(newPath),
+            header: header,
+            hunks: hunks
+        )
     }
 
     /// Strips the leading `a/`/`b/` and any tab-suffix from a diff path.

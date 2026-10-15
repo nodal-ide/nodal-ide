@@ -347,7 +347,7 @@ extension SourceControlManager {
             DiffLine(kind: .addition, text: text, oldLineNumber: nil, newLineNumber: index + 1)
         }
         let hunk = DiffHunk(oldStart: 0, oldCount: 0, newStart: 1, newCount: lines.count, lines: lines)
-        return FileDiff(oldPath: "/dev/null", newPath: url.lastPathComponent, hunks: [hunk])
+        return FileDiff(oldPath: "/dev/null", newPath: url.lastPathComponent, header: "", hunks: [hunk])
     }
 }
 
@@ -362,5 +362,21 @@ extension SourceControlManager {
         let relative = path.hasPrefix(root + "/") ? String(path.dropFirst(root.count + 1)) : path
         guard let output = try? await gitClient.blame(for: relative) else { return nil }
         return BlameParser.parse(output)
+    }
+}
+
+// MARK: - Hunk staging
+
+extension SourceControlManager {
+    /// Stages a single hunk by applying its patch to the index.
+    func stagePatch(_ patch: String) async throws {
+        try await gitClient.applyPatch(patch, cached: true, reverse: false)
+        await refreshAllChangedFiles()
+    }
+
+    /// Unstages a single hunk by reverse-applying its patch to the index.
+    func unstagePatch(_ patch: String) async throws {
+        try await gitClient.applyPatch(patch, cached: true, reverse: true)
+        await refreshAllChangedFiles()
     }
 }

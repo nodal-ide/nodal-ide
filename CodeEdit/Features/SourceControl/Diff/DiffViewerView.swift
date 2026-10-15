@@ -36,6 +36,16 @@ struct DiffViewerView: View {
                     .foregroundStyle(.red)
             }
             Spacer()
+            Picker(
+                "",
+                selection: Binding(get: { state.staged }, set: { state.setStaged($0) })
+            ) {
+                Text("Working").tag(false)
+                Text("Staged").tag(true)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 170)
             if state.isLoading {
                 ProgressView().controlSize(.small)
             }
@@ -74,13 +84,26 @@ struct DiffViewerView: View {
     }
 
     private func hunkHeader(_ hunk: DiffHunk) -> some View {
-        Text(hunk.header)
-            .font(.system(size: 11, design: .monospaced))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.secondary.opacity(0.12))
+        HStack(spacing: 8) {
+            Text(hunk.header)
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(.secondary)
+            Spacer()
+            Button(state.staged ? "Unstage" : "Stage") {
+                if state.staged {
+                    state.unstageHunk(hunk)
+                } else {
+                    state.stageHunk(hunk)
+                }
+            }
+            .buttonStyle(.borderless)
+            .controlSize(.small)
+            .font(.system(size: 11))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.secondary.opacity(0.12))
     }
 }
 
