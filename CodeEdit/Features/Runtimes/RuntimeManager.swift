@@ -51,6 +51,20 @@ final class RuntimeManager: ObservableObject {
         }
     }
 
+    // MARK: - Node package managers
+
+    /// Installed package managers and versions for a Node runtime.
+    func nodePackageManagers(for runtime: InstalledRuntime) async -> [String: String] {
+        await NodePackageManagerService.installed(in: runtime)
+    }
+
+    /// Downloads and activates a package manager version for a Node runtime (via corepack).
+    func activateNodePackageManager(_ name: String, version: String, runtime: InstalledRuntime) async {
+        await jobs.run(kind: runtime.kind, version: "\(name)@\(version)", operation: .install) { progress in
+            try await NodePackageManagerService.prepare(name, version: version, in: runtime, progress: progress)
+        }
+    }
+
     func register(_ provider: any RuntimeProvider) {
         providers[provider.kind] = provider
     }
