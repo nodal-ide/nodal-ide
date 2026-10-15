@@ -78,6 +78,17 @@ class UtilityAreaViewModel: ObservableObject {
         self.isCollapsed.toggle()
     }
 
+    /// Selects a tab and expands the utility area so it is visible.
+    ///
+    /// Used when opening a panel from the status bar, toolbars, or a task/test/debug action.
+    func open(tab: UtilityAreaTab) {
+        animateCollapse = true
+        if isCollapsed {
+            isCollapsed = false
+        }
+        selectedTab = tab
+    }
+
     // MARK: - Terminal Management
 
     /// Removes all terminals included in the given set and selects a new terminal if the selection was modified.
@@ -188,7 +199,7 @@ class UtilityAreaViewModel: ObservableObject {
     /// Splits the terminal area, creating a new terminal alongside the focused one.
     /// - Parameter axis: The split orientation.
     func splitFocusedTerminal(axis: TerminalSplitAxis = .horizontal) {
-        guard splitTerminalID == nil, let primary = selectedTerminals.first else { return }
+        guard splitTerminalID == nil, selectedTerminals.first != nil else { return }
         let secondary = insertTerminal(rootURL: inheritedTerminalRootURL())
         splitTerminalID = secondary
         splitAxis = axis

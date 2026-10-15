@@ -52,6 +52,7 @@ final class RunController: ObservableObject {
             return
         }
         guard let taskManager = workspace?.taskManager else { return }
+        workspace?.utilityAreaModel?.open(tab: .debugConsole)
         let task = Self.task(from: configuration)
         runningTaskID = task.id
         runningConfigurationID = configuration.id
@@ -81,6 +82,7 @@ final class RunController: ObservableObject {
                 Settings.shared.preferences.developerSettings.debugAdapterArguments[adapterID] ?? ""
             ).split(separator: " ").map(String.init)
 
+            workspace.utilityAreaModel?.open(tab: .debug)
             runningConfigurationID = configuration.id
             debugController.start(
                 DebugSession.LaunchOptions(
@@ -122,6 +124,7 @@ final class RunController: ObservableObject {
             DebuggerAutoWiring.reportUnavailable(kind: DebuggerAutoWiring.kind(forProgram: program))
             return
         }
+        workspace.utilityAreaModel?.open(tab: .debug)
         debugController.start(options)
     }
 

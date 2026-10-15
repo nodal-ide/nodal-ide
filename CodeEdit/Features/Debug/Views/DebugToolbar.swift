@@ -23,17 +23,21 @@ private struct DebugToolbarContent: View {
 
     var body: some View {
         if session.state.isActive {
-            HStack(spacing: 4) {
-                control("play.fill", "Continue") { session.continueExecution() }
-                control("pause.fill", "Pause") { session.pause() }
+            HStack(spacing: 6) {
+                DebugStateBadge(state: session.state)
 
-                Divider().frame(height: 14)
+                Divider().frame(height: 16)
 
-                control("arrow.turn.down.right", "Step Over") { session.stepOver() }
-                control("arrow.down.right", "Step Into") { session.stepInto() }
-                control("arrow.up.right", "Step Out") { session.stepOut() }
+                control("play.fill", "Continue", enabled: session.state.isStopped) { session.continueExecution() }
+                control("pause.fill", "Pause", enabled: session.state == .running) { session.pause() }
 
-                Divider().frame(height: 14)
+                Divider().frame(height: 16)
+
+                control("arrow.turn.down.right", "Step Over", enabled: session.state.isStopped) { session.stepOver() }
+                control("arrow.down.right", "Step Into", enabled: session.state.isStopped) { session.stepInto() }
+                control("arrow.up.right", "Step Out", enabled: session.state.isStopped) { session.stepOut() }
+
+                Divider().frame(height: 16)
 
                 control("stop.fill", "Stop") { onStop() }
             }
@@ -45,12 +49,18 @@ private struct DebugToolbarContent: View {
         }
     }
 
-    private func control(_ systemImage: String, _ help: String, action: @escaping () -> Void) -> some View {
+    private func control(
+        _ systemImage: String,
+        _ help: String,
+        enabled: Bool = true,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .frame(width: 22, height: 20)
         }
         .buttonStyle(.plain)
+        .disabled(!enabled)
         .help(help)
     }
 }

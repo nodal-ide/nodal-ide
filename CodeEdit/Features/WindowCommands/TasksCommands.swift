@@ -96,11 +96,7 @@ struct TasksCommands: Commands {
         guard let utilityAreaModel = windowController?.workspace?.utilityAreaModel else {
             return
         }
-        if utilityAreaModel.isCollapsed {
-            // Open the utility area
-            utilityAreaModel.isCollapsed.toggle()
-        }
-        utilityAreaModel.selectedTab = .debugConsole // Switch to the correct tab
+        utilityAreaModel.open(tab: .debugConsole) // Expand to the correct tab
         taskManager?.taskShowingOutput = taskManager?.selectedTaskID // Switch to the selected task
     }
 

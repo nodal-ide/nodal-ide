@@ -241,6 +241,11 @@ final class DebugSession: ObservableObject {
         console.append(line)
     }
 
+    /// Clears the debug console.
+    func clearConsole() {
+        console.removeAll()
+    }
+
     func evaluate(_ expression: String, frameID: Int? = nil) async -> String? {
         guard let client else { return nil }
         let arguments = try? JSONValue.encode(DAPEvaluateArguments(expression: expression, frameId: frameID))

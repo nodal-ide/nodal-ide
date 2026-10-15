@@ -27,48 +27,82 @@ private struct BreakpointsContent: View {
 
     var body: some View {
         if store.breakpoints.isEmpty {
-            Text("No breakpoints")
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            DebugEmptyState(
+                systemImage: "circle.dashed",
+                title: "No Breakpoints",
+                message: "Click in the gutter to add a breakpoint."
+            )
         } else {
             List {
-                ForEach(store.breakpoints.sorted { $0.filePath == $1.filePath ? $0.line < $1.line : $0.filePath < $1.filePath })
-                { breakpoint in
-                    HStack(spacing: 8) {
-                        Toggle("", isOn: enabledBinding(breakpoint))
-                            .labelsHidden()
-                            .toggleStyle(.checkbox)
-                        Image(systemName: "circle.fill")
-                            .font(.system(size: 8))
-                            .foregroundStyle(breakpoint.verified ? Color.red : Color.red.opacity(0.5))
-                        Text(breakpoint.fileURL.lastPathComponent)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                        Text("line \(breakpoint.line)")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                        if let condition = breakpoint.condition {
-                            Text(condition)
-                                .font(.system(size: 10, design: .monospaced))
-                                .foregroundStyle(.secondary)
+                ForEach(grouped, id: \.file) { group in
+                    Section {
+                        ForEach(group.breakpoints) { breakpoint in
+                            row(breakpoint, showsFile: false)
+                        }
+                    } header: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "doc.text")
+                            Text(group.file)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
+                            Spacer(minLength: 0)
+                            Text("\(group.breakpoints.count)")
+                                .foregroundStyle(.tertiary)
                         }
-                        Spacer(minLength: 0)
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture { open(breakpoint) }
-                    .contextMenu {
-                        Button("Edit Condition…") {
-                            editCondition(breakpoint)
-                        }
-                        Button("Remove", role: .destructive) {
-                            store.remove(breakpoint.id)
-                        }
+                        .font(.system(size: 11))
                     }
                 }
             }
-            .listStyle(.plain)
+            .listStyle(.sidebar)
+        }
+    }
+
+    private var grouped: [(file: String, breakpoints: [Breakpoint])] {
+        Dictionary(grouping: store.breakpoints, by: \.filePath)
+            .map { (file: $0.key, breakpoints: $0.value.sorted { $0.line < $1.line }) }
+            .sorted { $0.file < $1.file }
+    }
+
+    private func row(_ breakpoint: Breakpoint, showsFile: Bool) -> some View {
+        HStack(spacing: 8) {
+            Toggle("", isOn: enabledBinding(breakpoint))
+                .labelsHidden()
+                .toggleStyle(.checkbox)
+                .help(breakpoint.enabled ? "Disable breakpoint" : "Enable breakpoint")
+            Image(systemName: "circle.fill")
+                .font(.system(size: 8))
+                .foregroundStyle(breakpoint.verified ? Color.red : Color.red.opacity(0.45))
+                .help(breakpoint.verified ? "Verified" : "Unverified")
+            if showsFile {
+                Text(breakpoint.fileURL.lastPathComponent)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            Text("Line \(breakpoint.line)")
+                .font(.system(size: 11, design: .monospaced))
+                .foregroundStyle(.secondary)
+            if let condition = breakpoint.condition, !condition.isEmpty {
+                Text(condition)
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(Color.secondary.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+            Spacer(minLength: 0)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { open(breakpoint) }
+        .contextMenu {
+            Button("Edit Condition…") {
+                editCondition(breakpoint)
+            }
+            Button("Remove", role: .destructive) {
+                store.remove(breakpoint.id)
+            }
         }
     }
 

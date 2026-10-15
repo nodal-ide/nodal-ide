@@ -52,7 +52,7 @@ struct StatusBarView: View {
         HStack(alignment: .center, spacing: 10) {
             ForEach(utilityAreaViewModel.tabItems) { tab in
                 Button {
-                    utilityAreaViewModel.selectedTab = tab
+                    utilityAreaViewModel.open(tab: tab)
                 } label: {
                     Image(systemName: tab.systemImage)
                 }

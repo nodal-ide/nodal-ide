@@ -33,6 +33,7 @@ final class TestRunner: ObservableObject {
 
     func run(_ configuration: RunConfiguration) {
         guard let taskManager = workspace?.taskManager else { return }
+        workspace?.utilityAreaModel?.open(tab: .tests)
         results = []
         outputBuffer = ""
         isRunning = true
