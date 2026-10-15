@@ -273,16 +273,30 @@ struct UtilityAreaTerminalView: View {
             UtilityAreaTerminalSidebar()
         }
         .onAppear {
-            guard let workspaceURL = workspace.fileURL else {
-                assertionFailure("Workspace does not have a file URL.")
-                return
+            if !utilityAreaViewModel.isCollapsed {
+                ensureTerminal()
             }
-            utilityAreaViewModel.initializeTerminals(workspaceURL: workspaceURL)
-            Task { await RuntimeEnvironment.shared.refresh(workspace: workspace) }
+        }
+        .onChange(of: utilityAreaViewModel.isCollapsed) { _, isCollapsed in
+            if !isCollapsed {
+                ensureTerminal()
+            }
         }
         .accessibilityIdentifier("terminal-area")
     }
 
+    /// Creates the initial terminal lazily (only once the terminal area is visible), after resolving the
+    /// project runtimes so the new shell starts with the pinned `PATH`.
+    private func ensureTerminal() {
+        guard let workspaceURL = workspace.fileURL else {
+            assertionFailure("Workspace does not have a file URL.")
+            return
+        }
+        Task {
+            await RuntimeEnvironment.shared.refresh(workspace: workspace)
+            utilityAreaViewModel.initializeTerminals(workspaceURL: workspaceURL)
+        }
+    }
 }
 
 extension UtilityAreaTerminalView {
