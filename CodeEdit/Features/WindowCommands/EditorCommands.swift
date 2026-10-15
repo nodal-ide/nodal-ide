@@ -29,6 +29,30 @@ struct EditorCommands: Commands {
                 .keyboardShortcut("]", modifiers: [.command, .option])
             }
 
+            Menu("Multi-cursor") {
+                Button("Select Next Occurrence") {
+                    editor?.selectedTab?.rangeTranslator.controller?.textView.selectNextOccurrence()
+                }
+                .keyboardShortcut("d", modifiers: [.command])
+
+                Button("Select All Occurrences") {
+                    editor?.selectedTab?.rangeTranslator.controller?.textView.selectAllOccurrences()
+                }
+                .keyboardShortcut("g", modifiers: [.control, .command])
+
+                Divider()
+
+                Button("Add Cursor Above") {
+                    editor?.selectedTab?.rangeTranslator.controller?.textView.addCursorAbove()
+                }
+                .keyboardShortcut(.upArrow, modifiers: [.control, .option])
+
+                Button("Add Cursor Below") {
+                    editor?.selectedTab?.rangeTranslator.controller?.textView.addCursorBelow()
+                }
+                .keyboardShortcut(.downArrow, modifiers: [.control, .option])
+            }
+
             Menu("Folding") {
                 Button("Fold All") {
                     editor?.selectedTab?.rangeTranslator.controller?.foldAll()
