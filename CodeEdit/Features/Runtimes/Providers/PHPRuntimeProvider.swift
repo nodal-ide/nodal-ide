@@ -75,10 +75,29 @@ final class PHPRuntimeProvider: RuntimeProvider {
     }
 
     func uninstall(_ runtime: InstalledRuntime) async throws {
-        guard runtime.isManaged, RuntimeManager.isManagedPath(runtime.executableDirectory) else {
-            throw RuntimeError.installFailed("Only managed runtimes can be removed.")
+        if runtime.isManaged, RuntimeManager.isManagedPath(runtime.executableDirectory) {
+            try FileManager.default.removeItem(at: runtime.executableDirectory.deletingLastPathComponent())
+            return
         }
-        try FileManager.default.removeItem(at: runtime.executableDirectory.deletingLastPathComponent())
+        if runtime.source == .brew, let formula = runtime.installIdentifier {
+            let result = await run("brew uninstall \(formula)")
+            if await isInstalled(minorOf: runtime.version) {
+                throw RuntimeError.installFailed(
+                    result.output.isEmpty ? "Homebrew failed to uninstall \(formula)." : result.output
+                )
+            }
+            return
+        }
+        throw RuntimeError.installFailed("Only managed or Homebrew runtimes can be removed.")
+    }
+
+    /// Runs a command off the main thread.
+    private func run(_ command: String) async -> (output: String, status: Int32) {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global().async {
+                continuation.resume(returning: RuntimeShell.runResult(command))
+            }
+        }
     }
 
     func debugger(for runtime: InstalledRuntime) -> RuntimeDebugger? {
@@ -101,17 +120,20 @@ final class PHPRuntimeProvider: RuntimeProvider {
         prefix="$(brew --prefix 2>/dev/null)"; \
         for d in "$prefix"/Cellar/php "$prefix"/Cellar/php@*; do \
           [ -d "$d" ] || continue; \
-          for v in "$d"/*; do [ -x "$v/bin/php" ] && printf '%s\\t%s\\n' "$(basename "$v")" "$v/bin"; done; \
+          for v in "$d"/*; do \
+            [ -x "$v/bin/php" ] && printf '%s\\t%s\\t%s\\n' "$(basename "$d")" "$(basename "$v")" "$v/bin"; \
+          done; \
         done
         """)
         return output.compactMap { line in
             let parts = line.split(separator: "\t").map(String.init)
-            guard parts.count == 2 else { return nil }
+            guard parts.count == 3 else { return nil }
             return InstalledRuntime(
                 kind: kind,
-                version: parts[0],
+                version: parts[1],
                 source: .brew,
-                executableDirectory: URL(filePath: parts[1])
+                executableDirectory: URL(filePath: parts[2]),
+                installIdentifier: parts[0]
             )
         }
     }

@@ -47,9 +47,12 @@ struct WorkspaceSettingsRuntimesView: View {
 
     private func versionPicker(kind: RuntimeKind, installed: [InstalledRuntime]) -> some View {
         Picker(kind.title, selection: versionBinding(kind)) {
-            Text(inheritTitle(for: kind)).tag("")
+            Text(inheritTitle(for: kind)).tag(String?.none)
             ForEach(installed) { runtime in
-                Text("v\(runtime.version) — \(runtime.source.title)").tag(runtime.version)
+                Text("v\(runtime.version) — \(runtime.source.title)").tag(String?.some(runtime.version))
+            }
+            if let pinned = pinnedVersion(kind), !installed.contains(where: { $0.version == pinned }) {
+                Text("v\(pinned) — not installed").tag(String?.some(pinned))
             }
         }
         .accessibilityLabel("\(kind.title) version")
@@ -62,13 +65,20 @@ struct WorkspaceSettingsRuntimesView: View {
 
     // MARK: - Bindings
 
-    private func versionBinding(_ kind: RuntimeKind) -> Binding<String> {
+    private func pinnedVersion(_ kind: RuntimeKind) -> String? {
+        workspaceSettingsManager.settings.runtimes.selection(for: kind).version
+    }
+
+    private func versionBinding(_ kind: RuntimeKind) -> Binding<String?> {
         Binding {
-            workspaceSettingsManager.settings.runtimes.selection(for: kind).version ?? ""
+            workspaceSettingsManager.settings.runtimes.selection(for: kind).version
         } set: { newValue in
-            var selection = workspaceSettingsManager.settings.runtimes.selection(for: kind)
-            selection.version = newValue.isEmpty ? nil : newValue
-            workspaceSettingsManager.settings.runtimes.setSelection(selection, for: kind)
+            // Assign the whole `runtimes` value so `@Published` always fires.
+            var runtimes = workspaceSettingsManager.settings.runtimes
+            var selection = runtimes.selection(for: kind)
+            selection.version = newValue
+            runtimes.setSelection(selection, for: kind)
+            workspaceSettingsManager.settings.runtimes = runtimes
         }
     }
 
@@ -77,7 +87,9 @@ struct WorkspaceSettingsRuntimesView: View {
             workspaceSettingsManager.settings.runtimes.node.packageManager ?? ""
         } set: { newValue in
             let trimmed = newValue.trimmingCharacters(in: .whitespaces)
-            workspaceSettingsManager.settings.runtimes.node.packageManager = trimmed.isEmpty ? nil : trimmed
+            var runtimes = workspaceSettingsManager.settings.runtimes
+            runtimes.node.packageManager = trimmed.isEmpty ? nil : trimmed
+            workspaceSettingsManager.settings.runtimes = runtimes
         }
     }
 

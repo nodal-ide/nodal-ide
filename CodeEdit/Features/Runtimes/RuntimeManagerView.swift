@@ -11,6 +11,8 @@ struct RuntimeManagerView: View {
     @StateObject private var model = RuntimeManagerViewModel()
     @ObservedObject private var tooling = RuntimeManager.shared.tooling
 
+    @State private var confirmingUninstall = false
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -31,6 +33,31 @@ struct RuntimeManagerView: View {
         }
         .frame(minWidth: 760, minHeight: 560)
         .task { await model.loadAll() }
+        .confirmationDialog(
+            uninstallTitle,
+            isPresented: $confirmingUninstall,
+            titleVisibility: .visible
+        ) {
+            Button("Uninstall", role: .destructive) {
+                Task { await model.uninstall(model.selectedRemovable) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(uninstallMessage)
+        }
+    }
+
+    private var uninstallTitle: String {
+        let count = model.selectedRemovable.count
+        return "Uninstall \(count) runtime\(count == 1 ? "" : "s")?"
+    }
+
+    private var uninstallMessage: String {
+        let brew = model.selectedRemovable.filter { $0.installed?.source == .brew }.count
+        if brew > 0 {
+            return "Homebrew runtimes are removed with `brew uninstall` and may be used by other projects."
+        }
+        return "This removes the runtime from disk."
     }
 
     private var header: some View {
@@ -82,7 +109,7 @@ struct RuntimeManagerView: View {
             Spacer()
             Text("\(model.selection.count) selected").font(.callout).foregroundStyle(.secondary)
             Button("Uninstall") {
-                Task { await model.uninstall(model.selectedRemovable) }
+                confirmingUninstall = true
             }
             .disabled(model.selectedRemovable.isEmpty)
             Button("Install") {

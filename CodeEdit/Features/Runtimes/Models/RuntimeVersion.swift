@@ -14,9 +14,16 @@ struct InstalledRuntime: Identifiable, Hashable {
     let source: RuntimeVersionSource
     /// The directory containing the runtime's executables (used for PATH prepending).
     let executableDirectory: URL
+    /// An identifier the provider needs to uninstall this runtime (e.g. a Homebrew formula).
+    var installIdentifier: String?
 
     var id: String { "\(kind.rawValue):\(version):\(source.rawValue)" }
     var isManaged: Bool { source == .managed }
+
+    /// Whether the app can uninstall this runtime (managed installs, or Homebrew formulae).
+    var isRemovable: Bool {
+        isManaged || (source == .brew && installIdentifier != nil)
+    }
 }
 
 /// A version offered by a provider's catalog (may or may not be installed).

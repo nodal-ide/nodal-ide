@@ -170,6 +170,16 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
                 workspaceSettings: workspaceSettingsManager.settings,
                 workspaceURL: url
             )
+            // Re-resolve the runtime PATH whenever the project's runtime pins change.
+            workspaceSettingsManager.$settings
+                .map(\.runtimes)
+                .removeDuplicates()
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    guard let self else { return }
+                    Task { await RuntimeEnvironment.shared.refresh(workspace: self) }
+                }
+                .store(in: &cancellables)
         }
         self.runConfigurationStore = RunConfigurationStore(workspaceURL: url)
         self.runController = RunController(workspace: self)
@@ -181,6 +191,8 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         workspaceFileManager?.addObserver(undoRegistration)
         editorManager?.restoreFromState(self)
         utilityAreaModel?.restoreFromState(self)
+
+        Task { await RuntimeEnvironment.shared.refresh(workspace: self) }
     }
 
     override func read(from url: URL, ofType typeName: String) throws {

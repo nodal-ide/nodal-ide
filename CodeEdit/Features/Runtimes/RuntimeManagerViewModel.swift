@@ -21,6 +21,7 @@ final class RuntimeManagerViewModel: ObservableObject {
         var id: String { version }
         var isInstalled: Bool { installed != nil }
         var isManaged: Bool { installed?.isManaged ?? false }
+        var isRemovable: Bool { installed?.isRemovable ?? false }
     }
 
     @Published var selectedKind: RuntimeKind = .php
@@ -71,8 +72,8 @@ final class RuntimeManagerViewModel: ObservableObject {
     /// Selected rows that can be installed (available but not installed).
     var selectedInstallable: [Row] { selectedRows.filter { !$0.isInstalled && $0.available != nil } }
 
-    /// Selected rows that can be uninstalled (installed and managed).
-    var selectedRemovable: [Row] { selectedRows.filter(\.isManaged) }
+    /// Selected rows that can be uninstalled (managed installs or Homebrew formulae).
+    var selectedRemovable: [Row] { selectedRows.filter(\.isRemovable) }
 
     private var selectedRows: [Row] { currentRows.filter { selection.contains($0.id) } }
 

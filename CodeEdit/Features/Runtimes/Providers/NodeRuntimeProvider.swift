@@ -39,7 +39,13 @@ final class NodeRuntimeProvider: RuntimeProvider {
                 ? .brew
                 : .system
             runtimes.append(
-                InstalledRuntime(kind: .node, version: version, source: source, executableDirectory: binDirectory)
+                InstalledRuntime(
+                    kind: .node,
+                    version: version,
+                    source: source,
+                    executableDirectory: binDirectory,
+                    installIdentifier: source == .brew ? Self.brewFormula(from: path) : nil
+                )
             )
         }
 
@@ -120,10 +126,30 @@ final class NodeRuntimeProvider: RuntimeProvider {
     }
 
     func uninstall(_ runtime: InstalledRuntime) async throws {
-        guard runtime.isManaged, RuntimeManager.isManagedPath(runtime.executableDirectory) else {
-            throw RuntimeError.installFailed("Only managed runtimes can be removed.")
+        if runtime.isManaged, RuntimeManager.isManagedPath(runtime.executableDirectory) {
+            try FileManager.default.removeItem(at: runtime.executableDirectory.deletingLastPathComponent())
+            return
         }
-        try FileManager.default.removeItem(at: runtime.executableDirectory.deletingLastPathComponent())
+        if runtime.source == .brew, let formula = runtime.installIdentifier {
+            let result = RuntimeShell.runResult("brew uninstall \(formula)")
+            let stillInstalled = await installedVersions().contains { $0.version == runtime.version }
+            if stillInstalled {
+                throw RuntimeError.installFailed(
+                    result.output.isEmpty ? "Homebrew failed to uninstall \(formula)." : result.output
+                )
+            }
+            return
+        }
+        throw RuntimeError.installFailed("Only managed or Homebrew runtimes can be removed.")
+    }
+
+    /// Extracts the Homebrew formula name from a Cellar binary path (`…/Cellar/<formula>/<version>/bin`).
+    private static func brewFormula(from path: String) -> String? {
+        let components = URL(filePath: path).pathComponents
+        guard let cellarIndex = components.lastIndex(of: "Cellar"), components.count > cellarIndex + 1 else {
+            return nil
+        }
+        return components[cellarIndex + 1]
     }
 
     func debugger(for runtime: InstalledRuntime) -> RuntimeDebugger? {
