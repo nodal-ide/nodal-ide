@@ -84,23 +84,18 @@ extension LanguageServer {
             guard let document = openFiles.document(for: uri) else { return }
 
             switch resolveDocumentSyncKind() {
-            case .full:
+            case .full, .incremental:
+                // Always send the full content. Incremental ranges were corrupting the server's copy (e.g.
+                // phantom "'{'/';' expected" errors); a range-less change is a valid full replacement for
+                // both full and incremental servers.
                 guard let content = await getIsolatedDocumentContent(document) else {
                     logger.error("Failed to get isolated document content")
                     return
                 }
                 let changeEvent = TextDocumentContentChangeEvent(range: nil, rangeLength: nil, text: content.string)
-                try await lspInstance.textDocumentDidChange(
-                    DidChangeTextDocumentParams(uri: uri, version: 0, contentChange: changeEvent)
-                )
-            case .incremental:
                 let fileVersion = openFiles.incrementVersion(for: uri)
-                let changeEvents = changes.map {
-                    // rangeLength is depreciated in the LSP spec.
-                    TextDocumentContentChangeEvent(range: $0.range, rangeLength: nil, text: $0.string)
-                }
                 try await lspInstance.textDocumentDidChange(
-                    DidChangeTextDocumentParams(uri: uri, version: fileVersion, contentChanges: changeEvents)
+                    DidChangeTextDocumentParams(uri: uri, version: fileVersion, contentChange: changeEvent)
                 )
             case .none:
                 return
