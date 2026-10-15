@@ -58,4 +58,10 @@ extension JSONValue {
         if case .object(let value) = self { return value }
         return nil
     }
+
+    /// Encodes a `Codable` value into a `JSONValue`.
+    static func encode<T: Encodable>(_ value: T) throws -> JSONValue {
+        let data = try JSONEncoder().encode(value)
+        return try JSONDecoder().decode(JSONValue.self, from: data)
+    }
 }
