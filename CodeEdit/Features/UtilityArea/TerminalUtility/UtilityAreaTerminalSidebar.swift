@@ -14,7 +14,11 @@ struct UtilityAreaTerminalSidebar: View {
     @EnvironmentObject private var utilityAreaViewModel: UtilityAreaViewModel
 
     var body: some View {
-        List(selection: $utilityAreaViewModel.selectedTerminals) {
+        let selection = Binding(
+            get: { utilityAreaViewModel.selectedTerminals },
+            set: { utilityAreaViewModel.setSelectedTerminals($0) }
+        )
+        return List(selection: selection) {
             ForEach(utilityAreaViewModel.terminals, id: \.self.id) { terminal in
                 UtilityAreaTerminalTab(
                     terminal: terminal,

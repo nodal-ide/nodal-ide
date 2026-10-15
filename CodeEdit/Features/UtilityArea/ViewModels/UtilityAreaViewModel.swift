@@ -158,29 +158,41 @@ class UtilityAreaViewModel: ObservableObject {
         return id
     }
 
-    /// Splits the terminal area, showing the focused terminal alongside another one.
+    /// Splits the terminal area, creating a new terminal alongside the focused one.
     /// - Parameter axis: The split orientation.
     func splitFocusedTerminal(axis: TerminalSplitAxis = .horizontal) {
         guard splitTerminalID == nil, let primary = selectedTerminals.first else { return }
         let focused = focusedTerminalID ?? primary
         let baseURL = terminals.first(where: { $0.id == focused })?.url
 
-        let secondary: UUID
-        if let existing = terminals.first(where: { $0.id != focused })?.id {
-            secondary = existing
-        } else {
-            secondary = insertTerminal(rootURL: baseURL)
-        }
-
+        let secondary = insertTerminal(rootURL: baseURL)
         splitTerminalID = secondary
         splitAxis = axis
         focusedTerminalID = secondary
     }
 
-    /// Removes the split, keeping the primary pane.
+    /// Closes the split, removing the secondary terminal.
     func closeSplit() {
+        guard let split = splitTerminalID else { return }
         splitTerminalID = nil
+        removeTerminals([split])
         focusedTerminalID = selectedTerminals.first
+    }
+
+    /// Sets the selection (from the sidebar/picker), keeping the two panes distinct.
+    ///
+    /// Selecting the split pane swaps the panes so the primary and split never refer to the same terminal.
+    func setSelectedTerminals(_ ids: Set<UUID>) {
+        guard let id = ids.first else { return }
+        if splitTerminalID == id {
+            let previousPrimary = selectedTerminals.first
+            splitTerminalID = previousPrimary
+            selectedTerminals = [id]
+            focusedTerminalID = id
+        } else {
+            selectedTerminals = [id]
+            focusedTerminalID = id
+        }
     }
 
     /// Focuses a visible pane.

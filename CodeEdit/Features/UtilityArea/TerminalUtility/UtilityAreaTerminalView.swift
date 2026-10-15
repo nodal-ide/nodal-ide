@@ -91,7 +91,8 @@ struct UtilityAreaTerminalView: View {
     @ViewBuilder private var terminalContent: some View {
         if utilityAreaViewModel.isSplit,
            let primary = getSelectedTerminal(),
-           let secondary = getSplitTerminal() {
+           let secondary = getSplitTerminal(),
+           primary.id != secondary.id {
             switch utilityAreaViewModel.splitAxis {
             case .horizontal:
                 HSplitView {
@@ -176,7 +177,10 @@ struct UtilityAreaTerminalView: View {
             .paneToolbar {
                 PaneToolbarSection {
                     UtilityAreaTerminalPicker(
-                        selectedIDs: $utilityAreaViewModel.selectedTerminals,
+                        selectedIDs: Binding(
+                            get: { utilityAreaViewModel.selectedTerminals },
+                            set: { utilityAreaViewModel.setSelectedTerminals($0) }
+                        ),
                         terminals: utilityAreaViewModel.terminals
                     )
                     .opacity(tabState.leadingSidebarIsCollapsed ? 1 : 0)
@@ -197,9 +201,11 @@ struct UtilityAreaTerminalView: View {
                         Button("Split Right") {
                             utilityAreaViewModel.splitFocusedTerminal(axis: .horizontal)
                         }
+                        .disabled(utilityAreaViewModel.isSplit)
                         Button("Split Down") {
                             utilityAreaViewModel.splitFocusedTerminal(axis: .vertical)
                         }
+                        .disabled(utilityAreaViewModel.isSplit)
                         if utilityAreaViewModel.isSplit {
                             Divider()
                             Button("Close Split") {
