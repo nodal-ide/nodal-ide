@@ -23,7 +23,10 @@ final class RuntimeManager: ObservableObject {
 
     private(set) var providers: [RuntimeKind: any RuntimeProvider] = [:]
 
-    private init() {}
+    private init() {
+        register(NodeRuntimeProvider())
+        register(PHPRuntimeProvider())
+    }
 
     func register(_ provider: any RuntimeProvider) {
         providers[provider.kind] = provider
