@@ -12,6 +12,9 @@ struct CommandCenterView: View {
     let onClose: () -> Void
 
     @State private var selection = 0
+    @State private var lastTapTime = Date.distantPast
+    @State private var lastTapDirection = 0
+    @State private var jumpModeUntil: Date?
     @FocusState private var isFieldFocused: Bool
 
     var body: some View {
@@ -24,8 +27,8 @@ struct CommandCenterView: View {
             footer
         }
         .frame(minWidth: 660, minHeight: 420)
+        .background(CommandCenterKeyMonitor(onKeyDown: handleKey))
         .onExitCommand { onClose() }
-        .onMoveCommand(perform: move)
         .onAppear {
             model.scheduleSearch()
             DispatchQueue.main.async { isFieldFocused = true }
@@ -210,20 +213,59 @@ struct CommandCenterView: View {
         onClose()
     }
 
-    private func move(_ direction: MoveCommandDirection) {
-        switch direction {
-        case .up:
-            selection = max(0, selection - 1)
-        case .down:
-            selection = min(max(0, model.results.count - 1), selection + 1)
-        case .left:
-            model.cycleCategory(by: -1)
-            selection = 0
-        case .right:
-            model.cycleCategory(by: 1)
-            selection = 0
-        @unknown default:
-            break
+    /// Handles app-level key events while the Command Center is key. Returns `true` to consume.
+    private func handleKey(_ event: NSEvent) -> Bool {
+        switch event.keyCode {
+        case 125: // down
+            if selection < model.results.count - 1 { selection += 1 }
+            return true
+        case 126: // up
+            if selection > 0 { selection -= 1 }
+            return true
+        case 123: // left
+            return handleHorizontal(direction: -1)
+        case 124: // right
+            return handleHorizontal(direction: 1)
+        case 36: // return
+            activateSelected()
+            return true
+        case 53: // escape
+            onClose()
+            return true
+        default:
+            return false
         }
+    }
+
+    /// Switches tabs on ←/→ when the query is empty, the caret is at the edge, or "jump mode" is active
+    /// (entered by double-tapping ←/→). Otherwise the field moves the caret as usual.
+    private func handleHorizontal(direction: Int) -> Bool {
+        let now = Date()
+        let isDoubleTap = lastTapDirection == direction && now.timeIntervalSince(lastTapTime) < 0.3
+        lastTapDirection = direction
+        lastTapTime = now
+
+        let jumpActive = jumpModeUntil.map { now < $0 } ?? false
+        guard jumpActive || isDoubleTap || queryEmptyOrCaretAtEdge(direction) else {
+            return false
+        }
+
+        jumpModeUntil = now.addingTimeInterval(3)
+        model.cycleCategory(by: direction)
+        selection = 0
+        isFieldFocused = true
+        return true
+    }
+
+    private func queryEmptyOrCaretAtEdge(_ direction: Int) -> Bool {
+        let editor = NSApp.keyWindow?.firstResponder as? NSTextView
+        let text = editor?.string ?? model.query
+        guard !text.isEmpty else { return true }
+        let length = (text as NSString).length
+        let selected = editor?.selectedRange() ?? NSRange(location: length, length: 0)
+        if direction < 0 {
+            return selected.location == 0 && selected.length == 0
+        }
+        return NSMaxRange(selected) == length
     }
 }
