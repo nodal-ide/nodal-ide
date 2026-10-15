@@ -22,6 +22,9 @@ struct DeveloperSettingsView: View {
     @AppSettings(\.developerSettings.debugAdapterArguments)
     var debugAdapterArguments
 
+    @AppSettings(\.developerSettings.lspServerArguments)
+    var lspServerArguments
+
     var body: some View {
         SettingsForm {
             Section {
@@ -40,6 +43,20 @@ struct DeveloperSettingsView: View {
                     Text(
                         "Specify the absolute path to your LSP binary and its associated language."
                     )
+                } actionBarTrailing: {
+                    EmptyView()
+                }
+                .frame(minHeight: 96)
+
+                KeyValueTable(
+                    items: $lspServerArguments,
+                    keyColumnName: "Server",
+                    valueColumnName: "Arguments",
+                    newItemInstruction: "Add launch arguments"
+                ) {
+                    Text("Add launch arguments")
+                    Text("Optional launch arguments per language server (space-separated), "
+                         + "keyed by package name (e.g. typescript-language-server). Defaults to --stdio.")
                 } actionBarTrailing: {
                     EmptyView()
                 }

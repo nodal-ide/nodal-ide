@@ -30,6 +30,9 @@ extension SettingsData {
         /// Optional extra command-line arguments per debug adapter id (space-separated).
         var debugAdapterArguments: [String: String] = [:]
 
+        /// Optional launch arguments per language server (space-separated), keyed by package name or language id.
+        var lspServerArguments: [String: String] = [:]
+
         /// Global default runtime versions, keyed by runtime kind (`php`, `node`).
         var defaultRuntimeVersions: [String: String] = [:]
 
@@ -60,6 +63,11 @@ extension SettingsData {
             self.debugAdapterArguments = try container.decodeIfPresent(
                 [String: String].self,
                 forKey: .debugAdapterArguments
+            ) ?? [:]
+
+            self.lspServerArguments = try container.decodeIfPresent(
+                [String: String].self,
+                forKey: .lspServerArguments
             ) ?? [:]
 
             self.defaultRuntimeVersions = try container.decodeIfPresent(
