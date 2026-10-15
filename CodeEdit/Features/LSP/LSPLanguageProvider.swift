@@ -186,7 +186,9 @@ final class LSPLanguageProvider: LanguageProvider {
     // MARK: - Completion
 
     @MainActor
-    func completionTriggerCharacters() -> Set<String> { [] }
+    func completionTriggerCharacters() -> Set<String> {
+        Set(server?.serverCapabilities.completionProvider?.triggerCharacters ?? [])
+    }
 
     @MainActor
     func completionSuggestionsRequested(
