@@ -121,7 +121,7 @@ final class LSPLanguageProvider: LanguageProvider {
 
               let position = textView.textView.lspRangeFrom(nsRange: range)?.start else { return nil }
         guard let hover = try? await server.requestHover(for: documentURI, position) else { return nil }
-        let contents = Self.hoverText(hover.contents)
+        let contents = Self.cleanedMarkdown(Self.hoverText(hover.contents))
         guard !contents.isEmpty else { return nil }
         return HoverInfo(contents: contents, range: range)
     }
@@ -130,21 +130,29 @@ final class LSPLanguageProvider: LanguageProvider {
 
     @MainActor
     func diagnostics(for textView: TextViewController) async -> [EditorDiagnostic] {
-        // Only pull when the server advertises pull-diagnostics support; otherwise it pushes them.
-        guard let server = server,
-              server.serverCapabilities.diagnosticProvider != nil,
-              let report = try? await server.requestPullDiagnostics(document: documentURI) else {
+        guard let server = server else { return [] }
+
+        // Push-based servers: use the latest pushed diagnostics for this document.
+        if server.serverCapabilities.diagnosticProvider == nil {
+            return LSPDiagnosticsCache.shared.diagnostics(for: documentURI).compactMap {
+                editorDiagnostic(from: $0, in: textView)
+            }
+        }
+
+        guard let report = try? await server.requestPullDiagnostics(document: documentURI) else {
             return []
         }
-        return (report.items ?? []).compactMap { diagnostic in
-            guard let range = textView.textView.nsRange(fromLSP: diagnostic.range) else { return nil }
-            return EditorDiagnostic(
-                range: range,
-                severity: Self.severity(diagnostic.severity),
-                message: diagnostic.message,
-                line: diagnostic.range.start.line + 1
-            )
-        }
+        return (report.items ?? []).compactMap { editorDiagnostic(from: $0, in: textView) }
+    }
+
+    private func editorDiagnostic(from diagnostic: Diagnostic, in textView: TextViewController) -> EditorDiagnostic? {
+        guard let range = textView.textView.nsRange(fromLSP: diagnostic.range) else { return nil }
+        return EditorDiagnostic(
+            range: range,
+            severity: Self.severity(diagnostic.severity),
+            message: diagnostic.message,
+            line: diagnostic.range.start.line + 1
+        )
     }
 
     // MARK: - Code actions
@@ -286,6 +294,18 @@ final class LSPLanguageProvider: LanguageProvider {
         case .optionB(let markedArray): return markedArray.map(\.value).joined(separator: "\n\n")
         case .optionC(let content): return content.value
         }
+    }
+
+    /// Strips markdown syntax (code fences, inline ticks) since the hover UI renders plain text.
+    private static func cleanedMarkdown(_ text: String) -> String {
+        var result = text
+        // Opening fences with an optional language identifier (e.g. "```typescript\n").
+        result = result.replacingOccurrences(of: "```[a-zA-Z0-9_+-]*\\n?", with: "", options: .regularExpression)
+        // Remaining closing fences.
+        result = result.replacingOccurrences(of: "```", with: "")
+        // Inline code ticks.
+        result = result.replacingOccurrences(of: "`", with: "")
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private static func severity(_ severity: DiagnosticSeverity?) -> EditorDiagnosticSeverity {

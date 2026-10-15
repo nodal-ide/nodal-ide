@@ -52,7 +52,7 @@ extension LSPLanguageProvider {
         }
 
         completionPosition = position
-        completionItems = Array(items.prefix(500))
+        completionItems = Array(items.prefix(200))
         return (cursorPosition, completionItems.map(Self.entry))
     }
 }
