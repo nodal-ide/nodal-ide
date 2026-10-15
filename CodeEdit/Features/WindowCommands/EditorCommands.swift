@@ -29,6 +29,18 @@ struct EditorCommands: Commands {
                 .keyboardShortcut("]", modifiers: [.command, .option])
             }
 
+            Menu("Folding") {
+                Button("Fold All") {
+                    editor?.selectedTab?.rangeTranslator.controller?.foldAll()
+                }
+                .keyboardShortcut(.upArrow, modifiers: [.command, .option])
+
+                Button("Unfold All") {
+                    editor?.selectedTab?.rangeTranslator.controller?.unfoldAll()
+                }
+                .keyboardShortcut(.downArrow, modifiers: [.command, .option])
+            }
+
             Divider()
 
             Button("Format Document") {
