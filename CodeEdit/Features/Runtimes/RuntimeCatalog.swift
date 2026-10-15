@@ -65,7 +65,9 @@ enum RuntimeCatalog {
                   let stable = versionsAny["stable"] as? String else {
                 continue
             }
-            versions.append(RuntimeVersion(version: stable, isLTS: formula == "php"))
+            versions.append(
+                RuntimeVersion(version: stable, isLTS: formula == "php", installIdentifier: formula)
+            )
         }
         return deduplicated(versions)
     }

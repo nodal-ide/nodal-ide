@@ -24,6 +24,8 @@ struct RuntimeVersion: Identifiable, Hashable, Codable {
     let version: String
     var isLTS: Bool?
     var releaseDate: Date?
+    /// An identifier the provider needs to install this version (e.g. a Homebrew formula).
+    var installIdentifier: String?
     /// The source it is installed as, if present on the system.
     var installedSource: RuntimeVersionSource?
 

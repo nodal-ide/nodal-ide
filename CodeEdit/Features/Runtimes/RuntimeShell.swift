@@ -11,20 +11,26 @@ enum RuntimeShell {
     /// Runs a command in a non-interactive login shell and returns its trimmed stdout.
     @discardableResult
     static func run(_ command: String) -> String {
+        runResult(command).output
+    }
+
+    /// Runs a command and returns its trimmed combined output and exit status.
+    static func runResult(_ command: String) -> (output: String, status: Int32) {
         let task = Process()
         task.executableURL = URL(filePath: "/bin/zsh")
         task.arguments = ["-lc", command]
-        let stdout = Pipe()
-        task.standardOutput = stdout
-        task.standardError = Pipe()
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = pipe
         do {
             try task.run()
         } catch {
-            return ""
+            return ("", -1)
         }
-        let data = stdout.fileHandleForReading.readDataToEndOfFile()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
         task.waitUntilExit()
-        return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return (output, task.terminationStatus)
     }
 
     /// Runs a command and returns its non-empty output lines.

@@ -36,8 +36,25 @@ final class PHPRuntimeProvider: RuntimeProvider {
         return annotate(versions, installed: installed)
     }
 
-    func install(version: String, progress: @escaping (RuntimeInstallProgress) -> Void) async throws {
-        throw RuntimeError.unsupported // RM4
+    func install(_ version: RuntimeVersion, progress: @escaping (RuntimeInstallProgress) -> Void) async throws {
+        guard let formula = version.installIdentifier else {
+            throw RuntimeError.unsupported
+        }
+        progress(.init(phase: .installing, message: "brew install \(formula)"))
+        let result = await run("brew install \(formula)")
+        guard result.status == 0 else {
+            throw RuntimeError.installFailed(result.output.isEmpty ? "Homebrew failed." : result.output)
+        }
+        progress(.init(phase: .done))
+    }
+
+    /// Runs a command off the main thread.
+    private func run(_ command: String) async -> (output: String, status: Int32) {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global().async {
+                continuation.resume(returning: RuntimeShell.runResult(command))
+            }
+        }
     }
 
     func uninstall(_ runtime: InstalledRuntime) async throws {

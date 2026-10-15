@@ -22,9 +22,9 @@ protocol RuntimeProvider: AnyObject {
 
     /// Installs a version into the managed directory, reporting progress.
     /// - Parameters:
-    ///   - version: The version to install.
+    ///   - version: The version to install (from ``availableVersions()``).
     ///   - progress: Called with progress updates.
-    func install(version: String, progress: @escaping (RuntimeInstallProgress) -> Void) async throws
+    func install(_ version: RuntimeVersion, progress: @escaping (RuntimeInstallProgress) -> Void) async throws
 
     /// Removes a managed runtime. Adopted (non-managed) runtimes are not removed.
     func uninstall(_ runtime: InstalledRuntime) async throws
