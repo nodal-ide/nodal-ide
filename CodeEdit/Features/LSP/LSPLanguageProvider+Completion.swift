@@ -16,6 +16,7 @@ extension LSPLanguageProvider {
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
+        print("[lsp-completion] requested")
         guard let server = server else {
             Self.logger.warning("completion: server nil (lang=\(self.languageID), path=\(self.workspacePath))")
             return nil
