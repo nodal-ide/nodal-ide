@@ -50,30 +50,30 @@ extension LSPService {
     }
 
     private func handleRequest(_ request: ServerRequest, client: LanguageServerType) {
-        // TODO: Handle Requests
+        // Always reply — an unanswered request can block the server (e.g. it waits on
+        // `workspace/configuration` before answering `textDocument/completion`).
+        print("[lsp] server request: \(request.method.rawValue)")
         switch request {
-            //        case let .workspaceConfiguration(params, _):
-            //            print("workspaceConfiguration: \(params)")
-            //        case let .workspaceFolders(handler):
-            //            print("workspaceFolders: \(String(describing: handler))")
-            //        case let .workspaceApplyEdit(params, _):
-            //            print("workspaceApplyEdit: \(params)")
-//        case let .clientRegisterCapability(params, _):
-//            print("clientRegisterCapability: \(params)")
-//        case let .clientUnregisterCapability(params, _):
-//            print("clientUnregisterCapability: \(params)")
-            //        case let .workspaceCodeLensRefresh(handler):
-            //            print("workspaceCodeLensRefresh: \(String(describing: handler))")
-//        case let .workspaceSemanticTokenRefresh(handler):
-//            print("Refresh semantic tokens!", handler)
-            //        case let .windowShowMessageRequest(params, _):
-            //            print("windowShowMessageRequest: \(params)")
-            //        case let .windowShowDocument(params, _):
-            //            print("windowShowDocument: \(params)")
-            //        case let .windowWorkDoneProgressCreate(params, _):
-            //            print("windowWorkDoneProgressCreate: \(params)")
-        default:
-            return
+        case let .workspaceConfiguration(params, handler):
+            Task { await handler(.success(Array(repeating: .null, count: params.items.count))) }
+        case let .workspaceFolders(handler):
+            Task { await handler(.success(client.rootPath.pathComponents.isEmpty ? nil : [])) }
+        case let .workspaceApplyEdit(_, handler):
+            Task { await handler(.success(ApplyWorkspaceEditResult(applied: false))) }
+        case let .clientRegisterCapability(_, handler),
+             let .clientUnregisterCapability(_, handler):
+            Task { await handler(nil) }
+        case let .windowWorkDoneProgressCreate(_, handler):
+            Task { await handler(nil) }
+        case let .workspaceCodeLensRefresh(handler),
+             let .workspaceSemanticTokenRefresh(handler):
+            Task { await handler(nil) }
+        case let .windowShowMessageRequest(_, handler):
+            Task { await handler(.success(nil)) }
+        case let .windowShowDocument(_, handler):
+            Task { await handler(.success(ShowDocumentResult(success: false))) }
+        case let .custom(_, _, handler):
+            Task { await handler(.success(.null)) }
         }
     }
 
