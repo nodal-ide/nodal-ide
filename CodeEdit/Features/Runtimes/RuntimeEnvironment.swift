@@ -28,6 +28,10 @@ final class RuntimeEnvironment: ObservableObject {
 
         var environment: [String: String] = [:]
         if !binPaths.isEmpty {
+            // `CE_RUNTIME_PATH` is re-prepended by the shell integration *after* the user's profiles run,
+            // so a profile that prepends its own tool dirs can't shadow the project's runtimes.
+            environment["CE_RUNTIME_PATH"] = binPaths.joined(separator: ":")
+
             // Runtime bins first, then the common tool dirs, then the app's PATH (deduped).
             var parts = binPaths
             for dir in RuntimeShell.extraPathDirectories where !parts.contains(dir) {

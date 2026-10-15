@@ -6,3 +6,8 @@ ZDOTDIR=$USER_ZDOTDIR
 if [[ -o "login" &&  -f $ZDOTDIR/.zlogin ]]; then
 	. $ZDOTDIR/.zlogin
 fi
+
+# Re-prepend the project's runtime PATH (after the user's .zlogin has run).
+if [[ -n "$CE_RUNTIME_PATH" && "$PATH" != "$CE_RUNTIME_PATH:"* ]]; then
+	export PATH="$CE_RUNTIME_PATH:$PATH"
+fi

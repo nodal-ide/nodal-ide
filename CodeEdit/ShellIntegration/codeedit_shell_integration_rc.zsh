@@ -44,6 +44,12 @@ fi
 
 # END: Microsoft code
 
+# Re-prepend the project's runtime PATH (after the user's rc has run) so a profile
+# that prepends its own tool dirs can't shadow the project's runtimes.
+if [[ -n "$CE_RUNTIME_PATH" && "$PATH" != "$CE_RUNTIME_PATH:"* ]]; then
+	export PATH="$CE_RUNTIME_PATH:$PATH"
+fi
+
 builtin autoload -Uz add-zsh-hook
 
 __codeedit_preexec() {

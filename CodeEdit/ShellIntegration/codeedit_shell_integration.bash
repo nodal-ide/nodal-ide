@@ -50,6 +50,12 @@ fi
 
 # END: Modified Microsoft code
 
+# Re-prepend the project's runtime PATH (after the user's rc/profile has run) so a
+# profile that prepends its own tool dirs can't shadow the project's runtimes.
+if [[ -n "$CE_RUNTIME_PATH" && "$PATH" != "$CE_RUNTIME_PATH:"* ]]; then
+	export PATH="$CE_RUNTIME_PATH:$PATH"
+fi
+
 # Wrap bash-preexec.sh in a function so that, if it exits early due to having
 # been sourced elsewhere, it doesn't exit our entire script.
 _install_bash_preexec () {
