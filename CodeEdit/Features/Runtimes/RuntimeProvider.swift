@@ -38,6 +38,16 @@ extension RuntimeProvider {
         let bin = runtime.executableDirectory.path(percentEncoded: false)
         return ["PATH": bin + ":" + (ProcessInfo.processInfo.environment["PATH"] ?? "")]
     }
+
+    /// Marks catalog versions that are installed on the system.
+    func annotate(_ versions: [RuntimeVersion], installed: [InstalledRuntime]) -> [RuntimeVersion] {
+        let byVersion = Dictionary(grouping: installed, by: \.version)
+        return versions.map { version in
+            var version = version
+            version.installedSource = byVersion[version.version]?.first?.source
+            return version
+        }
+    }
 }
 
 enum RuntimeError: LocalizedError {

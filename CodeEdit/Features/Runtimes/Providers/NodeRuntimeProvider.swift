@@ -39,7 +39,9 @@ final class NodeRuntimeProvider: RuntimeProvider {
     }
 
     func availableVersions() async -> [RuntimeVersion] {
-        [] // RM3 (catalog)
+        let installed = await installedVersions()
+        let versions = await RuntimeCatalog.versions(for: kind)
+        return annotate(versions, installed: installed)
     }
 
     func install(version: String, progress: @escaping (RuntimeInstallProgress) -> Void) async throws {

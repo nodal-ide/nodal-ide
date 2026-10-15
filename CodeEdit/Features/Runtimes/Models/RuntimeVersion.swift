@@ -20,7 +20,7 @@ struct InstalledRuntime: Identifiable, Hashable {
 }
 
 /// A version offered by a provider's catalog (may or may not be installed).
-struct RuntimeVersion: Identifiable, Hashable {
+struct RuntimeVersion: Identifiable, Hashable, Codable {
     let version: String
     var isLTS: Bool?
     var releaseDate: Date?
