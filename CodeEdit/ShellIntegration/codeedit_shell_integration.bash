@@ -448,6 +448,8 @@ __codeedit_status="$?"
 
 __codeedit_preexec() {
     builtin printf "\033]0;%s\007" "$1"
+    # Notify the terminal that a command started (OSC 1337, consumed by SwiftTerm).
+    builtin printf "\033]1337;CodeEdit=start\007"
 }
 
 # Emit OSC 7 (current working directory) so the terminal can track the shell's cwd.
@@ -456,8 +458,11 @@ __codeedit_cwd() {
 }
 
 __codeedit_precmd() {
+    local __codeedit_code=$?
     builtin printf "\033]0;bash\007"
     __codeedit_cwd
+    # Notify the terminal that the command finished, with its exit code.
+    builtin printf "\033]1337;CodeEdit=exit;%d\007" "$__codeedit_code"
 }
 
 preexec_functions+=(__codeedit_preexec)

@@ -48,12 +48,17 @@ builtin autoload -Uz add-zsh-hook
 
 __codeedit_preexec() {
     builtin printf "\033]0;%s\007" "$1"
+    # Notify the terminal that a command started (OSC 1337, consumed by SwiftTerm).
+    builtin printf "\033]1337;CodeEdit=start\007"
 }
 
 __codeedit_precmd() {
+    local __codeedit_code=$?
     builtin printf "\033]0;zsh\007"
     # Emit OSC 7 (current working directory) so the terminal can track the shell's cwd.
     builtin printf "\033]7;file://%s%s\007" "${HOST:-localhost}" "$PWD"
+    # Notify the terminal that the command finished, with its exit code.
+    builtin printf "\033]1337;CodeEdit=exit;%d\007" "$__codeedit_code"
 }
 
 add-zsh-hook preexec __codeedit_preexec

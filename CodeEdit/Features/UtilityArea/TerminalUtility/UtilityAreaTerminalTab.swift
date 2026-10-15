@@ -18,6 +18,20 @@ struct UtilityAreaTerminalTab: View {
 
     @FocusState private var isFocused: Bool
 
+    /// A small indicator for the terminal's running state / last command result.
+    @ViewBuilder private var activityIndicator: some View {
+        if terminal.isRunning {
+            ProgressView()
+                .controlSize(.mini)
+                .help("A command is running")
+        } else if let code = terminal.lastExitCode {
+            Circle()
+                .fill(code == 0 ? Color.green : Color.red)
+                .frame(width: 6, height: 6)
+                .help(code == 0 ? "Last command succeeded" : "Last command exited with code \(code)")
+        }
+    }
+
     var body: some View {
         let terminalTitle = Binding<String>(
             get: {
@@ -33,19 +47,23 @@ struct UtilityAreaTerminalTab: View {
             }
         )
 
-        Label {
-            if #available(macOS 14, *) {
-                // Fix the icon misplacement issue introduced since macOS 14
-                TextField("Name", text: terminalTitle)
-                    .focused($isFocused)
-            } else {
-                // A padding is needed for macOS 13
-                TextField("Name", text: terminalTitle)
-                    .focused($isFocused)
-                    .padding(.leading, -8)
+        HStack(spacing: 6) {
+            Label {
+                if #available(macOS 14, *) {
+                    // Fix the icon misplacement issue introduced since macOS 14
+                    TextField("Name", text: terminalTitle)
+                        .focused($isFocused)
+                } else {
+                    // A padding is needed for macOS 13
+                    TextField("Name", text: terminalTitle)
+                        .focused($isFocused)
+                        .padding(.leading, -8)
+                }
+            } icon: {
+                Image(systemName: "terminal")
             }
-        } icon: {
-            Image(systemName: "terminal")
+            Spacer(minLength: 4)
+            activityIndicator
         }
         .contextMenu {
             Button("Rename...") {

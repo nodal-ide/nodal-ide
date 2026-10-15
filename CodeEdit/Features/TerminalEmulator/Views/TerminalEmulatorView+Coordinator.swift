@@ -13,6 +13,8 @@ extension TerminalEmulatorView {
         private let terminalID: UUID
         public var onTitleChange: (_ title: String) -> Void
         public var onCwdChange: (URL?) -> Void
+        public var onCommandStart: () -> Void
+        public var onCommandFinish: (Int?) -> Void
 
         var mode: TerminalMode
 
@@ -20,13 +22,36 @@ extension TerminalEmulatorView {
             terminalID: UUID,
             mode: TerminalMode,
             onTitleChange: @escaping (_ title: String) -> Void,
-            onCwdChange: @escaping (URL?) -> Void
+            onCwdChange: @escaping (URL?) -> Void,
+            onCommandStart: @escaping () -> Void,
+            onCommandFinish: @escaping (Int?) -> Void
         ) {
             self.terminalID = terminalID
             self.onTitleChange = onTitleChange
             self.onCwdChange = onCwdChange
+            self.onCommandStart = onCommandStart
+            self.onCommandFinish = onCommandFinish
             self.mode = mode
             super.init()
+        }
+
+        /// Parses our shell-integration command markers (`OSC 1337; CodeEdit=start` / `CodeEdit=exit;<code>`).
+        func iTermContent(source: TerminalView, content: ArraySlice<UInt8>) {
+            guard let text = String(bytes: content, encoding: .utf8),
+                  text.hasPrefix("CodeEdit=") else {
+                return
+            }
+            let payload = String(text.dropFirst("CodeEdit=".count))
+            let parts = payload.split(separator: ";", omittingEmptySubsequences: false).map(String.init)
+            guard let kind = parts.first else { return }
+            switch kind {
+            case "start":
+                onCommandStart()
+            case "exit":
+                onCommandFinish(parts.count > 1 ? Int(parts[1]) : nil)
+            default:
+                break
+            }
         }
 
         func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {

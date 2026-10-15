@@ -138,6 +138,16 @@ struct UtilityAreaTerminalView: View {
                         DispatchQueue.main.async { [weak utilityAreaViewModel] in
                             utilityAreaViewModel?.updateTerminal(terminal.id, cwd: url)
                         }
+                    },
+                    onCommandStart: {
+                        DispatchQueue.main.async { [weak utilityAreaViewModel] in
+                            utilityAreaViewModel?.commandStarted(terminal.id)
+                        }
+                    },
+                    onCommandFinish: { exitCode in
+                        DispatchQueue.main.async { [weak utilityAreaViewModel] in
+                            utilityAreaViewModel?.commandFinished(terminal.id, exitCode: exitCode)
+                        }
                     }
                 )
                 .frame(height: fill ? nil : max(0, constrainedHeight - 1))

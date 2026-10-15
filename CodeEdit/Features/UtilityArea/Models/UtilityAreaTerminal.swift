@@ -22,6 +22,10 @@ final class UtilityAreaTerminal: ObservableObject, Identifiable, Equatable {
     @Published var customTitle: Bool
     /// The shell's current working directory, tracked via shell integration (OSC 7).
     @Published var cwd: URL?
+    /// Whether a command is currently running (tracked via shell integration).
+    @Published var isRunning: Bool = false
+    /// The exit code of the last finished command, if known.
+    @Published var lastExitCode: Int?
 
     init(id: UUID, url: URL, title: String, shell: Shell?) {
         self.id = id

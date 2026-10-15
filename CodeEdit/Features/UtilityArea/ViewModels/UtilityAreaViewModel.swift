@@ -129,6 +129,20 @@ class UtilityAreaViewModel: ObservableObject {
         terminals.first(where: { $0.id == id })?.cwd = cwd
     }
 
+    /// Marks a terminal as running a command.
+    func commandStarted(_ id: UUID) {
+        guard let terminal = terminals.first(where: { $0.id == id }) else { return }
+        terminal.isRunning = true
+        terminal.lastExitCode = nil
+    }
+
+    /// Marks a terminal's command as finished, recording its exit code.
+    func commandFinished(_ id: UUID, exitCode: Int?) {
+        guard let terminal = terminals.first(where: { $0.id == id }) else { return }
+        terminal.isRunning = false
+        terminal.lastExitCode = exitCode
+    }
+
     /// Create a new terminal if there are no existing terminals.
     /// Will not perform any action if terminals exist in the ``terminals`` array.
     /// - Parameter workspaceURL: The base url of the workspace, to initialize terminals.l

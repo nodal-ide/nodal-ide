@@ -40,10 +40,17 @@ protocol CELocalShellTerminalViewDelegate: AnyObject {
     func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?)
 
     /// This method will be invoked when the child process started by `startProcess` has terminated.
-    /// - Parameter source: the local process that terminated
-    /// - Parameter exitCode: the exit code returned by the process, or nil if this was an error caused during
+    /// - Parameter source: The local process that terminated
+    /// - Parameter exitCode: The exit code returned by the process, or nil if this was an error caused during
     ///                       the IO reading/writing
     func processTerminated(source: TerminalView, exitCode: Int32?)
+
+    /// Invoked for unhandled OSC 1337 sequences (used by our shell integration for command markers).
+    func iTermContent(source: TerminalView, content: ArraySlice<UInt8>)
+}
+
+extension CELocalShellTerminalViewDelegate {
+    func iTermContent(source: TerminalView, content: ArraySlice<UInt8>) {}
 }
 
 // MARK: - CELocalShellTerminalView
@@ -165,6 +172,10 @@ class CELocalShellTerminalView: CETerminalView, TerminalViewDelegate, LocalProce
 
     public func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {
         processDelegate?.hostCurrentDirectoryUpdate(source: source, directory: directory)
+    }
+
+    public func iTermContent(source: TerminalView, content: ArraySlice<UInt8>) {
+        processDelegate?.iTermContent(source: source, content: content)
     }
 
     /// Passes data from the terminal to the shell.
