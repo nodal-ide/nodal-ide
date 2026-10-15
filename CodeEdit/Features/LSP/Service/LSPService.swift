@@ -125,6 +125,9 @@ final class LSPService: ObservableObject {
     /// Language/workspace combinations whose server failed to start (avoids respawning on every tab).
     var failedClientKeys: Set<ClientKey> = []
 
+    /// In-flight server starts, keyed by client key (dedupes concurrent starts).
+    var startingTasks: [ClientKey: Task<LanguageServerType, Error>] = [:]
+
     @AppSettings(\.developerSettings.lspBinaries)
     var lspBinaries
 
@@ -204,23 +207,41 @@ final class LSPService: ObservableObject {
         for languageId: LanguageIdentifier,
         workspacePath: String
     ) async throws -> LanguageServerType {
+        let key = ClientKey(languageId, workspacePath)
+        // Reuse an already-running server, or await an in-flight start (avoids spawning two processes when
+        // multiple documents open at once, e.g. restored tabs).
+        if let existing = languageClients[key] {
+            return existing
+        }
+        if let inFlight = startingTasks[key] {
+            return try await inFlight.value
+        }
         guard let serverBinary = languageConfigs[languageId] else {
             logger.error("Couldn't find language sever binary for \(languageId.rawValue)")
             throw LSPError.binaryNotFound
         }
 
         logger.info("Starting \(languageId.rawValue) language server")
-        let server = try await LanguageServerType.createServer(
-            for: languageId,
-            with: serverBinary,
-            workspacePath: workspacePath
-        )
-        languageClients[ClientKey(languageId, workspacePath)] = server
-        // swiftlint:disable:next line_length
-        logger.info("Successfully started \(languageId.rawValue) language server (key path: \(workspacePath, privacy: .private))")
-
-        self.startListeningToEvents(for: ClientKey(languageId, workspacePath))
-        return server
+        let task = Task {
+            try await LanguageServerType.createServer(
+                for: languageId,
+                with: serverBinary,
+                workspacePath: workspacePath
+            )
+        }
+        startingTasks[key] = task
+        do {
+            let server = try await task.value
+            startingTasks[key] = nil
+            languageClients[key] = server
+            // swiftlint:disable:next line_length
+            logger.info("Successfully started \(languageId.rawValue) language server (key path: \(workspacePath, privacy: .private))")
+            startListeningToEvents(for: key)
+            return server
+        } catch {
+            startingTasks[key] = nil
+            throw error
+        }
     }
 
     // MARK: - Stop Servers
