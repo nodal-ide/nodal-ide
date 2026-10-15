@@ -52,7 +52,6 @@ extension LSPService {
     private func handleRequest(_ request: ServerRequest, client: LanguageServerType) {
         // Always reply — an unanswered request can block the server (e.g. it waits on
         // `workspace/configuration` before answering `textDocument/completion`).
-        print("[lsp] server request: \(request.method.rawValue)")
         switch request {
         case let .workspaceConfiguration(params, handler):
             Task { await handler(.success(Array(repeating: .null, count: params.items.count))) }
@@ -103,7 +102,6 @@ extension LSPService {
     /// Handles push diagnostics (`textDocument/publishDiagnostics`), which servers like
     /// `typescript-language-server` use instead of pull diagnostics.
     private func handlePublishDiagnostics(_ params: PublishDiagnosticsParams) {
-        print("[lsp] publishDiagnostics \(params.uri) count=\(params.diagnostics.count)")
         // Feed the editor (inline diagnostics) and the Problems panel.
         LSPDiagnosticsCache.shared.update(uri: params.uri, diagnostics: params.diagnostics)
         NotificationCenter.default.post(name: Notification.Name("LSPDiagnosticsUpdated"), object: nil)

@@ -16,24 +16,11 @@ extension LSPLanguageProvider {
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
-        print("[lsp-completion] requested")
-        guard let server = server else {
-            Self.logger.warning("completion: server nil (lang=\(self.languageID), path=\(self.workspacePath))")
+        guard let server = server,
+              let position = textView.textView.lspRangeFrom(nsRange: cursorPosition.range)?.start else {
             return nil
         }
-        guard let position = textView.textView.lspRangeFrom(nsRange: cursorPosition.range)?.start else {
-            Self.logger.warning("completion: position nil (range=\(cursorPosition.range))")
-            return nil
-        }
-        let completionResponse: CompletionResponse
-        do {
-            completionResponse = try await server.requestCompletion(for: documentURI, position: position)
-        } catch {
-            Self.logger.warning("completion request failed: \(error.localizedDescription)")
-            return nil
-        }
-        guard let response = completionResponse else {
-            Self.logger.warning("completion: no response")
+        guard let response = try? await server.requestCompletion(for: documentURI, position: position) else {
             return nil
         }
 
@@ -44,7 +31,6 @@ extension LSPLanguageProvider {
         case .optionB(let list):
             items = list.items
         }
-        Self.logger.warning("completion: \(items.count) item(s) at \(position.line):\(position.character)")
         guard !items.isEmpty else {
             completionPosition = nil
             completionItems = []

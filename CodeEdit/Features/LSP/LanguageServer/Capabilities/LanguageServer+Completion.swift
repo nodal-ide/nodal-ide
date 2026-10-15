@@ -25,9 +25,7 @@ extension LanguageServer {
                 triggerKind: .invoked,
                 triggerCharacter: nil
             )
-            print("[lsp-completion] sending request at \(position.line):\(position.character)")
             let response = try await lspInstance.completion(completionParams)
-            print("[lsp-completion] got response")
 
             lspCache.set(key: cacheKey, value: response)
             return response
