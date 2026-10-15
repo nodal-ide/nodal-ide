@@ -14,6 +14,7 @@ enum UtilityAreaTab: WorkspacePanelTab, CaseIterable {
     case terminal
     case debugConsole
     case output
+    case tests
 
     var title: String {
         switch self {
@@ -25,6 +26,8 @@ enum UtilityAreaTab: WorkspacePanelTab, CaseIterable {
             return "Debug Console"
         case .output:
             return "Output"
+        case .tests:
+            return "Tests"
         }
     }
 
@@ -38,6 +41,8 @@ enum UtilityAreaTab: WorkspacePanelTab, CaseIterable {
             return "ladybug"
         case .output:
             return "list.bullet.indent"
+        case .tests:
+            return "checkmark.diamond"
         }
     }
 
@@ -51,6 +56,8 @@ enum UtilityAreaTab: WorkspacePanelTab, CaseIterable {
             UtilityAreaDebugView()
         case .output:
             UtilityAreaOutputView()
+        case .tests:
+            TestsView()
         }
     }
 }

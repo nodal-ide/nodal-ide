@@ -17,6 +17,10 @@ class CETask: ObservableObject, Identifiable, Hashable, Codable {
     @Published var environmentVariables: [EnvironmentVariable]  = []
     /// Optional problem matcher name (e.g. `$gcc`, `$tsc`) applied to this task's output.
     @Published var problemMatcher: String?
+    /// Transient (not persisted): receives raw output chunks (used by the test runner).
+    var outputObserver: ((String) -> Void)?
+    /// Transient (not persisted): called when the task's process finishes.
+    var onFinish: (() -> Void)?
 
     init(
         name: String = "",

@@ -52,13 +52,14 @@ class CEActiveTask: ObservableObject, Identifiable, Hashable {
         updateTaskStatus(to: .running)
 
         let view = output ?? CEActiveTaskTerminalView(activeTask: self)
-        configureMatcher(view: view, workspaceURL: workspaceURL)
+        installOutputTap(view: view)
+        configureMatcher(workspaceURL: workspaceURL)
         view.startProcess(workspaceURL: workspaceURL, shell: shell)
 
         output = view
     }
 
-    // MARK: - Problem matchers
+    // MARK: - Output & problem matchers
 
     private var matcherParser: ProblemMatcherParser?
     private var matcherProblems: [TaskProblem] = []
@@ -68,7 +69,17 @@ class CEActiveTask: ObservableObject, Identifiable, Hashable {
     private var matcherOwner: String { "task:\(task.id.uuidString)" }
 
     @MainActor
-    private func configureMatcher(view: CEActiveTaskTerminalView, workspaceURL: URL?) {
+    private func installOutputTap(view: CEActiveTaskTerminalView) {
+        view.outputTap = { [weak self] slice in
+            guard let text = String(bytes: slice, encoding: .utf8) else { return }
+            DispatchQueue.main.async {
+                self?.handleOutput(text)
+            }
+        }
+    }
+
+    @MainActor
+    private func configureMatcher(workspaceURL: URL?) {
         guard let name = task.problemMatcher,
               let matcher = ProblemMatcher.preset(named: name),
               let workingDirectory = workspaceURL else {
@@ -78,17 +89,13 @@ class CEActiveTask: ObservableObject, Identifiable, Hashable {
         matcherProblems = []
         outputLineBuffer = ""
         matcherParser = ProblemMatcherParser(matcher: matcher, workingDirectory: workingDirectory)
-
-        view.outputTap = { [weak self] slice in
-            guard let text = String(bytes: slice, encoding: .utf8) else { return }
-            DispatchQueue.main.async {
-                self?.consumeOutput(text)
-            }
-        }
     }
 
     @MainActor
-    private func consumeOutput(_ text: String) {
+    private func handleOutput(_ text: String) {
+        task.outputObserver?(text)
+
+        guard matcherParser != nil else { return }
         outputLineBuffer += text
         while let newline = outputLineBuffer.firstIndex(of: "\n") {
             let line = String(outputLineBuffer[..<newline])
@@ -162,6 +169,7 @@ class CEActiveTask: ObservableObject, Identifiable, Hashable {
         }
 
         deleteStatusTaskNotification()
+        task.onFinish?()
     }
 
     @MainActor
