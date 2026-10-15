@@ -42,7 +42,7 @@ final class PHPRuntimeProvider: RuntimeProvider {
         }
         progress(.init(phase: .resolving, message: "Preparing \(formula)…"))
         // Stream `brew install` so the user sees activity and can stop it.
-        let status = try await RuntimeShell.runStreaming("brew install \(formula)") { line in
+        let result = try await RuntimeShell.runStreaming("brew install \(formula)") { line in
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard trimmed.hasPrefix("==>") || trimmed.contains("%") else { return }
             Task { @MainActor in
@@ -52,10 +52,26 @@ final class PHPRuntimeProvider: RuntimeProvider {
         if Task.isCancelled {
             throw CancellationError()
         }
-        guard status == 0 else {
-            throw RuntimeError.installFailed("Homebrew exited with status \(status).")
+        if result.status != 0 {
+            // Homebrew can exit non-zero for benign reasons (auto-update failure, already installed).
+            // Only report failure if the version really isn't present.
+            if await isInstalled(minorOf: version.version) {
+                progress(.init(phase: .done))
+                return
+            }
+            throw RuntimeError.installFailed(
+                result.output.isEmpty ? "Homebrew exited with status \(result.status)." : result.output
+            )
         }
         progress(.init(phase: .done))
+    }
+
+    /// Whether a runtime with the same major.minor version is installed.
+    private func isInstalled(minorOf version: String) async -> Bool {
+        let minor = version.split(separator: ".").prefix(2).joined(separator: ".")
+        return await installedVersions().contains {
+            $0.version.split(separator: ".").prefix(2).joined(separator: ".") == minor
+        }
     }
 
     func uninstall(_ runtime: InstalledRuntime) async throws {

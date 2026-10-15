@@ -43,13 +43,14 @@ enum RuntimeShell {
         return (output, task.terminationStatus)
     }
 
-    /// Runs a command in a login shell, streaming output lines, and returns its exit status.
+    /// Runs a command in a login shell, streaming output lines.
     ///
+    /// - Returns: The exit status and the captured output (last ~100 lines) for diagnostics.
     /// Cancelling the calling task terminates the process (used to stop installs).
     static func runStreaming(
         _ command: String,
         onLine: @escaping @Sendable (String) -> Void
-    ) async throws -> Int32 {
+    ) async throws -> (status: Int32, output: String) {
         let process = Process()
         process.executableURL = URL(filePath: "/bin/zsh")
         let extras = extraPathDirectories.joined(separator: ":")
@@ -57,10 +58,10 @@ enum RuntimeShell {
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = pipe
+        let buffer = LineBuffer(onLine: onLine)
 
-        return try await withTaskCancellationHandler {
+        let status: Int32 = try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
-                let buffer = LineBuffer(onLine: onLine)
                 pipe.fileHandleForReading.readabilityHandler = { handle in
                     buffer.append(handle.availableData)
                 }
@@ -79,6 +80,7 @@ enum RuntimeShell {
         } onCancel: {
             process.terminate()
         }
+        return (status, buffer.tail())
     }
 
     /// Runs a command and returns its non-empty output lines.
@@ -95,10 +97,12 @@ enum RuntimeShell {
     }
 }
 
-/// Accumulates `readabilityHandler` chunks and splits them into lines (thread-safe).
+/// Accumulates `readabilityHandler` chunks, splits them into lines (thread-safe), and keeps a tail.
 private final class LineBuffer: @unchecked Sendable {
     private let onLine: @Sendable (String) -> Void
     private var buffer = ""
+    private var tailLines: [String] = []
+    private let maxTail = 100
     private let lock = NSLock()
 
     init(onLine: @escaping @Sendable (String) -> Void) {
@@ -111,7 +115,9 @@ private final class LineBuffer: @unchecked Sendable {
         buffer += text
         var lines: [String] = []
         while let index = buffer.firstIndex(of: "\n") {
-            lines.append(String(buffer[buffer.startIndex..<index]))
+            let line = String(buffer[buffer.startIndex..<index])
+            lines.append(line)
+            store(line)
             buffer = String(buffer[buffer.index(after: index)...])
         }
         lock.unlock()
@@ -124,9 +130,26 @@ private final class LineBuffer: @unchecked Sendable {
         lock.lock()
         let remainder = buffer
         buffer = ""
+        store(remainder)
         lock.unlock()
         if !remainder.isEmpty {
             onLine(remainder)
+        }
+    }
+
+    /// The captured output, joined (most recent lines last), for diagnostics.
+    func tail() -> String {
+        lock.lock()
+        let lines = tailLines
+        lock.unlock()
+        return lines.joined(separator: "\n")
+    }
+
+    /// Must be called while holding `lock`.
+    private func store(_ line: String) {
+        tailLines.append(line)
+        if tailLines.count > maxTail {
+            tailLines.removeFirst(tailLines.count - maxTail)
         }
     }
 }
