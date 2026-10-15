@@ -82,6 +82,9 @@ struct CodeFileView: View {
 
     @EnvironmentObject var undoRegistration: UndoManagerRegistration
 
+    @State private var breakpointLines: Set<Int> = []
+    @State private var breakpointCancellables = Set<AnyCancellable>()
+
     @ObservedObject private var themeModel: ThemeModel = .shared
 
     @State private var treeSitter = TreeSitterClient()
@@ -188,6 +191,18 @@ struct CodeFileView: View {
         }
     }
 
+    /// Seeds the gutter breakpoint markers and keeps them in sync with the workspace store.
+    private func setUpBreakpoints() {
+        guard let store = codeFile.findWorkspace()?.breakpointStore, let url = codeFile.fileURL else { return }
+        breakpointLines = store.lines(for: url)
+        store.$breakpoints
+            .receive(on: RunLoop.main)
+            .sink { _ in
+                breakpointLines = store.lines(for: url)
+            }
+            .store(in: &breakpointCancellables)
+    }
+
     private var currentTheme: Theme {
         themeModel.selectedTheme ?? themeModel.themes.first!
     }
@@ -262,10 +277,18 @@ struct CodeFileView: View {
             symbolsDelegate: languageDelegate,
             inlayHintDelegate: showInlayHints ? languageDelegate : nil,
             foldRangeDelegate: languageDelegate,
-            documentHighlightDelegate: languageDelegate
+            documentHighlightDelegate: languageDelegate,
+            breakpointLines: breakpointLines,
+            onToggleBreakpoint: { line in
+                guard let store = codeFile.findWorkspace()?.breakpointStore, let url = codeFile.fileURL else {
+                    return
+                }
+                store.toggle(url, line: line)
+            }
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))
+        .onAppear(perform: setUpBreakpoints)
         .background {
             if colorScheme == .dark {
                 EffectView(.underPageBackground)

@@ -48,6 +48,9 @@ final class DebugSession: ObservableObject {
     @Published private(set) var variablesByReference: [Int: [DAPVariable]] = [:]
     @Published private(set) var console: [String] = []
 
+    /// Breakpoints to send to the adapter (set before/while a session runs).
+    var breakpoints: [Breakpoint] = []
+
     private var client: DebugAdapterClient?
     private var configurationDone = false
     private var launchTask: Task<Void, Never>?
@@ -122,14 +125,53 @@ final class DebugSession: ObservableObject {
         // Fallback: configure even if the adapter never sends `initialized`.
         Task { [weak self] in
             try? await Task.sleep(for: .seconds(1))
-            self?.sendConfigurationDoneIfNeeded()
+            self?.configureSession()
         }
     }
 
-    private func sendConfigurationDoneIfNeeded() {
-        guard !configurationDone, let client else { return }
+    /// Sends breakpoints and then `configurationDone`. Called on the adapter's `initialized` event (or a fallback).
+    private func configureSession() {
+        guard !configurationDone, client != nil else { return }
         configurationDone = true
-        Task { _ = try? await client.send(command: "configurationDone") }
+        Task { [weak self] in
+            guard let self else { return }
+            await self.sendAllBreakpoints()
+            _ = try? await self.client?.send(command: "configurationDone")
+        }
+    }
+
+    /// Updates the session's breakpoints and re-sends them if the session is already configured.
+    func updateBreakpoints(_ breakpoints: [Breakpoint]) {
+        self.breakpoints = breakpoints
+        guard configurationDone, client != nil else { return }
+        Task { await sendAllBreakpoints() }
+    }
+
+    private func sendAllBreakpoints() async {
+        let grouped = Dictionary(grouping: breakpoints.filter(\.enabled), by: \.filePath)
+        for (path, fileBreakpoints) in grouped {
+            await setBreakpoints(fileURL: URL(filePath: path), breakpoints: fileBreakpoints)
+        }
+    }
+
+    /// Sends `setBreakpoints` for one file and returns the adapter's breakpoint info.
+    @discardableResult
+    func setBreakpoints(fileURL: URL, breakpoints: [Breakpoint]) async -> [DAPBreakpoint] {
+        guard let client else { return [] }
+        let source = DAPSetBreakpointsSource(
+            name: fileURL.lastPathComponent,
+            path: fileURL.path(percentEncoded: false)
+        )
+        let sourceBreakpoints = breakpoints.map {
+            DAPSourceBreakpoint(line: $0.line, column: nil, condition: $0.condition)
+        }
+        guard let arguments = try? JSONValue.encode(
+            DAPSetBreakpointsArguments(source: source, breakpoints: sourceBreakpoints)
+        ), let response = try? await client.send(command: "setBreakpoints", arguments: arguments),
+              let body = response.body, let result = try? body.decode(DAPSetBreakpointsResponse.self) else {
+            return []
+        }
+        return result.breakpoints
     }
 
     // MARK: - Execution control
@@ -228,7 +270,7 @@ final class DebugSession: ObservableObject {
     private func handle(_ event: DAPEvent) {
         switch event.event {
         case "initialized":
-            sendConfigurationDoneIfNeeded()
+            configureSession()
         case "stopped":
             guard let body = event.body, let stopped = try? body.decode(DAPStoppedEventBody.self) else { return }
             state = .stopped(reason: stopped.reason)

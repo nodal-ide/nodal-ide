@@ -47,6 +47,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     var runConfigurationStore: RunConfigurationStore?
     var runController: RunController?
     var testRunner: TestRunner?
+    var breakpointStore: BreakpointStore?
     var workspaceSettingsManager: CEWorkspaceSettings?
     var taskNotificationHandler: TaskNotificationHandler = TaskNotificationHandler()
 
@@ -172,6 +173,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         self.runConfigurationStore = RunConfigurationStore(workspaceURL: url)
         self.runController = RunController(workspace: self)
         self.testRunner = TestRunner(workspace: self)
+        self.breakpointStore = BreakpointStore(workspaceURL: url)
         self.taskNotificationHandler.workspaceURL = url
 
         workspaceFileManager?.addObserver(undoRegistration)
