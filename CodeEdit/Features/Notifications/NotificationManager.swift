@@ -37,6 +37,7 @@ final class NotificationManager: NSObject, ObservableObject {
     ///   - actionButtonTitle: Title for the action button
     ///   - action: Closure to execute when action button is clicked
     ///   - isSticky: Whether the notification should persist until manually dismissed
+    @discardableResult
     func post(
         iconSymbol: String,
         iconColor: Color? = Color(.systemBlue),
@@ -45,7 +46,7 @@ final class NotificationManager: NSObject, ObservableObject {
         actionButtonTitle: String,
         action: @escaping () -> Void,
         isSticky: Bool = false
-    ) {
+    ) -> CENotification {
         let notification = CENotification(
             iconSymbol: iconSymbol,
             iconColor: iconColor,
@@ -58,6 +59,7 @@ final class NotificationManager: NSObject, ObservableObject {
         )
 
         postNotification(notification)
+        return notification
     }
 
     /// Posts a new notification

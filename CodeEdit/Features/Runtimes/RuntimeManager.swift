@@ -21,11 +21,31 @@ final class RuntimeManager: ObservableObject {
         return base
     }
 
+    /// Running/finished install & uninstall jobs (surfaced in the activity area).
+    let jobs = RuntimeJobCenter()
+
     private(set) var providers: [RuntimeKind: any RuntimeProvider] = [:]
 
     private init() {
         register(NodeRuntimeProvider())
         register(PHPRuntimeProvider())
+    }
+
+    // MARK: - Install / uninstall
+
+    func install(kind: RuntimeKind, version: RuntimeVersion) async {
+        guard let provider = provider(for: kind) else { return }
+        await jobs.run(kind: kind, version: version.version, operation: .install) { progress in
+            try await provider.install(version, progress: progress)
+        }
+    }
+
+    func uninstall(_ runtime: InstalledRuntime) async {
+        guard let provider = provider(for: runtime.kind) else { return }
+        await jobs.run(kind: runtime.kind, version: runtime.version, operation: .uninstall) { progress in
+            let _ = progress
+            try await provider.uninstall(runtime)
+        }
     }
 
     func register(_ provider: any RuntimeProvider) {
