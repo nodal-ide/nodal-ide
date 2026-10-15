@@ -33,12 +33,11 @@ extension WorkspaceDocument.SearchState {
                 for file in result.results {
                     taskGroup.addTask {
                         do {
-                            try await self.replaceOccurrencesInFile(
+                            return try await self.replaceOccurrencesInFile(
                                 fileURL: file.url,
                                 query: query,
                                 replacingTerm: replacingTerm
                             )
-                            return true
                         } catch {
                             // TODO: Write log; issue number: #0000
                             return false
@@ -82,29 +81,43 @@ extension WorkspaceDocument.SearchState {
         }
     }
 
-    /// Replaces occurrences of a specified query with a given replacement term in the content of a file.
+    /// Replaces occurrences of a specified query with a given replacement term in a file.
     ///
-    /// - Parameters:
-    ///     - fileURL: The URL of the file to be processed.
-    ///     - query:  The string to be searched for and replaced.
-    ///     - replacingTerm: The string to replace occurrences of the query.
-    ///     - options: The options for the search and replace operation.
-    ///             You can use options such as regular expression or case-insensitivity.
+    /// If the file is open in the workspace, its **in-memory document** is updated (so the editor reflects the
+    /// change and unsaved edits are preserved); otherwise the file is rewritten on disk.
     ///
-    /// The function performs the replacement in memory and then writes the modified content back to the file
+    /// - Returns: `true` if the file's content changed.
+    @MainActor
     func replaceOccurrencesInFile(
         fileURL: URL,
         query: String,
         replacingTerm: String
-    ) async throws {
+    ) async throws -> Bool {
+        if let file = workspace.workspaceFileManager?.getFile(fileURL.path)
+                    ?? workspace.workspaceFileManager?.getFile(fileURL.relativePath),
+           let document = file.fileDocument,
+           let content = document.content {
+            let original = content.string
+            let updated = original.replacingOccurrences(
+                of: query,
+                with: replacingTerm,
+                options: replaceOptions
+            )
+            guard updated != original else { return false }
+            content.replaceCharacters(in: NSRange(location: 0, length: content.length), with: updated)
+            document.updateChangeCount(.changeDone)
+            return true
+        }
+
         let fileContent = try String(contentsOf: fileURL, encoding: .utf8)
         let updatedContent = fileContent.replacingOccurrences(
             of: query,
             with: replacingTerm,
-            options: self.replaceOptions
+            options: replaceOptions
         )
-
+        guard updatedContent != fileContent else { return false }
         try updatedContent.write(to: fileURL, atomically: true, encoding: .utf8)
+        return true
     }
 
     /// Replaces a specified range of text within a file with a new string.
@@ -135,14 +148,6 @@ extension WorkspaceDocument.SearchState {
             alert.runModal()
 
             return
-        }
-
-        var replaceOptions = NSString.CompareOptions()
-        if selectedMode.second == .RegularExpression {
-            replaceOptions = [.regularExpression]
-        }
-        if !caseSensitive {
-            replaceOptions = [.caseInsensitive]
         }
 
         let updatedContent = fileContent.replacingOccurrences(
