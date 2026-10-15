@@ -228,6 +228,11 @@ final class DebugSession: ObservableObject {
         variablesByReference[reference] = result.variables
     }
 
+    /// Appends a line to the debug console (used for evaluated expressions).
+    func log(_ line: String) {
+        console.append(line)
+    }
+
     func evaluate(_ expression: String, frameID: Int? = nil) async -> String? {
         guard let client else { return nil }
         let arguments = try? JSONValue.encode(DAPEvaluateArguments(expression: expression, frameId: frameID))
