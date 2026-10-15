@@ -163,14 +163,19 @@ class UtilityAreaViewModel: ObservableObject {
         return id
     }
 
+    /// The directory new terminals should start in: the focused terminal's current working directory,
+    /// falling back to its starting URL.
+    func inheritedTerminalRootURL() -> URL? {
+        let focused = focusedTerminalID ?? selectedTerminals.first
+        guard let terminal = terminals.first(where: { $0.id == focused }) else { return nil }
+        return terminal.cwd ?? terminal.url
+    }
+
     /// Splits the terminal area, creating a new terminal alongside the focused one.
     /// - Parameter axis: The split orientation.
     func splitFocusedTerminal(axis: TerminalSplitAxis = .horizontal) {
         guard splitTerminalID == nil, let primary = selectedTerminals.first else { return }
-        let focused = focusedTerminalID ?? primary
-        let baseURL = terminals.first(where: { $0.id == focused })?.url
-
-        let secondary = insertTerminal(rootURL: baseURL)
+        let secondary = insertTerminal(rootURL: inheritedTerminalRootURL())
         splitTerminalID = secondary
         splitAxis = axis
         focusedTerminalID = secondary
@@ -217,7 +222,7 @@ class UtilityAreaViewModel: ObservableObject {
         }
 
         let id = UUID()
-        let url = terminals[index].url
+        let url = terminals[index].cwd ?? terminals[index].url
         let shell = terminals[index].shell
         if let shellPid = TerminalCache.shared.getTerminalView(replacing)?.process.shellPid {
             kill(shellPid, SIGKILL)

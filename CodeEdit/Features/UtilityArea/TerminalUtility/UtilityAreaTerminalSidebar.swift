@@ -38,29 +38,29 @@ struct UtilityAreaTerminalSidebar: View {
         .accentColor(.secondary)
         .contextMenu {
             Button("New Terminal") {
-                utilityAreaViewModel.addTerminal(rootURL: workspace.fileURL)
+                utilityAreaViewModel.addTerminal(rootURL: utilityAreaViewModel.inheritedTerminalRootURL() ?? workspace.fileURL)
             }
             Menu("New Terminal With Profile") {
                 Button("Default") {
-                    utilityAreaViewModel.addTerminal(rootURL: workspace.fileURL)
+                    utilityAreaViewModel.addTerminal(rootURL: utilityAreaViewModel.inheritedTerminalRootURL() ?? workspace.fileURL)
                 }
                 Divider()
                 ForEach(Shell.allCases, id: \.self) { shell in
                     Button(shell.rawValue) {
-                        utilityAreaViewModel.addTerminal(shell: shell, rootURL: workspace.fileURL)
+                        utilityAreaViewModel.addTerminal(shell: shell, rootURL: utilityAreaViewModel.inheritedTerminalRootURL() ?? workspace.fileURL)
                     }
                 }
             }
         }
         .onChange(of: utilityAreaViewModel.terminals) { _, newValue in
             if newValue.isEmpty {
-                utilityAreaViewModel.addTerminal(rootURL: workspace.fileURL)
+                utilityAreaViewModel.addTerminal(rootURL: utilityAreaViewModel.inheritedTerminalRootURL() ?? workspace.fileURL)
             }
         }
         .paneToolbar {
             PaneToolbarSection {
                 Button {
-                    utilityAreaViewModel.addTerminal(rootURL: workspace.fileURL)
+                    utilityAreaViewModel.addTerminal(rootURL: utilityAreaViewModel.inheritedTerminalRootURL() ?? workspace.fileURL)
                 } label: {
                     Image(systemName: "plus")
                 }
