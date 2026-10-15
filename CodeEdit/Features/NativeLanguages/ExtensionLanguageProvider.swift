@@ -239,7 +239,15 @@ final class ExtensionLanguageProvider: LanguageProvider {
     @MainActor
     func diagnostics(for textView: TextViewController) async -> [EditorDiagnostic] {
         let params = DiagnosticsParams(file: filePath, text: textView.textView.string)
-        guard let diagnostics = try? await server.request("diagnostics", params: params, as: [RPCDiagnostic].self) else {
+        guard let diagnostics = try? await server.request(
+
+            "diagnostics",
+
+            params: params,
+
+            as: [RPCDiagnostic].self
+
+        ) else {
             return []
         }
         return diagnostics.map { diagnostic in
@@ -329,18 +337,18 @@ final class ExtensionLanguageProvider: LanguageProvider {
     // MARK: Helpers
 
     private static func prefix(in source: String, before offset: Int) -> String {
-        let ns = source as NSString
-        let safeOffset = min(max(offset, 0), ns.length)
+        let nsString = source as NSString
+        let safeOffset = min(max(offset, 0), nsString.length)
         var index = safeOffset
         while index > 0 {
-            let scalar = ns.character(at: index - 1)
+            let scalar = nsString.character(at: index - 1)
             guard let unicode = UnicodeScalar(scalar),
                   CharacterSet.alphanumerics.contains(unicode) || unicode == "_" || unicode == "\\" else {
                 break
             }
             index -= 1
         }
-        return ns.substring(with: NSRange(location: index, length: safeOffset - index))
+        return nsString.substring(with: NSRange(location: index, length: safeOffset - index))
     }
 
     private static func severity(from string: String?) -> EditorDiagnosticSeverity {

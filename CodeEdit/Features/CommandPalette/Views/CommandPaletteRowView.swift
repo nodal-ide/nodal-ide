@@ -34,27 +34,28 @@ struct CommandPaletteRowView: View {
         .frame(maxWidth: .infinity)
     }
 
-    @ViewBuilder
     private var icon: some View {
-        switch item.kind {
-        case .file:
-            if let url = item.fileURL {
-                Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 20, height: 20)
-            } else {
-                Image(systemName: "doc")
+        Group {
+            switch item.kind {
+            case .file:
+                if let url = item.fileURL {
+                    Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                } else {
+                    Image(systemName: "doc")
+                        .frame(width: 20)
+                }
+            case .symbol:
+                Image(systemName: symbolIcon)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
+            case .command:
+                Image(systemName: "command")
+                    .foregroundStyle(.secondary)
                     .frame(width: 20)
             }
-        case .symbol:
-            Image(systemName: symbolIcon)
-                .foregroundStyle(.secondary)
-                .frame(width: 20)
-        case .command:
-            Image(systemName: "command")
-                .foregroundStyle(.secondary)
-                .frame(width: 20)
         }
     }
 

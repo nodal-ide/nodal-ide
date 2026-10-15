@@ -82,7 +82,15 @@ enum DocsetBuilder {
         guard let data = try? Data(contentsOf: url),
               let text = String(data: data.prefix(4096), encoding: .utf8),
               let start = text.range(of: "<title>", options: .caseInsensitive),
-              let end = text.range(of: "</title>", options: .caseInsensitive, range: start.upperBound..<text.endIndex) else {
+              let end = text.range(
+
+                  of: "</title>",
+
+                  options: .caseInsensitive,
+
+                  range: start.upperBound..<text.endIndex
+
+              ) else {
             return (fallback as NSString).lastPathComponent
         }
         let title = String(text[start.upperBound..<end.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)

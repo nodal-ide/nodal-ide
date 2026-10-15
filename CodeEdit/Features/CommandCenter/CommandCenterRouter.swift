@@ -12,11 +12,11 @@ import CodeEditSourceEditor
 enum CommandCenterRouter {
     static func activate(_ item: CommandCenterItem, workspace: WorkspaceDocument?) {
         switch item.kind {
-        case .file(let url, let range):
+        case let .file(url, range):
             open(url, range: range)
-        case .symbol(let url, let range):
+        case let .symbol(url, range):
             open(url, range: range)
-        case .position(let url, let line, let character):
+        case let .position(url, line, character):
             open(url, range: nil, position: (line, character))
         case .command(let id):
             CommandManager.shared.executeCommand(id)
@@ -66,7 +66,8 @@ enum CommandCenterRouter {
             Task { try? await workspace.sourceControlManager?.checkoutBranch(branch: branch) }
         } else if route.hasPrefix("run:") {
             let id = String(route.dropFirst("run:".count))
-            guard let task = workspace.workspaceSettingsManager?.settings.tasks.first(where: { $0.id.uuidString == id }),
+            let tasks = workspace.workspaceSettingsManager?.settings.tasks ?? []
+            guard let task = tasks.first(where: { $0.id.uuidString == id }),
                   let manager = workspace.taskManager else {
                 return
             }

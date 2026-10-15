@@ -12,6 +12,16 @@ enum DiffParser {
     ///
     /// Only the first file in the diff is returned; pass a single-file diff when multiple files are possible.
     static func parse(_ diff: String) -> FileDiff {
+        var builder = Builder()
+        for rawLine in diff.split(separator: "\n", omittingEmptySubsequences: false) {
+            builder.consume(String(rawLine))
+        }
+        builder.flushHunk()
+        return builder.build()
+    }
+
+    /// Incremental parser state for a unified diff.
+    private struct Builder {
         var oldPath: String?
         var newPath: String?
         var hunks: [DiffHunk] = []
@@ -26,7 +36,40 @@ enum DiffParser {
         var oldLine = 0
         var newLine = 0
 
-        func flushHunk() {
+        mutating func consume(_ line: String) {
+            if line.hasPrefix("@@") {
+                inHunks = true
+                flushHunk()
+                if let header = DiffParser.parseHunkHeader(line) {
+                    hunkOldStart = header.oldStart
+                    hunkOldCount = header.oldCount
+                    hunkNewStart = header.newStart
+                    hunkNewCount = header.newCount
+                    oldLine = header.oldStart
+                    newLine = header.newStart
+                }
+            } else if line.hasPrefix("--- ") {
+                oldPath = String(line.dropFirst(4))
+            } else if line.hasPrefix("+++ ") {
+                newPath = String(line.dropFirst(4))
+            } else if line.hasPrefix("+") {
+                currentLines.append(diffLine(line, kind: .addition, old: nil, new: newLine))
+                newLine += 1
+            } else if line.hasPrefix("-") {
+                currentLines.append(diffLine(line, kind: .deletion, old: oldLine, new: nil))
+                oldLine += 1
+            } else if line.hasPrefix(" ") {
+                currentLines.append(diffLine(line, kind: .context, old: oldLine, new: newLine))
+                oldLine += 1
+                newLine += 1
+            } else if line.hasPrefix("\\") {
+                // "\ No newline at end of file" — ignore.
+            } else if !inHunks, !line.isEmpty {
+                headerLines.append(line)
+            }
+        }
+
+        mutating func flushHunk() {
             guard !currentLines.isEmpty || hunkOldCount > 0 || hunkNewCount > 0 else { return }
             hunks.append(
                 DiffHunk(
@@ -40,61 +83,19 @@ enum DiffParser {
             currentLines = []
         }
 
-        for rawLine in diff.split(separator: "\n", omittingEmptySubsequences: false) {
-            let line = String(rawLine)
-
-            if line.hasPrefix("@@") {
-                inHunks = true
-                flushHunk()
-                if let header = parseHunkHeader(line) {
-                    hunkOldStart = header.oldStart
-                    hunkOldCount = header.oldCount
-                    hunkNewStart = header.newStart
-                    hunkNewCount = header.newCount
-                    oldLine = header.oldStart
-                    newLine = header.newStart
-                }
-            } else if line.hasPrefix("--- ") {
-                oldPath = String(line.dropFirst(4))
-            } else if line.hasPrefix("+++ ") {
-                newPath = String(line.dropFirst(4))
-            } else if line.hasPrefix("+") {
-                currentLines.append(
-                    DiffLine(kind: .addition, text: String(line.dropFirst()), oldLineNumber: nil, newLineNumber: newLine)
-                )
-                newLine += 1
-            } else if line.hasPrefix("-") {
-                currentLines.append(
-                    DiffLine(kind: .deletion, text: String(line.dropFirst()), oldLineNumber: oldLine, newLineNumber: nil)
-                )
-                oldLine += 1
-            } else if line.hasPrefix(" ") {
-                currentLines.append(
-                    DiffLine(
-                        kind: .context,
-                        text: String(line.dropFirst()),
-                        oldLineNumber: oldLine,
-                        newLineNumber: newLine
-                    )
-                )
-                oldLine += 1
-                newLine += 1
-            } else if line.hasPrefix("\\") {
-                // "\ No newline at end of file" — ignore.
-                continue
-            } else if !inHunks, !line.isEmpty {
-                headerLines.append(line)
-            }
+        func build() -> FileDiff {
+            let header = headerLines.isEmpty ? "" : headerLines.joined(separator: "\n") + "\n"
+            return FileDiff(
+                oldPath: DiffParser.stripPrefix(oldPath),
+                newPath: DiffParser.stripPrefix(newPath),
+                header: header,
+                hunks: hunks
+            )
         }
-        flushHunk()
 
-        let header = headerLines.isEmpty ? "" : headerLines.joined(separator: "\n") + "\n"
-        return FileDiff(
-            oldPath: stripPrefix(oldPath),
-            newPath: stripPrefix(newPath),
-            header: header,
-            hunks: hunks
-        )
+        private func diffLine(_ line: String, kind: DiffLine.Kind, old: Int?, new: Int?) -> DiffLine {
+            DiffLine(kind: kind, text: String(line.dropFirst()), oldLineNumber: old, newLineNumber: new)
+        }
     }
 
     /// Strips the leading `a/`/`b/` and any tab-suffix from a diff path.

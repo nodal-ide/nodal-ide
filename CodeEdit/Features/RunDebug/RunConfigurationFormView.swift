@@ -32,7 +32,13 @@ struct RunConfigurationFormView: View {
                 TextField("Working Directory", text: $configuration.workingDirectory)
                     .accessibilityLabel("Working Directory")
             } footer: {
-                Text("Working directory is relative to the workspace (or absolute). Leave empty for the workspace root.")
+                Text(
+
+                    "Working directory is relative to the workspace (or absolute). "
+
+                    + "Leave empty for the workspace root."
+
+                )
                     .font(.caption)
             }
 

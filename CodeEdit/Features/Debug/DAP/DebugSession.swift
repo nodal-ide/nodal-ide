@@ -213,8 +213,11 @@ final class DebugSession: ObservableObject {
         Task { _ = try? await client.send(command: command, arguments: value) }
     }
 
-    // MARK: - Introspection
+}
 
+// MARK: - Introspection
+
+extension DebugSession {
     func selectFrame(_ frame: DAPStackFrame) async {
         currentFrameID = frame.id
         await refreshScopes(frameID: frame.id)
@@ -298,26 +301,9 @@ final class DebugSession: ObservableObject {
         case "initialized":
             configureSession()
         case "stopped":
-            guard let body = event.body, let stopped = try? body.decode(DAPStoppedEventBody.self) else { return }
-            state = .stopped(reason: stopped.reason)
-            if let threadID = stopped.threadId {
-                currentThreadID = threadID
-            }
-            Task { [weak self] in
-                guard let self else { return }
-                await self.refreshThreads()
-                if let threadID = self.currentThreadID {
-                    await self.refreshStackTrace(threadID: threadID)
-                }
-            }
+            handleStopped(event)
         case "continued":
-            state = .running
-            callStack = []
-            scopes = []
-            if let body = event.body, let continued = try? body.decode(DAPContinuedEventBody.self),
-               let threadID = continued.threadId {
-                currentThreadID = threadID
-            }
+            handleContinued(event)
         case "output":
             if let body = event.body, let output = try? body.decode(DAPOutputEventBody.self) {
                 console.append(output.output)
@@ -326,6 +312,31 @@ final class DebugSession: ObservableObject {
             state = .terminated
         default:
             break
+        }
+    }
+
+    private func handleStopped(_ event: DAPEvent) {
+        guard let body = event.body, let stopped = try? body.decode(DAPStoppedEventBody.self) else { return }
+        state = .stopped(reason: stopped.reason)
+        if let threadID = stopped.threadId {
+            currentThreadID = threadID
+        }
+        Task { [weak self] in
+            guard let self else { return }
+            await self.refreshThreads()
+            if let threadID = self.currentThreadID {
+                await self.refreshStackTrace(threadID: threadID)
+            }
+        }
+    }
+
+    private func handleContinued(_ event: DAPEvent) {
+        state = .running
+        callStack = []
+        scopes = []
+        if let body = event.body, let continued = try? body.decode(DAPContinuedEventBody.self),
+           let threadID = continued.threadId {
+            currentThreadID = threadID
         }
     }
 

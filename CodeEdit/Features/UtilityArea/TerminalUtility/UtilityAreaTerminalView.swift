@@ -148,39 +148,10 @@ struct UtilityAreaTerminalView: View {
                 if !fill {
                     Spacer(minLength: 0).frame(minHeight: 0)
                 }
-                TerminalEmulatorView(
-                    url: terminal.url,
-                    terminalID: terminal.id,
-                    shellType: terminal.shell,
-                    onTitleChange: { newTitle in
-                        // This can be called whenever, even in a view update so it needs to be dispatched.
-                        DispatchQueue.main.async { [weak utilityAreaViewModel] in
-                            utilityAreaViewModel?.updateTerminal(terminal.id, title: newTitle)
-                        }
-                    },
-                    onCwdChange: { url in
-                        DispatchQueue.main.async { [weak utilityAreaViewModel] in
-                            utilityAreaViewModel?.updateTerminal(terminal.id, cwd: url)
-                        }
-                    },
-                    onCommandStart: {
-                        DispatchQueue.main.async { [weak utilityAreaViewModel] in
-                            utilityAreaViewModel?.commandStarted(terminal.id)
-                        }
-                    },
-                    onCommandFinish: { exitCode in
-                        DispatchQueue.main.async { [weak utilityAreaViewModel] in
-                            utilityAreaViewModel?.commandFinished(terminal.id, exitCode: exitCode)
-                        }
-                    },
-                    onOpenLink: { link in
-                        openTerminalLink(link)
-                    },
-                    environment: RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)
-                )
-                .frame(height: fill ? nil : max(0, constrainedHeight - 1))
-                .id(terminal.id)
-                .accessibilityIdentifier("terminal")
+                terminalEmulator(terminal)
+                    .frame(height: fill ? nil : max(0, constrainedHeight - 1))
+                    .id(terminal.id)
+                    .accessibilityIdentifier("terminal")
             }
         }
         .overlay {
@@ -197,15 +168,38 @@ struct UtilityAreaTerminalView: View {
         }
     }
 
-    /// Estimate the font's height for keeping the terminal aligned with the bottom.
-    /// - Parameter nsFont: The font being used in the terminal.
-    /// - Returns: The height in pixels of the font.
-    func fontTotalHeight(nsFont: NSFont) -> CGFloat {
-        let ctFont = nsFont as CTFont
-        let ascent = CTFontGetAscent(ctFont)
-        let descent = CTFontGetDescent(ctFont)
-        let leading = CTFontGetLeading(ctFont)
-        return ascent + descent + leading
+    /// The terminal emulator for a pane, wiring its callbacks back into the view model.
+    private func terminalEmulator(_ terminal: UtilityAreaTerminal) -> some View {
+        TerminalEmulatorView(
+            url: terminal.url,
+            terminalID: terminal.id,
+            shellType: terminal.shell,
+            onTitleChange: { newTitle in
+                // This can be called whenever, even in a view update so it needs to be dispatched.
+                DispatchQueue.main.async { [weak utilityAreaViewModel] in
+                    utilityAreaViewModel?.updateTerminal(terminal.id, title: newTitle)
+                }
+            },
+            onCwdChange: { url in
+                DispatchQueue.main.async { [weak utilityAreaViewModel] in
+                    utilityAreaViewModel?.updateTerminal(terminal.id, cwd: url)
+                }
+            },
+            onCommandStart: {
+                DispatchQueue.main.async { [weak utilityAreaViewModel] in
+                    utilityAreaViewModel?.commandStarted(terminal.id)
+                }
+            },
+            onCommandFinish: { exitCode in
+                DispatchQueue.main.async { [weak utilityAreaViewModel] in
+                    utilityAreaViewModel?.commandFinished(terminal.id, exitCode: exitCode)
+                }
+            },
+            onOpenLink: { link in
+                openTerminalLink(link)
+            },
+            environment: RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)
+        )
     }
 
     var body: some View {
@@ -287,6 +281,20 @@ struct UtilityAreaTerminalView: View {
             Task { await RuntimeEnvironment.shared.refresh(workspace: workspace) }
         }
         .accessibilityIdentifier("terminal-area")
+    }
+
+}
+
+extension UtilityAreaTerminalView {
+    /// Estimate the font's height for keeping the terminal aligned with the bottom.
+    /// - Parameter nsFont: The font being used in the terminal.
+    /// - Returns: The height in pixels of the font.
+    func fontTotalHeight(nsFont: NSFont) -> CGFloat {
+        let ctFont = nsFont as CTFont
+        let ascent = CTFontGetAscent(ctFont)
+        let descent = CTFontGetDescent(ctFont)
+        let leading = CTFontGetLeading(ctFont)
+        return ascent + descent + leading
     }
 
     @ViewBuilder var backgroundEffectView: some View {

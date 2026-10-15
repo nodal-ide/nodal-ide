@@ -301,7 +301,8 @@ extension FindNavigatorListViewController: NSMenuDelegate {
         menu.addItem(replaceItem)
     }
 
-    @objc private func replaceClickedMatch(_ sender: NSMenuItem) {
+    @objc
+    private func replaceClickedMatch(_ sender: NSMenuItem) {
         guard let match = sender.representedObject as? SearchResultMatchModel,
               let state = workspace.searchState else {
             return

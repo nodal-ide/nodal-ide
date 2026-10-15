@@ -40,7 +40,7 @@ final class LSPLanguageProvider: LanguageProvider {
 
     /// The running server for this file's language, resolved lazily (it may still be starting when the
     /// file is opened).
-    private var server: LanguageServer<CodeFileDocument>? {
+    var server: LanguageServer<CodeFileDocument>? {
         MainActor.assumeIsolated {
             guard let lsp = ServiceContainer.resolve(.singleton, LSPService.self),
                   let language = LanguageIdentifier(rawValue: languageID) else {
@@ -54,7 +54,7 @@ final class LSPLanguageProvider: LanguageProvider {
     private var completionPosition: Position?
     private var completionItems: [CompletionItem] = []
 
-    private var documentURI: String { fileURL.lspURI }
+    var documentURI: String { fileURL.lspURI }
 
     nonisolated init(
         languageID: String,
@@ -71,7 +71,9 @@ final class LSPLanguageProvider: LanguageProvider {
     // MARK: - JumpToDefinition
 
     func queryLinks(forRange range: NSRange, textView: TextViewController) async -> [JumpToDefinitionLink]? {
-        guard let server = server, let position = textView.textView.lspRangeFrom(nsRange: range)?.start else { return nil }
+        guard let server = server,
+
+              let position = textView.textView.lspRangeFrom(nsRange: range)?.start else { return nil }
         guard let response = try? await server.requestGoToDefinition(for: documentURI, position: position) else {
             return nil
         }
@@ -112,73 +114,13 @@ final class LSPLanguageProvider: LanguageProvider {
 
     @MainActor
     func hoverInfo(forRange range: NSRange, textView: TextViewController) async -> HoverInfo? {
-        guard let server = server, let position = textView.textView.lspRangeFrom(nsRange: range)?.start else { return nil }
+        guard let server = server,
+
+              let position = textView.textView.lspRangeFrom(nsRange: range)?.start else { return nil }
         guard let hover = try? await server.requestHover(for: documentURI, position) else { return nil }
         let contents = Self.hoverText(hover.contents)
         guard !contents.isEmpty else { return nil }
         return HoverInfo(contents: contents, range: range)
-    }
-
-    // MARK: - Signature help
-
-    @MainActor
-    func signatureHelp(
-        calleeRange: NSRange,
-        argumentIndex: Int,
-        textView: TextViewController
-    ) async -> SignatureHelpInfo? {
-        guard let server = server, let position = textView.textView.lspRangeFrom(nsRange: calleeRange)?.start else {
-            return nil
-        }
-        guard let help = try? await server.requestSignatureHelp(for: documentURI, position),
-              let signature = help.signatures.first else {
-            return nil
-        }
-        let parameters = (signature.parameters ?? []).map { Self.plainText($0.label) }
-        let active = help.activeParameter ?? signature.activeParameter.map { Int($0) } ?? argumentIndex
-        return SignatureHelpInfo(signature: signature.label, parameters: parameters, activeParameter: active)
-    }
-
-    // MARK: - Document symbols
-
-    @MainActor
-    func documentSymbols(for textView: TextViewController) async -> [EditorSymbol] {
-        guard let server = server, let response = try? await server.requestSymbols(for: documentURI) else {
-            return []
-        }
-
-        var result: [EditorSymbol] = []
-        switch response {
-        case .optionA(let symbols):
-            func add(_ symbol: DocumentSymbol) {
-                result.append(
-                    EditorSymbol(
-                        name: symbol.name,
-                        detail: symbol.detail,
-                        position: CursorPosition(
-                            line: symbol.selectionRange.start.line + 1,
-                            column: symbol.selectionRange.start.character + 1
-                        )
-                    )
-                )
-                symbol.children?.forEach(add)
-            }
-            symbols.forEach(add)
-        case .optionB(let infos):
-            for info in infos {
-                result.append(
-                    EditorSymbol(
-                        name: info.name,
-                        detail: info.containerName,
-                        position: CursorPosition(
-                            line: info.location.range.start.line + 1,
-                            column: info.location.range.start.character + 1
-                        )
-                    )
-                )
-            }
-        }
-        return result
     }
 
     // MARK: - Diagnostics
@@ -241,72 +183,6 @@ final class LSPLanguageProvider: LanguageProvider {
         }
     }
 
-    // MARK: - Inlay hints
-
-    @MainActor
-    func inlayHints(forVisibleRange range: NSRange, textView: TextViewController) async -> [EditorInlayHint] {
-        guard let server = server,
-              let lspRange = textView.textView.lspRangeFrom(nsRange: range) else {
-            return []
-        }
-        guard let hints = try? await server.requestInlayHint(for: documentURI, lspRange) else {
-            return []
-        }
-        return hints.compactMap { hint in
-            guard let offset = textView.textView.offset(forLSPPosition: hint.position) else { return nil }
-            let label: String
-            switch hint.label {
-            case .optionA(let string):
-                label = string
-            case .optionB(let parts):
-                label = parts.map(\.value).joined()
-            }
-            guard !label.isEmpty else { return nil }
-            return EditorInlayHint(offset: offset, text: label)
-        }
-    }
-
-    // MARK: - Document highlights
-
-    @MainActor
-    func documentHighlights(
-        at position: CursorPosition,
-        textView: TextViewController
-    ) async -> [EditorDocumentHighlight] {
-        guard let server = server,
-              let lspPosition = textView.textView.lspRangeFrom(nsRange: position.range)?.start else {
-            return []
-        }
-        guard let highlights = try? await server.requestHighlight(
-            for: documentURI,
-            position: lspPosition
-        ) else {
-            return []
-        }
-        return highlights.compactMap { highlight in
-            guard let range = textView.textView.nsRange(fromLSP: highlight.range) else { return nil }
-            return EditorDocumentHighlight(range: range, kind: highlight.kind?.rawValue)
-        }
-    }
-
-    // MARK: - Folding ranges
-
-    @MainActor
-    func foldRanges(for textView: TextViewController) async -> [EditorFoldRange] {
-        guard let server = server,
-              let ranges = try? await server.requestFoldingRange(for: documentURI) else {
-            return []
-        }
-        return ranges.compactMap { range in
-            guard range.endLine > range.startLine else { return nil }
-            return EditorFoldRange(
-                startLine: range.startLine,
-                endLine: range.endLine,
-                kind: range.kind?.rawValue
-            )
-        }
-    }
-
     // MARK: - Completion
 
     @MainActor
@@ -317,7 +193,9 @@ final class LSPLanguageProvider: LanguageProvider {
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
-        guard let server = server, let position = textView.textView.lspRangeFrom(nsRange: cursorPosition.range)?.start else {
+        guard let server = server,
+
+              let position = textView.textView.lspRangeFrom(nsRange: cursorPosition.range)?.start else {
             return nil
         }
         guard let response = try? await server.requestCompletion(for: documentURI, position: position) else {
@@ -350,10 +228,10 @@ final class LSPLanguageProvider: LanguageProvider {
         guard let startPosition = completionPosition, !completionItems.isEmpty else { return nil }
         let prefixStart = textView.textView.offset(forLSPPosition: startPosition) ?? 0
         let cursor = cursorPosition.range.location
-        let ns = textView.textView.string as NSString
-        let clampedStart = min(max(prefixStart, 0), ns.length)
-        let clampedEnd = min(max(cursor, clampedStart), ns.length)
-        let prefix = ns.substring(with: NSRange(location: clampedStart, length: clampedEnd - clampedStart))
+        let nsString = textView.textView.string as NSString
+        let clampedStart = min(max(prefixStart, 0), nsString.length)
+        let clampedEnd = min(max(cursor, clampedStart), nsString.length)
+        let prefix = nsString.substring(with: NSRange(location: clampedStart, length: clampedEnd - clampedStart))
 
         let filtered = prefix.isEmpty
             ? completionItems
@@ -410,14 +288,14 @@ final class LSPLanguageProvider: LanguageProvider {
         )
     }
 
-    private static func plainText(_ option: TwoTypeOption<String, MarkupContent>) -> String {
+    static func plainText(_ option: TwoTypeOption<String, MarkupContent>) -> String {
         switch option {
         case .optionA(let string): return string
         case .optionB(let content): return content.value
         }
     }
 
-    private static func plainText(_ option: TwoTypeOption<String, [UInt]>) -> String {
+    static func plainText(_ option: TwoTypeOption<String, [UInt]>) -> String {
         switch option {
         case .optionA(let string): return string
         case .optionB(let offsets): return offsets.map(String.init).joined(separator: "-")

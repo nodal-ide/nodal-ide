@@ -140,186 +140,25 @@ enum LSPEditorActions {
         }
     }
 
-    // MARK: - Call hierarchy
-
-    /// Prepares a call hierarchy at the cursor and returns the items (usually one) it applies to.
-    static func prepareCallHierarchy(workspace: WorkspaceDocument?) async -> [CallHierarchyEntry] {
-        guard let workspace,
-              let context = activeContext(workspace: workspace),
-              let position = position(in: context.controller.textView) else {
-            return []
-        }
-        guard let items = try? await context.server.requestPrepareCallHierarchy(
-            for: context.fileURL.lspURI,
-            position: position
-        ) else {
-            return []
-        }
-        return items.map(callHierarchyEntry(from:))
-    }
-
-    /// Fetches the incoming or outgoing calls for a prepared call-hierarchy entry.
-    static func callHierarchyCalls(
-        for entry: CallHierarchyEntry,
-        direction: CallHierarchyDirection,
-        workspace: WorkspaceDocument?
-    ) async -> [CallHierarchyCall] {
-        guard let server = activeContext(workspace: workspace)?.server else {
-            return []
-        }
-        switch direction {
-        case .incoming:
-            guard let calls = try? await server.requestCallHierarchyIncomingCalls(entry.item) else {
-                return []
-            }
-            return calls.map { call in
-                CallHierarchyCall(
-                    id: "in:\(call.from.uri):\(call.from.selectionRange.start.line):\(call.from.name)",
-                    entry: callHierarchyEntry(from: call.from),
-                    callRanges: call.fromRanges
-                )
-            }
-        case .outgoing:
-            guard let calls = try? await server.requestCallHierarchyOutgoingCalls(entry.item) else {
-                return []
-            }
-            return calls.map { call in
-                CallHierarchyCall(
-                    id: "out:\(call.to.uri):\(call.to.selectionRange.start.line):\(call.to.name)",
-                    entry: callHierarchyEntry(from: call.to),
-                    callRanges: call.fromRanges
-                )
-            }
-        }
-    }
-
-    private static func callHierarchyEntry(from item: CallHierarchyItem) -> CallHierarchyEntry {
-        let start = item.selectionRange.start
-        return CallHierarchyEntry(
-            id: "\(item.uri):\(start.line):\(start.character):\(item.name)",
-            name: item.name,
-            detail: item.detail,
-            kind: item.kind,
-            fileURL: URL(string: item.uri),
-            line: start.line,
-            column: start.character,
-            item: item
-        )
-    }
-
-    // MARK: - References
-
-    /// Finds references to the symbol at the cursor and returns result rows for the references panel.
-    static func referenceItems(workspace: WorkspaceDocument?) async -> [PaletteItem] {
-        guard let workspace, let context = activeContext(workspace: workspace),
-              let position = position(in: context.controller.textView) else {
-            return []
-        }
-        guard let locations = try? await context.server.requestFindReferences(
-            for: context.fileURL.lspURI,
-            position,
-            true
-        ) else {
-            return []
-        }
-        let workspacePath = workspace.fileURL?.path
-        return (locations ?? []).compactMap {
-            referenceItem(for: $0, workspace: workspace, workspacePath: workspacePath)
-        }
-    }
-
-    private static func referenceItem(
-        for location: Location,
-        workspace: WorkspaceDocument,
-        workspacePath: String?
-    ) -> PaletteItem? {
-        guard let url = URL(string: location.uri) else { return nil }
-        let line = location.range.start.line + 1
-        let column = location.range.start.character + 1
-
-        var title = url.lastPathComponent
-        var range: NSRange?
-        if let content = string(for: url, workspace: workspace),
-           let nsRange = nsRange(from: location.range, in: content) {
-            range = nsRange
-            let symbol = (content as NSString).substring(with: nsRange)
-            if !symbol.isEmpty, !symbol.contains("\n") {
-                title = symbol
-            } else {
-                title = lineText(at: line - 1, in: content) ?? url.lastPathComponent
-            }
-        }
-
-        var subtitle = "\(url.lastPathComponent):\(line):\(column)"
-        if let workspacePath, url.path.hasPrefix(workspacePath + "/") {
-            subtitle = url.path
-                .replacingOccurrences(of: workspacePath + "/", with: "") + ":\(line):\(column)"
-        }
-
-        return PaletteItem(
-            id: "ref:\(location.uri):\(line):\(column)",
-            kind: .symbol,
-            title: title,
-            subtitle: subtitle,
-            fileURL: url,
-            range: range,
-            commandID: nil,
-            matchedCharacters: [],
-            symbolKind: nil
-        )
-    }
-
-    /// Returns the current text of a file, preferring an open document over disk.
-    private static func string(for url: URL, workspace: WorkspaceDocument) -> String? {
-        if let file = workspace.workspaceFileManager?.getFile(url.path)
-                    ?? workspace.workspaceFileManager?.getFile(url.relativePath),
-           let content = file.fileDocument?.content {
-            return content.string
-        }
-        return try? String(contentsOf: url, encoding: .utf8)
-    }
-
-    private static func nsRange(from range: LSPRange, in string: String) -> NSRange? {
-        let lineStarts = lineStartOffsets(in: string)
-        guard let start = offset(for: range.start, lineStarts: lineStarts),
-              let end = offset(for: range.end, lineStarts: lineStarts) else {
-            return nil
-        }
-        return NSRange(location: start, length: max(0, end - start))
-    }
-
-    private static func offset(for position: Position, lineStarts: [Int]) -> Int? {
-        guard position.line >= 0, position.line < lineStarts.count else { return nil }
-        return lineStarts[position.line] + position.character
-    }
-
-    private static func lineText(at line: Int, in string: String) -> String? {
-        let lineStarts = lineStartOffsets(in: string)
-        guard line >= 0, line < lineStarts.count else { return nil }
-        let ns = string as NSString
-        let start = lineStarts[line]
-        let end = line + 1 < lineStarts.count ? lineStarts[line + 1] : ns.length
-        guard start <= ns.length else { return nil }
-        return ns.substring(with: NSRange(location: start, length: max(0, end - start)))
-            .trimmingCharacters(in: .newlines)
-    }
-
     // MARK: - Helpers
 
-    private struct Context {
+    struct Context {
         let controller: TextViewController
         let fileURL: URL
         let server: LanguageServer<CodeFileDocument>
     }
 
-    private static func activeContext(workspace: WorkspaceDocument?) -> Context? {
+    static func activeContext(workspace: WorkspaceDocument?) -> Context? {
         guard let workspace,
               let tab = workspace.editorManager?.activeEditor.selectedTab,
               let controller = tab.rangeTranslator.controller,
               let document = tab.file.fileDocument,
               let language = document.getLanguage().lspLanguage,
               let lsp = ServiceContainer.resolve(.singleton, LSPService.self),
-              let server = lsp.languageClient(for: language, workspacePath: workspace.fileURL?.absolutePath ?? "") else {
+              let server = lsp.languageClient(
+                  for: language,
+                  workspacePath: workspace.fileURL?.absolutePath ?? ""
+              ) else {
             return nil
         }
         let fileURL = document.fileURL ?? tab.file.url
@@ -332,7 +171,7 @@ enum LSPEditorActions {
         return FormattingOptions(tabSize: tabSize, insertSpaces: textEditing.indentOption.indentType == .spaces)
     }
 
-    private static func position(in textView: TextView) -> Position? {
+    static func position(in textView: TextView) -> Position? {
         let selected = textView.selectionManager?.textSelections.first?.range ?? NSRange(location: 0, length: 0)
         return textView.lspRangeFrom(nsRange: selected)?.start
     }
@@ -398,12 +237,12 @@ enum LSPEditorActions {
         return result as String
     }
 
-    private static func lineStartOffsets(in string: String) -> [Int] {
-        let ns = string as NSString
+    static func lineStartOffsets(in string: String) -> [Int] {
+        let nsString = string as NSString
         var starts = [0]
         var index = 0
-        while index < ns.length {
-            if ns.character(at: index) == 0x0A {
+        while index < nsString.length {
+            if nsString.character(at: index) == 0x0A {
                 starts.append(index + 1)
             }
             index += 1

@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct KnowledgeQuickSearchView: View {
-    @Environment(\.openWindow) private var openWindow
+    @Environment(\.openWindow)
+    private var openWindow
 
     @State private var query = ""
     @State private var results: [KnowledgeSearchResult] = []

@@ -51,7 +51,8 @@ struct RunConfigurationListView: View {
 }
 
 struct RunConfigurationEditorSheet: View {
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss)
+    private var dismiss
     @ObservedObject var store: RunConfigurationStore
 
     @State private var configuration: RunConfiguration

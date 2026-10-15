@@ -140,30 +140,9 @@ struct CodeFileView: View {
         }
 
         // Build the language-provider pipeline (extensions + built-in engine).
-        var providers: [any LanguageProvider] = []
-        if let workspaceRoot = codeFile.findWorkspace()?.fileURL, let fileURL = codeFile.fileURL {
-            providers = LanguageProviderRegistry.shared.providers(
-                for: fileURL,
-                root: workspaceRoot,
-                languageID: codeFile.getLanguage().id.rawValue,
-                openLink: openLink
-            )
-        }
-
-        let phpProvider = providers.compactMap { $0 as? PHPProvider }.first
-        self.nativeProvider = phpProvider
-        phpProvider?.onDiagnostics = { url, diagnostics in
-            DiagnosticsStore.shared.update(file: url, diagnostics: diagnostics)
-        }
-
-        switch providers.count {
-        case 0:
-            self.languageDelegate = nil
-        case 1:
-            self.languageDelegate = providers[0]
-        default:
-            self.languageDelegate = LanguageProviderAggregator(providers: providers)
-        }
+        let pipeline = Self.buildLanguagePipeline(codeFile: codeFile, openLink: openLink)
+        self.nativeProvider = pipeline.provider
+        self.languageDelegate = pipeline.delegate
 
         if let openOptions = codeFile.openOptions {
             codeFile.openOptions = nil
@@ -190,47 +169,6 @@ struct CodeFileView: View {
                 }
                 .store(in: &cancellables)
         }
-    }
-
-    /// Seeds the gutter breakpoint markers and debug line, keeping them in sync with the workspace.
-    private func setUpBreakpoints() {
-        guard let workspace = codeFile.findWorkspace() else { return }
-        if let store = workspace.breakpointStore, let url = codeFile.fileURL {
-            breakpointLines = store.lines(for: url)
-            store.$breakpoints
-                .receive(on: RunLoop.main)
-                .sink { _ in
-                    breakpointLines = store.lines(for: url)
-                }
-                .store(in: &breakpointCancellables)
-        }
-        if let session = workspace.debugController?.session {
-            updateDebugLine(session)
-            session.objectWillChange
-                .receive(on: RunLoop.main)
-                .sink { [weak session] _ in
-                    DispatchQueue.main.async {
-                        if let session { updateDebugLine(session) }
-                    }
-                }
-                .store(in: &breakpointCancellables)
-        }
-    }
-
-    /// Highlights the current debug stop line when it's in this file.
-    private func updateDebugLine(_ session: DebugSession) {
-        guard session.state.isStopped,
-              let frame = session.currentFrame,
-              let path = frame.source?.path,
-              path == codeFile.fileURL?.path(percentEncoded: false) else {
-            debugLine = nil
-            return
-        }
-        debugLine = frame.line
-    }
-
-    private var currentTheme: Theme {
-        themeModel.selectedTheme ?? themeModel.themes.first!
     }
 
     @State private var font: NSFont = Settings[\.textEditing].font.current
@@ -329,6 +267,79 @@ struct CodeFileView: View {
         .onChange(of: settingsFont) { _, newFontSetting in
             font = newFontSetting.current
         }
+    }
+
+}
+
+extension CodeFileView {
+    /// Builds the language-provider pipeline (extensions + built-in engine) for a file.
+    private static func buildLanguagePipeline(
+        codeFile: CodeFileDocument,
+        openLink: @escaping (JumpToDefinitionLink) -> Void
+    ) -> (delegate: (any LanguageDelegate)?, provider: PHPProvider?) {
+        var providers: [any LanguageProvider] = []
+        if let workspaceRoot = codeFile.findWorkspace()?.fileURL, let fileURL = codeFile.fileURL {
+            providers = LanguageProviderRegistry.shared.providers(
+                for: fileURL,
+                root: workspaceRoot,
+                languageID: codeFile.getLanguage().id.rawValue,
+                openLink: openLink
+            )
+        }
+
+        let phpProvider = providers.compactMap { $0 as? PHPProvider }.first
+        phpProvider?.onDiagnostics = { url, diagnostics in
+            DiagnosticsStore.shared.update(file: url, diagnostics: diagnostics)
+        }
+
+        let delegate: (any LanguageDelegate)?
+        switch providers.count {
+        case 0: delegate = nil
+        case 1: delegate = providers[0]
+        default: delegate = LanguageProviderAggregator(providers: providers)
+        }
+        return (delegate, phpProvider)
+    }
+
+    /// Seeds the gutter breakpoint markers and debug line, keeping them in sync with the workspace.
+    private func setUpBreakpoints() {
+        guard let workspace = codeFile.findWorkspace() else { return }
+        if let store = workspace.breakpointStore, let url = codeFile.fileURL {
+            breakpointLines = store.lines(for: url)
+            store.$breakpoints
+                .receive(on: RunLoop.main)
+                .sink { _ in
+                    breakpointLines = store.lines(for: url)
+                }
+                .store(in: &breakpointCancellables)
+        }
+        if let session = workspace.debugController?.session {
+            updateDebugLine(session)
+            session.objectWillChange
+                .receive(on: RunLoop.main)
+                .sink { [weak session] _ in
+                    DispatchQueue.main.async {
+                        if let session { updateDebugLine(session) }
+                    }
+                }
+                .store(in: &breakpointCancellables)
+        }
+    }
+
+    /// Highlights the current debug stop line when it's in this file.
+    private func updateDebugLine(_ session: DebugSession) {
+        guard session.state.isStopped,
+              let frame = session.currentFrame,
+              let path = frame.source?.path,
+              path == codeFile.fileURL?.path(percentEncoded: false) else {
+            debugLine = nil
+            return
+        }
+        debugLine = frame.line
+    }
+
+    private var currentTheme: Theme {
+        themeModel.selectedTheme ?? themeModel.themes.first!
     }
 
     /// Determines the style of bracket emphasis based on the `bracketEmphasis` setting and the current theme.

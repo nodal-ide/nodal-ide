@@ -179,16 +179,16 @@ extension WorkspaceDocument.SearchState {
                     ?? workspace.workspaceFileManager?.getFile(url.relativePath),
            let document = file.fileDocument,
            let storage = document.content {
-            let ns = storage.string as NSString
-            guard let range = rangeForMatch(match, in: ns) else { return }
-            let updated = ns.replacingCharacters(in: range, with: replacingTerm)
+            let nsString = storage.string as NSString
+            guard let range = rangeForMatch(match, in: nsString) else { return }
+            let updated = nsString.replacingCharacters(in: range, with: replacingTerm)
             storage.replaceCharacters(in: NSRange(location: 0, length: storage.length), with: updated)
             document.updateChangeCount(.changeDone)
         } else {
             guard let content = try? String(contentsOf: url, encoding: .utf8) else { return }
-            let ns = content as NSString
-            guard let range = rangeForMatch(match, in: ns) else { return }
-            let updated = ns.replacingCharacters(in: range, with: replacingTerm)
+            let nsString = content as NSString
+            guard let range = rangeForMatch(match, in: nsString) else { return }
+            let updated = nsString.replacingCharacters(in: range, with: replacingTerm)
             try? updated.write(to: url, atomically: true, encoding: .utf8)
         }
 

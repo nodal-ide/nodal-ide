@@ -117,7 +117,13 @@ struct KnowledgeWebView: NSViewRepresentable {
 
         func scroll(to fragment: String, in webView: WKWebView) {
             let escaped = escapeForScript(fragment)
-            webView.evaluateJavaScript("document.getElementById('\(escaped)')?.scrollIntoView();", completionHandler: nil)
+            webView.evaluateJavaScript(
+
+                "document.getElementById('\\(escaped)')?.scrollIntoView();",
+
+                completionHandler: nil
+
+            )
         }
 
         func applyHighlight(_ query: String?, in webView: WKWebView) {

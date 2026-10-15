@@ -112,7 +112,9 @@ struct CommandCenterView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(Array(model.results.enumerated()), id: \.element.id) { index, item in
-                            if model.category == .all, index == 0 || model.results[index - 1].category != item.category {
+                            if model.category == .all,
+
+                               index == 0 || model.results[index - 1].category != item.category {
                                 sectionHeader(item.category)
                             }
                             row(item, isSelected: index == selection)

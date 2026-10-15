@@ -47,16 +47,7 @@ enum KnowledgeRenderer {
 
             // Fenced code block.
             if line.hasPrefix("```") {
-                let language = String(line.dropFirst(3)).trimmingCharacters(in: .whitespaces)
-                var code: [String] = []
-                index += 1
-                while index < lines.count, !lines[index].hasPrefix("```") {
-                    code.append(lines[index])
-                    index += 1
-                }
-                index += 1 // closing fence
-                let classAttribute = language.isEmpty ? "" : " class=\"language-\(escape(language))\""
-                html += "<pre><code\(classAttribute)>\(escape(code.joined(separator: "\n")))</code></pre>\n"
+                html += fencedCode(lines: lines, index: &index)
                 continue
             }
 
@@ -80,13 +71,7 @@ enum KnowledgeRenderer {
 
             // Blockquote.
             if trimmed.hasPrefix(">") {
-                var quote: [String] = []
-                while index < lines.count, lines[index].trimmingCharacters(in: .whitespaces).hasPrefix(">") {
-                    quote.append(String(lines[index].trimmingCharacters(in: .whitespaces).dropFirst())
-                        .trimmingCharacters(in: .whitespaces))
-                    index += 1
-                }
-                html += "<blockquote><p>\(inline(quote.joined(separator: " "), currentPath: currentPath))</p></blockquote>\n"
+                html += blockquote(lines: lines, index: &index, currentPath: currentPath)
                 continue
             }
 
@@ -111,21 +96,50 @@ enum KnowledgeRenderer {
             }
 
             // Paragraph.
-            var paragraph: [String] = []
-            while index < lines.count {
-                let candidate = lines[index].trimmingCharacters(in: .whitespaces)
-                if candidate.isEmpty || heading(candidate) != nil || candidate.hasPrefix("```")
-                    || candidate.hasPrefix(">") || candidate.hasPrefix("|")
-                    || isUnorderedListItem(candidate) || isOrderedListItem(candidate) {
-                    break
-                }
-                paragraph.append(candidate)
-                index += 1
-            }
-            html += "<p>\(inline(paragraph.joined(separator: " "), currentPath: currentPath))</p>\n"
+            html += paragraph(lines: lines, index: &index, currentPath: currentPath)
         }
 
         return html
+    }
+
+    private static func fencedCode(lines: [String], index: inout Int) -> String {
+        let language = String(lines[index].dropFirst(3)).trimmingCharacters(in: .whitespaces)
+        var code: [String] = []
+        index += 1
+        while index < lines.count, !lines[index].hasPrefix("```") {
+            code.append(lines[index])
+            index += 1
+        }
+        index += 1 // closing fence
+        let classAttribute = language.isEmpty ? "" : " class=\"language-\(escape(language))\""
+        return "<pre><code\(classAttribute)>\(escape(code.joined(separator: "\n")))</code></pre>\n"
+    }
+
+    private static func blockquote(lines: [String], index: inout Int, currentPath: String) -> String {
+        var quote: [String] = []
+        while index < lines.count, lines[index].trimmingCharacters(in: .whitespaces).hasPrefix(">") {
+            quote.append(String(lines[index].trimmingCharacters(in: .whitespaces).dropFirst())
+                .trimmingCharacters(in: .whitespaces))
+            index += 1
+        }
+        return "<blockquote><p>"
+            + inline(quote.joined(separator: " "), currentPath: currentPath)
+            + "</p></blockquote>\n"
+    }
+
+    private static func paragraph(lines: [String], index: inout Int, currentPath: String) -> String {
+        var paragraph: [String] = []
+        while index < lines.count {
+            let candidate = lines[index].trimmingCharacters(in: .whitespaces)
+            if candidate.isEmpty || heading(candidate) != nil || candidate.hasPrefix("```")
+                || candidate.hasPrefix(">") || candidate.hasPrefix("|")
+                || isUnorderedListItem(candidate) || isOrderedListItem(candidate) {
+                break
+            }
+            paragraph.append(candidate)
+            index += 1
+        }
+        return "<p>\(inline(paragraph.joined(separator: " "), currentPath: currentPath))</p>\n"
     }
 
     // MARK: - Blocks
@@ -191,7 +205,7 @@ enum KnowledgeRenderer {
         var result = escape(text)
 
         // Images.
-        result = replacing(result, pattern: "!\\[([^\\]]*)\\]\\(([^)]+)\\)") { match, groups in
+        result = replacing(result, pattern: "!\\[([^\\]]*)\\]\\(([^)]+)\\)") { _, groups in
             let alt = groups[0]
             let target = resolveLink(groups[1], from: currentPath).link
             return "<img src=\"\(target)\" alt=\"\(alt)\">"
@@ -273,15 +287,15 @@ enum KnowledgeRenderer {
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return string }
         var result = ""
         var lastIndex = string.startIndex
-        let ns = string as NSString
-        regex.enumerateMatches(in: string, range: NSRange(location: 0, length: ns.length)) { match, _, _ in
+        let nsString = string as NSString
+        regex.enumerateMatches(in: string, range: NSRange(location: 0, length: nsString.length)) { match, _, _ in
             guard let match else { return }
             let full = Range(match.range, in: string)!
             result += string[lastIndex..<full.lowerBound]
             var groups: [String] = []
             for groupIndex in 1..<match.numberOfRanges {
                 let range = match.range(at: groupIndex)
-                groups.append(range.location == NSNotFound ? "" : ns.substring(with: range))
+                groups.append(range.location == NSNotFound ? "" : nsString.substring(with: range))
             }
             result += transform(groups, groups)
             lastIndex = full.upperBound
@@ -302,8 +316,11 @@ enum KnowledgeRenderer {
             .replacingOccurrences(of: ">", with: "&gt;")
     }
 
-    // MARK: - Document
+}
 
+// MARK: - Document
+
+extension KnowledgeRenderer {
     private static func document(title: String, body: String, source: KnowledgeSource) -> String {
         """
         <!doctype html>
@@ -336,7 +353,11 @@ enum KnowledgeRenderer {
     }
     article { max-width: 720px; margin: 0 auto; }
     h1, h2, h3, h4 { line-height: 1.25; margin: 1.4em 0 0.5em; }
-    h1 { font-size: 1.9em; border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent); padding-bottom: .3em; }
+    h1 {
+        font-size: 1.9em;
+        border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+        padding-bottom: .3em;
+    }
     h2 { font-size: 1.4em; }
     a { color: -apple-system-control-accent; text-decoration: none; }
     a:hover { text-decoration: underline; }

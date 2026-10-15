@@ -213,64 +213,6 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
         self.panelOpen = true
     }
 
-    /// Finds references to the symbol under the cursor and shows them in a results panel.
-    @MainActor
-    func findReferences() {
-        guard let workspace else { return }
-        Task { @MainActor in
-            let items = await LSPEditorActions.referenceItems(workspace: workspace)
-            showReferences(items)
-        }
-    }
-
-    /// Shows previously computed reference items in the Find References panel.
-    @MainActor
-    func showReferences(_ items: [PaletteItem]) {
-        guard workspace != nil else { return }
-
-        if let referencesPanel {
-            referencesPanel.close()
-            self.referencesPanel = nil
-            self.panelOpen = false
-        }
-
-        let panel = SearchPanel()
-        self.referencesPanel = panel
-        let state = ReferencesViewModel(items: items)
-        let contentView = ReferencesView(state: state) {
-            panel.close()
-            self.panelOpen = false
-            self.referencesPanel = nil
-        }
-        panel.contentView = NSHostingView(rootView: SettingsInjector { contentView })
-        window?.addChildWindow(panel, ordered: .above)
-        panel.makeKeyAndOrderFront(self)
-        self.panelOpen = true
-    }
-
-    /// Shows the call hierarchy for the symbol at the cursor in a dedicated panel.
-    @MainActor
-    func showCallHierarchy() {
-        guard let workspace else { return }
-
-        if let callHierarchyPanel {
-            callHierarchyPanel.makeKeyAndOrderFront(self)
-            return
-        }
-
-        let panel = CallHierarchyPanel()
-        self.callHierarchyPanel = panel
-        let model = CallHierarchyViewModel(workspace: workspace)
-        let contentView = CallHierarchyView(model: model) {
-            panel.close()
-            self.callHierarchyPanel = nil
-        }
-        panel.contentView = NSHostingView(rootView: SettingsInjector { contentView })
-        window?.addChildWindow(panel, ordered: .above)
-        panel.center()
-        panel.makeKeyAndOrderFront(self)
-    }
-
     /// Opens a new untitled scratchpad file (no extension) in an editor tab.
     @IBAction func openScratchpad(_ sender: Any?) {
         guard let workspace, let editorManager = workspace.editorManager else { return }
@@ -372,5 +314,67 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
         navigatorSidebarViewModel = nil
         workspace = nil
         return true
+    }
+}
+
+// MARK: - Reference & Call-Hierarchy Panels
+
+extension CodeEditWindowController {
+    /// Finds references to the symbol under the cursor and shows them in a results panel.
+    @MainActor
+    func findReferences() {
+        guard let workspace else { return }
+        Task { @MainActor in
+            let items = await LSPEditorActions.referenceItems(workspace: workspace)
+            showReferences(items)
+        }
+    }
+
+    /// Shows previously computed reference items in the Find References panel.
+    @MainActor
+    func showReferences(_ items: [PaletteItem]) {
+        guard workspace != nil else { return }
+
+        if let referencesPanel {
+            referencesPanel.close()
+            self.referencesPanel = nil
+            self.panelOpen = false
+        }
+
+        let panel = SearchPanel()
+        self.referencesPanel = panel
+        let state = ReferencesViewModel(items: items)
+        let contentView = ReferencesView(state: state) {
+            panel.close()
+            self.panelOpen = false
+            self.referencesPanel = nil
+        }
+        panel.contentView = NSHostingView(rootView: SettingsInjector { contentView })
+        window?.addChildWindow(panel, ordered: .above)
+        panel.makeKeyAndOrderFront(self)
+        self.panelOpen = true
+    }
+
+    /// Shows the call hierarchy for the symbol at the cursor in a dedicated panel.
+    @MainActor
+    func showCallHierarchy() {
+        guard let workspace else { return }
+
+        if let callHierarchyPanel {
+            callHierarchyPanel.makeKeyAndOrderFront(self)
+            return
+        }
+
+        let panel = CallHierarchyPanel()
+        self.callHierarchyPanel = panel
+        let model = CallHierarchyViewModel(workspace: workspace)
+        let contentView = CallHierarchyView(model: model) {
+            panel.close()
+            self.callHierarchyPanel = nil
+        }
+        panel.contentView = NSHostingView(rootView: SettingsInjector { contentView })
+        window?.addChildWindow(panel, ordered: .above)
+        panel.center()
+        panel.makeKeyAndOrderFront(self)
     }
 }

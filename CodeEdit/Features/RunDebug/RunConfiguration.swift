@@ -66,8 +66,8 @@ struct RunConfiguration: Identifiable, Codable, Hashable {
 
     /// The shell command, changing into the working directory first when set.
     var fullCommand: String {
-        let cd = workingDirectory.isEmpty ? "" : "cd \(workingDirectory.escapedDirectory()) && "
-        return "\(cd)\(command)"
+        let changeDirectory = workingDirectory.isEmpty ? "" : "cd \(workingDirectory.escapedDirectory()) && "
+        return "\(changeDirectory)\(command)"
     }
 
     var environmentDictionary: [String: String] {
