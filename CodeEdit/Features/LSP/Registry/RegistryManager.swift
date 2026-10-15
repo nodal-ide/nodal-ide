@@ -67,6 +67,71 @@ final class RegistryManager: ObservableObject {
 
     func setPackageEnabled(packageName: String, enabled: Bool) {
         installedLanguageServers[packageName]?.isEnabled = enabled
+        reloadLanguageServerConfigs()
+    }
+
+    /// Resolves the executable for a registry package and registers it with ``LSPService`` so the language
+    /// server actually starts for its languages.
+    @MainActor
+    func reloadLanguageServerConfigs() {
+        ServiceContainer.resolve(.singleton, LSPService.self)?.reloadConfigurationsAndRestart()
+    }
+
+    /// Resolves the absolute path to a package's language-server executable.
+    ///
+    /// Uses the package manager's binary path (a file for npm/pip, a `bin` directory for cargo/go/github) and,
+    /// when it's a directory, picks a matching executable name from the registry's `bin` map.
+    func resolveExecutable(for package: RegistryItem) -> String? {
+        guard let method = package.installMethod,
+              let manager = method.packageManager(installPath: installPath) else {
+            return nil
+        }
+        let base = manager.getBinaryPath(for: package.name)
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: base, isDirectory: &isDirectory) else { return nil }
+        if !isDirectory.boolValue {
+            return base
+        }
+        for name in executableNames(for: package) {
+            let candidate = URL(filePath: base).appending(path: name).path
+            if FileManager.default.isExecutableFile(atPath: candidate) {
+                return candidate
+            }
+        }
+        // Fall back to the first executable in the directory.
+        let entries = (try? FileManager.default.contentsOfDirectory(atPath: base)) ?? []
+        return entries.sorted()
+            .map { URL(filePath: base).appending(path: $0).path }
+            .first { FileManager.default.isExecutableFile(atPath: $0) }
+    }
+
+    private func executableNames(for package: RegistryItem) -> [String] {
+        var names = package.bin.map { Array($0.keys) } ?? []
+        if let last = package.name.components(separatedBy: "/").last {
+            names.append(last)
+        }
+        return names
+    }
+
+    /// Fills in missing languages/executable paths for servers installed before these fields existed.
+    @MainActor
+    func backfillInstalledServers() {
+        var changed = false
+        for (name, server) in installedLanguageServers where server.executablePath.isEmpty || server.languages.isEmpty {
+            guard let item = registryItems.first(where: { $0.name == name }) else { continue }
+            var updated = server
+            if updated.languages.isEmpty {
+                updated.languages = item.languages
+            }
+            if updated.executablePath.isEmpty {
+                updated.executablePath = resolveExecutable(for: item) ?? ""
+            }
+            installedLanguageServers[name] = updated
+            changed = true
+        }
+        if changed {
+            reloadLanguageServerConfigs()
+        }
     }
 
     // MARK: - Uninstall
@@ -78,6 +143,7 @@ final class RegistryManager: ObservableObject {
 
         guard FileManager.default.fileExists(atPath: packageDirectory.path) else {
             installedLanguageServers.removeValue(forKey: packageName)
+            reloadLanguageServerConfigs()
             return
         }
 
@@ -97,6 +163,7 @@ final class RegistryManager: ObservableObject {
                 try FileManager.default.removeItem(at: packageDirectory)
             }.value
             installedLanguageServers.removeValue(forKey: packageName)
+            reloadLanguageServerConfigs()
         } catch {
             throw error
         }
@@ -154,12 +221,16 @@ final class RegistryManager: ObservableObject {
                 return
             }
 
-            self?.installedLanguageServers[operation.package.name] = .init(
-                packageName: operation.package.name,
+            let package = operation.package
+            self?.installedLanguageServers[package.name] = .init(
+                packageName: package.name,
                 isEnabled: true,
-                version: method.version ?? ""
+                version: method.version ?? "",
+                languages: package.languages,
+                executablePath: self?.resolveExecutable(for: package) ?? ""
             )
-            self?.updateActivityViewer(operation.package.name, activityTitle, fail: false)
+            self?.reloadLanguageServerConfigs()
+            self?.updateActivityViewer(package.name, activityTitle, fail: false)
         }
     }
 
@@ -224,6 +295,7 @@ final class RegistryManager: ObservableObject {
         }
 
         registryItems = items
+        backfillInstalledServers()
     }
 }
 

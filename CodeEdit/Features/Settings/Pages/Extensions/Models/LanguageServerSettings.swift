@@ -46,5 +46,32 @@ extension SettingsData {
         let packageName: String
         var isEnabled: Bool
         let version: String
+        /// The language identifiers this server provides (e.g. `typescript`, `javascript`).
+        var languages: [String]
+        /// The absolute path to the server's executable.
+        var executablePath: String
+
+        init(
+            packageName: String,
+            isEnabled: Bool,
+            version: String,
+            languages: [String] = [],
+            executablePath: String = ""
+        ) {
+            self.packageName = packageName
+            self.isEnabled = isEnabled
+            self.version = version
+            self.languages = languages
+            self.executablePath = executablePath
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.packageName = try container.decode(String.self, forKey: .packageName)
+            self.isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
+            self.version = try container.decodeIfPresent(String.self, forKey: .version) ?? ""
+            self.languages = try container.decodeIfPresent([String].self, forKey: .languages) ?? []
+            self.executablePath = try container.decodeIfPresent(String.self, forKey: .executablePath) ?? ""
+        }
     }
 }

@@ -5,6 +5,7 @@
 //  Created by Abe Malla on 2/7/24.
 //
 
+import AppKit
 import os.log
 import JSONRPC
 import SwiftUI
@@ -124,6 +125,10 @@ final class LSPService: ObservableObject {
     @AppSettings(\.developerSettings.lspBinaries)
     var lspBinaries
 
+    /// Registry-installed language servers.
+    @AppSettings(\.languageServers.installedLanguageServers)
+    var installedServers
+
     /// Language identifiers handled by a native, in-process implementation. No language server is started for these.
     @AppSettings(\.developerSettings.internalLanguages)
     var internalLanguages
@@ -132,16 +137,7 @@ final class LSPService: ObservableObject {
     private var openWindow
 
     init() {
-        // Load the LSP binaries from the developer menu
-        for binary in lspBinaries {
-            if let language = LanguageIdentifier(rawValue: binary.key) {
-                self.languageConfigs[language] = LanguageServerBinary(
-                    execPath: binary.value,
-                    args: [],
-                    env: ProcessInfo.processInfo.environment
-                )
-            }
-        }
+        reloadConfigurations()
 
         NotificationCenter.default.addObserver(
             forName: CodeFileDocument.didOpenNotification,
