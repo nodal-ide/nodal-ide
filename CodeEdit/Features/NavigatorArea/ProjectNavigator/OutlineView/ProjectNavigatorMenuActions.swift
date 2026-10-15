@@ -55,6 +55,18 @@ extension ProjectNavigatorMenu {
         DiffViewerPresenter.shared.show(file: changed, manager: manager)
     }
 
+    /// Opens the blame viewer for the selected file.
+    @MainActor
+    @objc
+    func showBlame() {
+        guard let workspace,
+              let manager = workspace.sourceControlManager,
+              let file = selectedItems().first ?? item else {
+            return
+        }
+        BlameViewerPresenter.shared.show(url: file.url, manager: manager)
+    }
+
     /// Action that opens **Finder** at the items location.
     @objc
     func showInFinder() {

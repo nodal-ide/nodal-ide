@@ -350,3 +350,17 @@ extension SourceControlManager {
         return FileDiff(oldPath: "/dev/null", newPath: url.lastPathComponent, hunks: [hunk])
     }
 }
+
+// MARK: - Blame
+
+extension SourceControlManager {
+    /// Returns parsed `git blame` information for a file, or `nil` if it can't be computed
+    /// (e.g. the file is untracked or the repository is unavailable).
+    func fileBlame(for url: URL) async -> [BlameLine]? {
+        let root = gitClient.directoryURL.standardizedFileURL.path
+        let path = url.standardizedFileURL.path
+        let relative = path.hasPrefix(root + "/") ? String(path.dropFirst(root.count + 1)) : path
+        guard let output = try? await gitClient.blame(for: relative) else { return nil }
+        return BlameParser.parse(output)
+    }
+}

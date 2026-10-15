@@ -45,6 +45,9 @@ struct SourceControlNavigatorChangesList: View {
                         Button("Show Diff") {
                             DiffViewerPresenter.shared.show(file: file, manager: sourceControlManager)
                         }
+                        Button("Show Blame") {
+                            BlameViewerPresenter.shared.show(url: file.fileURL, manager: sourceControlManager)
+                        }
                     }
                     if file.anyStatus() != .none {
                         Group {
