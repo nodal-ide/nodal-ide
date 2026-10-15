@@ -8,6 +8,7 @@
 
 import Foundation
 import AppKit
+import os
 import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
@@ -15,7 +16,7 @@ import CodeEditLangPHP
 import LanguageServerProtocol
 
 /// A completion entry produced by a language server.
-private struct LSPCompletionEntry: CodeSuggestionEntry {
+struct LSPCompletionEntry: CodeSuggestionEntry {
     let label: String
     let detail: String?
     let documentation: String?
@@ -31,6 +32,8 @@ private struct LSPCompletionEntry: CodeSuggestionEntry {
 
 /// A language provider backed by an LSP server.
 final class LSPLanguageProvider: LanguageProvider {
+    static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "LSPLanguageProvider")
+
     let languageID: String
     let priority: LanguageProviderPriority = .lsp
 
@@ -51,8 +54,8 @@ final class LSPLanguageProvider: LanguageProvider {
     }
 
     /// The last completion request: the LSP position and the items it returned.
-    private var completionPosition: Position?
-    private var completionItems: [CompletionItem] = []
+    var completionPosition: Position?
+    var completionItems: [CompletionItem] = []
 
     var documentURI: String { fileURL.lspURI }
 
@@ -191,38 +194,6 @@ final class LSPLanguageProvider: LanguageProvider {
     }
 
     @MainActor
-    func completionSuggestionsRequested(
-        textView: TextViewController,
-        cursorPosition: CursorPosition
-    ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
-        guard let server = server,
-
-              let position = textView.textView.lspRangeFrom(nsRange: cursorPosition.range)?.start else {
-            return nil
-        }
-        guard let response = try? await server.requestCompletion(for: documentURI, position: position) else {
-            return nil
-        }
-
-        let items: [CompletionItem]
-        switch response {
-        case .optionA(let array):
-            items = array
-        case .optionB(let list):
-            items = list.items
-        }
-        guard !items.isEmpty else {
-            completionPosition = nil
-            completionItems = []
-            return nil
-        }
-
-        completionPosition = position
-        completionItems = Array(items.prefix(500))
-        return (cursorPosition, completionItems.map(Self.entry))
-    }
-
-    @MainActor
     func completionOnCursorMove(
         textView: TextViewController,
         cursorPosition: CursorPosition
@@ -281,7 +252,7 @@ final class LSPLanguageProvider: LanguageProvider {
 
     // MARK: - Mapping helpers
 
-    private static func entry(_ item: CompletionItem) -> LSPCompletionEntry {
+    static func entry(_ item: CompletionItem) -> LSPCompletionEntry {
         LSPCompletionEntry(
             label: item.label,
             detail: item.detail,
