@@ -108,23 +108,32 @@ struct CommandCenterView: View {
                 Spacer()
             }
         } else {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(model.results.enumerated()), id: \.element.id) { index, item in
-                        if model.category == .all, index == 0 || model.results[index - 1].category != item.category {
-                            sectionHeader(item.category)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(model.results.enumerated()), id: \.element.id) { index, item in
+                            if model.category == .all, index == 0 || model.results[index - 1].category != item.category {
+                                sectionHeader(item.category)
+                            }
+                            row(item, isSelected: index == selection)
+                                .id(item.id)
+                                .onHover { hovering in
+                                    if hovering { selection = index }
+                                }
+                                .onTapGesture {
+                                    selection = index
+                                    activateSelected()
+                                }
                         }
-                        row(item, isSelected: index == selection)
-                            .onHover { hovering in
-                                if hovering { selection = index }
-                            }
-                            .onTapGesture {
-                                selection = index
-                                activateSelected()
-                            }
+                    }
+                    .padding(.vertical, 4)
+                }
+                .onChange(of: selection) { _, newValue in
+                    guard model.results.indices.contains(newValue) else { return }
+                    withAnimation(.easeOut(duration: 0.12)) {
+                        proxy.scrollTo(model.results[newValue].id, anchor: nil)
                     }
                 }
-                .padding(.vertical, 4)
             }
         }
     }
