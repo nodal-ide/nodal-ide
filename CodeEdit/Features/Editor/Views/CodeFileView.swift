@@ -83,6 +83,7 @@ struct CodeFileView: View {
     @EnvironmentObject var undoRegistration: UndoManagerRegistration
 
     @State private var breakpointLines: Set<Int> = []
+    @State private var debugLine: Int?
     @State private var breakpointCancellables = Set<AnyCancellable>()
 
     @ObservedObject private var themeModel: ThemeModel = .shared
@@ -191,16 +192,41 @@ struct CodeFileView: View {
         }
     }
 
-    /// Seeds the gutter breakpoint markers and keeps them in sync with the workspace store.
+    /// Seeds the gutter breakpoint markers and debug line, keeping them in sync with the workspace.
     private func setUpBreakpoints() {
-        guard let store = codeFile.findWorkspace()?.breakpointStore, let url = codeFile.fileURL else { return }
-        breakpointLines = store.lines(for: url)
-        store.$breakpoints
-            .receive(on: RunLoop.main)
-            .sink { _ in
-                breakpointLines = store.lines(for: url)
-            }
-            .store(in: &breakpointCancellables)
+        guard let workspace = codeFile.findWorkspace() else { return }
+        if let store = workspace.breakpointStore, let url = codeFile.fileURL {
+            breakpointLines = store.lines(for: url)
+            store.$breakpoints
+                .receive(on: RunLoop.main)
+                .sink { _ in
+                    breakpointLines = store.lines(for: url)
+                }
+                .store(in: &breakpointCancellables)
+        }
+        if let session = workspace.debugController?.session {
+            updateDebugLine(session)
+            session.objectWillChange
+                .receive(on: RunLoop.main)
+                .sink { [weak session] _ in
+                    DispatchQueue.main.async {
+                        if let session { updateDebugLine(session) }
+                    }
+                }
+                .store(in: &breakpointCancellables)
+        }
+    }
+
+    /// Highlights the current debug stop line when it's in this file.
+    private func updateDebugLine(_ session: DebugSession) {
+        guard session.state.isStopped,
+              let frame = session.currentFrame,
+              let path = frame.source?.path,
+              path == codeFile.fileURL?.path(percentEncoded: false) else {
+            debugLine = nil
+            return
+        }
+        debugLine = frame.line
     }
 
     private var currentTheme: Theme {
@@ -284,7 +310,8 @@ struct CodeFileView: View {
                     return
                 }
                 store.toggle(url, line: line)
-            }
+            },
+            debugLine: debugLine
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))

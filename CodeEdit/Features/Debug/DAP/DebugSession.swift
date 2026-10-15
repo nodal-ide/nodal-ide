@@ -51,6 +51,14 @@ final class DebugSession: ObservableObject {
     /// Breakpoints to send to the adapter (set before/while a session runs).
     var breakpoints: [Breakpoint] = []
 
+    /// The currently selected stack frame (or the top frame).
+    var currentFrame: DAPStackFrame? {
+        if let currentFrameID, let frame = callStack.first(where: { $0.id == currentFrameID }) {
+            return frame
+        }
+        return callStack.first
+    }
+
     private var client: DebugAdapterClient?
     private var configurationDone = false
     private var launchTask: Task<Void, Never>?

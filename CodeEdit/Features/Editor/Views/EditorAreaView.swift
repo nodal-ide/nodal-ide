@@ -24,6 +24,7 @@ struct EditorAreaView: View {
     @FocusState.Binding var focus: Editor?
 
     @EnvironmentObject private var editorManager: EditorManager
+    @EnvironmentObject private var workspace: WorkspaceDocument
 
     @State var codeFile: (() -> CodeFileDocument?)?
 
@@ -94,6 +95,10 @@ struct EditorAreaView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea(.all)
+        .overlay(alignment: .top) {
+            DebugToolbar()
+                .padding(.top, 8)
+        }
         .safeAreaInset(edge: .top, spacing: 0) {
             GeometryReader { geometry in
                 let topSafeArea = geometry.safeAreaInsets.top

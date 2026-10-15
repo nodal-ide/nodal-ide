@@ -59,8 +59,8 @@ struct StatusBarView: View {
                 .buttonStyle(.icon(isActive: utilityAreaViewModel.selectedTab == tab))
                 .help(tab.title)
             }
-//            StatusBarBreakpointButton()
-//            StatusBarDivider()
+            StatusBarBreakpointButton()
+            StatusBarDivider()
             Spacer()
             StatusBarFileInfoView()
             StatusBarCursorPositionLabel()
