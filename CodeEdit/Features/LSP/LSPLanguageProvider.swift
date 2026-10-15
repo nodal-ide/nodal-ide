@@ -372,6 +372,16 @@ final class LSPLanguageProvider: LanguageProvider {
               let lspItem = completionItems.first(where: { $0.label == entry.label }) else {
             return
         }
+        if lspItem.insertTextFormat == .snippet {
+            applySnippetCompletion(
+                lspItem,
+                startPosition: startPosition,
+                textView: textView,
+                cursorPosition: cursorPosition
+            )
+            return
+        }
+
         let edits = LSPCompletionItemsUtil.getCompletionItemEdits(startPosition: startPosition, item: lspItem)
         // Apply from the bottom up so offsets stay valid.
         let resolved = edits.compactMap { edit -> (NSRange, String)? in
