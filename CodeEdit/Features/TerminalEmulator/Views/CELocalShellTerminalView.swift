@@ -47,10 +47,14 @@ protocol CELocalShellTerminalViewDelegate: AnyObject {
 
     /// Invoked for unhandled OSC 1337 sequences (used by our shell integration for command markers).
     func iTermContent(source: TerminalView, content: ArraySlice<UInt8>)
+
+    /// Invoked when the user ⌘-clicks a hyperlink (OSC 8).
+    func requestOpenLink(source: TerminalView, link: String, params: [String: String])
 }
 
 extension CELocalShellTerminalViewDelegate {
     func iTermContent(source: TerminalView, content: ArraySlice<UInt8>) {}
+    func requestOpenLink(source: TerminalView, link: String, params: [String: String]) {}
 }
 
 // MARK: - CELocalShellTerminalView
@@ -176,6 +180,10 @@ class CELocalShellTerminalView: CETerminalView, TerminalViewDelegate, LocalProce
 
     public func iTermContent(source: TerminalView, content: ArraySlice<UInt8>) {
         processDelegate?.iTermContent(source: source, content: content)
+    }
+
+    public func requestOpenLink(source: TerminalView, link: String, params: [String: String]) {
+        processDelegate?.requestOpenLink(source: source, link: link, params: params)
     }
 
     /// Passes data from the terminal to the shell.

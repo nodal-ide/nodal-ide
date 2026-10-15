@@ -88,6 +88,30 @@ struct UtilityAreaTerminalView: View {
         return focused == terminal.id
     }
 
+    /// Opens a hyperlink activated in the terminal (⌘-click): web URLs in the browser, file URLs/paths in the editor.
+    private func openTerminalLink(_ link: String) {
+        if let url = URL(string: link), let scheme = url.scheme, !scheme.isEmpty {
+            if url.isFileURL {
+                CodeEditDocumentController.shared.openDocument(
+                    withContentsOf: url, display: true, completionHandler: { _, _, _ in }
+                )
+            } else {
+                NSWorkspace.shared.open(url)
+            }
+            return
+        }
+        let path = link.hasPrefix("/") ? link : (workspace.fileURL?.appending(path: link).path ?? link)
+        CodeEditDocumentController.shared.openDocument(
+            withContentsOf: URL(filePath: path), display: true, completionHandler: { _, _, _ in }
+        )
+    }
+
+    /// Reveals the focused terminal's current directory in Finder.
+    private func revealCurrentDirectory() {
+        guard let url = utilityAreaViewModel.inheritedTerminalRootURL() else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
     @ViewBuilder private var terminalContent: some View {
         if utilityAreaViewModel.isSplit,
            let primary = getSelectedTerminal(),
@@ -148,6 +172,9 @@ struct UtilityAreaTerminalView: View {
                         DispatchQueue.main.async { [weak utilityAreaViewModel] in
                             utilityAreaViewModel?.commandFinished(terminal.id, exitCode: exitCode)
                         }
+                    },
+                    onOpenLink: { link in
+                        openTerminalLink(link)
                     }
                 )
                 .frame(height: fill ? nil : max(0, constrainedHeight - 1))
@@ -202,6 +229,13 @@ struct UtilityAreaTerminalView: View {
                 }
                 Spacer()
                 PaneToolbarSection {
+                    Button {
+                        revealCurrentDirectory()
+                    } label: {
+                        Image(systemName: "folder")
+                    }
+                    .help("Reveal the terminal's directory in Finder")
+                    .disabled(getSelectedTerminal() == nil)
                     Button {
                         guard let terminal = getSelectedTerminal() else {
                             return

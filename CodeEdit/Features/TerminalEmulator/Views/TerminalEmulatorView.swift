@@ -46,6 +46,7 @@ struct TerminalEmulatorView: NSViewRepresentable {
     public var onCwdChange: (URL?) -> Void
     public var onCommandStart: () -> Void
     public var onCommandFinish: (Int?) -> Void
+    public var onOpenLink: (String) -> Void
 
     /// Create an emulator view
     /// - Parameters:
@@ -60,7 +61,8 @@ struct TerminalEmulatorView: NSViewRepresentable {
         onTitleChange: @escaping (_ title: String) -> Void,
         onCwdChange: @escaping (URL?) -> Void = { _ in },
         onCommandStart: @escaping () -> Void = {},
-        onCommandFinish: @escaping (Int?) -> Void = { _ in }
+        onCommandFinish: @escaping (Int?) -> Void = { _ in },
+        onOpenLink: @escaping (String) -> Void = { _ in }
     ) {
         self.url = url
         self.terminalID = terminalID
@@ -69,6 +71,7 @@ struct TerminalEmulatorView: NSViewRepresentable {
         self.onCwdChange = onCwdChange
         self.onCommandStart = onCommandStart
         self.onCommandFinish = onCommandFinish
+        self.onOpenLink = onOpenLink
     }
 
     init(url: URL, task: CEActiveTask) {
@@ -79,6 +82,7 @@ struct TerminalEmulatorView: NSViewRepresentable {
         self.onCwdChange = { _ in }
         self.onCommandStart = {}
         self.onCommandFinish = { _ in }
+        self.onOpenLink = { _ in }
     }
 
     // MARK: - Settings
@@ -241,7 +245,8 @@ struct TerminalEmulatorView: NSViewRepresentable {
             onTitleChange: onTitleChange,
             onCwdChange: onCwdChange,
             onCommandStart: onCommandStart,
-            onCommandFinish: onCommandFinish
+            onCommandFinish: onCommandFinish,
+            onOpenLink: onOpenLink
         )
     }
 }

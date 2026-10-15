@@ -15,6 +15,7 @@ extension TerminalEmulatorView {
         public var onCwdChange: (URL?) -> Void
         public var onCommandStart: () -> Void
         public var onCommandFinish: (Int?) -> Void
+        public var onOpenLink: (String) -> Void
 
         var mode: TerminalMode
 
@@ -24,15 +25,21 @@ extension TerminalEmulatorView {
             onTitleChange: @escaping (_ title: String) -> Void,
             onCwdChange: @escaping (URL?) -> Void,
             onCommandStart: @escaping () -> Void,
-            onCommandFinish: @escaping (Int?) -> Void
+            onCommandFinish: @escaping (Int?) -> Void,
+            onOpenLink: @escaping (String) -> Void
         ) {
             self.terminalID = terminalID
+            self.mode = mode
             self.onTitleChange = onTitleChange
             self.onCwdChange = onCwdChange
             self.onCommandStart = onCommandStart
             self.onCommandFinish = onCommandFinish
-            self.mode = mode
+            self.onOpenLink = onOpenLink
             super.init()
+        }
+
+        func requestOpenLink(source: TerminalView, link: String, params: [String: String]) {
+            onOpenLink(link)
         }
 
         /// Parses our shell-integration command markers (`OSC 1337; CodeEdit=start` / `CodeEdit=exit;<code>`).
