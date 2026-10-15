@@ -190,6 +190,8 @@ final class ProjectNavigatorMenu: NSMenu {
     /// Submenu for **Source Control** menu item.
     private func sourceControlMenu(item: CEWorkspaceFile) -> NSMenu {
         let sourceControlMenu = NSMenu(title: "Source Control")
+        sourceControlMenu.addItem(menuItem("Show Diff", action: #selector(showDiff)))
+        sourceControlMenu.addItem(.separator())
         sourceControlMenu.addItem(
             withTitle: "Commit \"\(String(describing: item.fileName()))\"...",
             action: nil,

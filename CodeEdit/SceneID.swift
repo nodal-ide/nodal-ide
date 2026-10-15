@@ -13,5 +13,4 @@ enum SceneID: String, CaseIterable {
     case extensions
     case settings
     case knowledge
-    case diff
 }

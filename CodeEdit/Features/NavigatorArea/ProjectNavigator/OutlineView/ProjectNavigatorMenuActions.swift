@@ -40,6 +40,21 @@ extension ProjectNavigatorMenu {
         return uniqueParents.count == 1
     }
 
+    /// Opens the diff viewer for the selected (changed) file.
+    @MainActor
+    @objc
+    func showDiff() {
+        guard let workspace,
+              let manager = workspace.sourceControlManager,
+              let file = selectedItems().first ?? item,
+              let changed = manager.changedFiles.first(where: {
+                  $0.ceFileKey == file.url.absoluteURL.path(percentEncoded: false)
+              }) else {
+            return
+        }
+        DiffViewerPresenter.shared.show(file: changed, manager: manager)
+    }
+
     /// Action that opens **Finder** at the items location.
     @objc
     func showInFinder() {
