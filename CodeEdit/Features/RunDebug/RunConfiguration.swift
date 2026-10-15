@@ -30,9 +30,15 @@ struct RunConfiguration: Identifiable, Codable, Hashable {
         }
     }
 
-    struct EnvironmentVariable: Codable, Hashable {
-        var key: String
-        var value: String
+    struct EnvironmentVariable: Identifiable, Codable, Hashable {
+        var id = UUID()
+        var key: String = ""
+        var value: String = ""
+
+        enum CodingKeys: String, CodingKey {
+            case key
+            case value
+        }
     }
 
     var id: UUID = UUID()

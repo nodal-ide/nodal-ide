@@ -48,24 +48,12 @@ struct RunCommands: Commands {
         }
     }
 
-    /// Opens the workspace's `launch.json` (creating an empty one if needed).
+    /// Opens the workspace settings (which hosts the Run Configurations editor).
     private func openConfigurations() {
-        guard let url = windowController?.workspace?.runConfigurationStore?.launchFileURL,
-              url.path != "/dev/null" else {
-            return
-        }
-        let fileManager = FileManager.default
-        if !fileManager.fileExists(atPath: url.path) {
-            try? fileManager.createDirectory(
-                at: url.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            try? "[]".write(to: url, atomically: true, encoding: .utf8)
-        }
-        CodeEditDocumentController.shared.openDocument(
-            withContentsOf: url,
-            display: true,
-            completionHandler: { _, _, _ in }
+        NSApp.sendAction(
+            #selector(CodeEditWindowController.openWorkspaceSettings(_:)),
+            to: windowController,
+            from: nil
         )
     }
 }

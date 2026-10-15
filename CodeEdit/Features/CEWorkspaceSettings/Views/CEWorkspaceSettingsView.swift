@@ -15,6 +15,8 @@ struct CEWorkspaceSettingsView: View {
 
     @State var selectedTaskID: UUID?
     @State var showAddTaskSheet: Bool = false
+    @State var selectedRunConfigurationID: UUID?
+    @State var showRunConfigurationSheet: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -73,6 +75,28 @@ struct CEWorkspaceSettingsView: View {
                         }
                     }
                 }
+
+                if let store = workspace.runConfigurationStore {
+                    Section {
+                        RunConfigurationListView(
+                            store: store,
+                            selectedID: $selectedRunConfigurationID,
+                            showEditor: $showRunConfigurationSheet
+                        )
+                    } header: {
+                        Text("Run Configurations")
+                    } footer: {
+                        HStack {
+                            Spacer()
+                            Button {
+                                selectedRunConfigurationID = nil
+                                showRunConfigurationSheet = true
+                            } label: {
+                                Text("Add Configuration...")
+                            }
+                        }
+                    }
+                }
             }
             .formStyle(.grouped)
             .scrollContentBackground(.hidden)
@@ -100,6 +124,17 @@ struct CEWorkspaceSettingsView: View {
                 )
             } else {
                 AddCETaskView()
+            }
+        }
+        .sheet(isPresented: $showRunConfigurationSheet) {
+            if let store = workspace.runConfigurationStore {
+                let taskNames = workspaceSettingsManager.settings.tasks.map(\.name)
+                if let id = selectedRunConfigurationID,
+                   let configuration = store.configurations.first(where: { $0.id == id }) {
+                    RunConfigurationEditorSheet(store: store, configuration: configuration, taskNames: taskNames)
+                } else {
+                    RunConfigurationEditorSheet(store: store, configuration: nil, taskNames: taskNames)
+                }
             }
         }
     }
