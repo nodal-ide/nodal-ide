@@ -18,8 +18,8 @@ enum CommandCenterProviders {
 
         if let root = workspace.fileURL {
             registry.register(FilesProvider(workspaceURL: root))
-            registry.register(SymbolsProvider(workspaceURL: root))
         }
+        registry.register(SymbolsProvider(workspace: workspace))
         if let manager = workspace.sourceControlManager {
             registry.register(GitProvider(manager: manager))
         }

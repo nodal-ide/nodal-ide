@@ -13,6 +13,8 @@ struct CommandCenterItem: Identifiable, Hashable {
         case file(URL, NSRange?)
         case command(String)
         case symbol(URL, NSRange)
+        /// A file position (0-based line/character), e.g. from LSP workspace symbols.
+        case position(URL, Int, Int)
         /// A provider-specific route string, resolved by the router.
         case route(String)
     }
