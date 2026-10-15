@@ -48,6 +48,8 @@ struct CodeFileView: View {
     var wrapLinesToEditorWidth
     @AppSettings(\.textEditing.overscroll)
     var overscroll
+    @AppSettings(\.textEditing.showInlayHints)
+    var showInlayHints
     @AppSettings(\.textEditing.font)
     var settingsFont
     @AppSettings(\.theme.useThemeBackground)
@@ -258,7 +260,7 @@ struct CodeFileView: View {
             codeActionDelegate: languageDelegate,
             diagnosticsDelegate: languageDelegate,
             symbolsDelegate: languageDelegate,
-            inlayHintDelegate: languageDelegate
+            inlayHintDelegate: showInlayHints ? languageDelegate : nil
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))

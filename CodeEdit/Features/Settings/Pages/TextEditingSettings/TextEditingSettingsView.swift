@@ -28,6 +28,7 @@ struct TextEditingSettingsView: View {
                 showGutter
                 showMinimap
                 showFoldingRibbon
+                showInlayHints
                 reformatSettings
             }
             Section {
@@ -229,6 +230,12 @@ private extension TextEditingSettingsView {
             .disabled(!textEditing.showGutter) // Disabled when the gutter is disabled
             // swiftlint:disable:next line_length
             .help("The code folding ribbon lets you fold regions of code. When the gutter is disabled, the folding ribbon is disabled.")
+    }
+
+    @ViewBuilder private var showInlayHints: some View {
+        Toggle("Show inlay hints", isOn: $textEditing.showInlayHints)
+            // swiftlint:disable:next line_length
+            .help("Show inline hints from the language server, such as inferred types and parameter names, without modifying the text.")
     }
 
     @ViewBuilder private var reformatSettings: some View {

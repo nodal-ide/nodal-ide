@@ -85,6 +85,9 @@ extension SettingsData {
         /// Toggle the code folding ribbon.
         var showFoldingRibbon: Bool = true
 
+        /// Toggle inline inlay hints (e.g. inferred types, parameter names) provided by the language server.
+        var showInlayHints: Bool = true
+
         /// The column at which to reformat text
         var reformatAtColumn: Int = 80
 
@@ -147,6 +150,7 @@ extension SettingsData {
             self.showGutter = try container.decodeIfPresent(Bool.self, forKey: .showGutter) ?? true
             self.showMinimap = try container.decodeIfPresent(Bool.self, forKey: .showMinimap) ?? true
             self.showFoldingRibbon = try container.decodeIfPresent(Bool.self, forKey: .showFoldingRibbon) ?? true
+            self.showInlayHints = try container.decodeIfPresent(Bool.self, forKey: .showInlayHints) ?? true
             self.reformatAtColumn = try container.decodeIfPresent(Int.self, forKey: .reformatAtColumn) ?? 80
             self.showReformattingGuide = try container.decodeIfPresent(
                 Bool.self,
