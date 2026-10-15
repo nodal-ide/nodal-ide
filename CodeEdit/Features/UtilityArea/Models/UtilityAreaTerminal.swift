@@ -20,6 +20,8 @@ final class UtilityAreaTerminal: ObservableObject, Identifiable, Equatable {
     @Published var terminalTitle: String
     @Published var shell: Shell?
     @Published var customTitle: Bool
+    /// The shell's current working directory, tracked via shell integration (OSC 7).
+    @Published var cwd: URL?
 
     init(id: UUID, url: URL, title: String, shell: Shell?) {
         self.id = id

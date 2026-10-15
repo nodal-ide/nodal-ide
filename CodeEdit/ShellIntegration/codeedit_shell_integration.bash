@@ -450,8 +450,14 @@ __codeedit_preexec() {
     builtin printf "\033]0;%s\007" "$1"
 }
 
+# Emit OSC 7 (current working directory) so the terminal can track the shell's cwd.
+__codeedit_cwd() {
+    builtin printf "\033]7;file://%s%s\007" "${HOSTNAME:-localhost}" "$PWD"
+}
+
 __codeedit_precmd() {
     builtin printf "\033]0;bash\007"
+    __codeedit_cwd
 }
 
 preexec_functions+=(__codeedit_preexec)

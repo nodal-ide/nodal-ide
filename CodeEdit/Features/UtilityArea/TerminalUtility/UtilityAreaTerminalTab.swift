@@ -62,6 +62,7 @@ struct UtilityAreaTerminalTab: View {
                 }
             }
         }
+        .help(terminal.cwd?.path(percentEncoded: false) ?? terminal.title)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(terminalTitle.wrappedValue)
         .accessibilityIdentifier("terminalTab")

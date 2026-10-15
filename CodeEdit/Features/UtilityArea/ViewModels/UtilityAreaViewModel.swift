@@ -124,6 +124,11 @@ class UtilityAreaViewModel: ObservableObject {
         }
     }
 
+    /// Update a terminal's current working directory (from shell integration).
+    func updateTerminal(_ id: UUID, cwd: URL?) {
+        terminals.first(where: { $0.id == id })?.cwd = cwd
+    }
+
     /// Create a new terminal if there are no existing terminals.
     /// Will not perform any action if terminals exist in the ``terminals`` array.
     /// - Parameter workspaceURL: The base url of the workspace, to initialize terminals.l

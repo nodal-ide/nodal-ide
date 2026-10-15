@@ -43,6 +43,7 @@ struct TerminalEmulatorView: NSViewRepresentable {
 
     public var mode: TerminalMode
     public var onTitleChange: (_ title: String) -> Void
+    public var onCwdChange: (URL?) -> Void
 
     /// Create an emulator view
     /// - Parameters:
@@ -50,11 +51,18 @@ struct TerminalEmulatorView: NSViewRepresentable {
     ///   - terminalID: The ID of the terminal. Used to restore state when switching away from the view.
     ///   - shellType: The type of shell to use. Overrides any settings or auto-detection.
     ///   - onTitleChange: A callback used when the terminal updates it's title.
-    init(url: URL, terminalID: UUID, shellType: Shell? = nil, onTitleChange: @escaping (_ title: String) -> Void) {
+    init(
+        url: URL,
+        terminalID: UUID,
+        shellType: Shell? = nil,
+        onTitleChange: @escaping (_ title: String) -> Void,
+        onCwdChange: @escaping (URL?) -> Void = { _ in }
+    ) {
         self.url = url
         self.terminalID = terminalID
         self.mode = .shell(shellType: shellType)
         self.onTitleChange = onTitleChange
+        self.onCwdChange = onCwdChange
     }
 
     init(url: URL, task: CEActiveTask) {
@@ -62,6 +70,7 @@ struct TerminalEmulatorView: NSViewRepresentable {
         self.url = url
         self.mode = .task(activeTask: task)
         self.onTitleChange = { _ in }
+        self.onCwdChange = { _ in }
     }
 
     // MARK: - Settings
@@ -218,6 +227,11 @@ struct TerminalEmulatorView: NSViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(terminalID: terminalID, mode: mode, onTitleChange: onTitleChange)
+        Coordinator(
+            terminalID: terminalID,
+            mode: mode,
+            onTitleChange: onTitleChange,
+            onCwdChange: onCwdChange
+        )
     }
 }

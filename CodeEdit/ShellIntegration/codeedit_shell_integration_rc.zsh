@@ -52,6 +52,8 @@ __codeedit_preexec() {
 
 __codeedit_precmd() {
     builtin printf "\033]0;zsh\007"
+    # Emit OSC 7 (current working directory) so the terminal can track the shell's cwd.
+    builtin printf "\033]7;file://%s%s\007" "${HOST:-localhost}" "$PWD"
 }
 
 add-zsh-hook preexec __codeedit_preexec

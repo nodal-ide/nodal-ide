@@ -133,6 +133,11 @@ struct UtilityAreaTerminalView: View {
                         DispatchQueue.main.async { [weak utilityAreaViewModel] in
                             utilityAreaViewModel?.updateTerminal(terminal.id, title: newTitle)
                         }
+                    },
+                    onCwdChange: { url in
+                        DispatchQueue.main.async { [weak utilityAreaViewModel] in
+                            utilityAreaViewModel?.updateTerminal(terminal.id, cwd: url)
+                        }
                     }
                 )
                 .frame(height: fill ? nil : max(0, constrainedHeight - 1))
