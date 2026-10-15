@@ -157,7 +157,7 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
 
     /// Opens the ⌘K command center (files, symbols, commands).
     @IBAction func openCommandCenter(_ sender: Any?) {
-        guard let workspace, let workspaceURL = workspace.fileURL else { return }
+        guard let workspace else { return }
 
         if let commandCenterPanel {
             if commandCenterPanel.isKeyWindow {
@@ -173,8 +173,8 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
 
         let panel = SearchPanel()
         self.commandCenterPanel = panel
-        let state = CommandPaletteViewModel(workspaceURL: workspaceURL)
-        let contentView = CommandPaletteView(state: state) {
+        let state = CommandCenterViewModel(workspace: workspace)
+        let contentView = CommandCenterView(model: state) {
             panel.close()
             self.panelOpen = false
             self.commandCenterPanel = nil
