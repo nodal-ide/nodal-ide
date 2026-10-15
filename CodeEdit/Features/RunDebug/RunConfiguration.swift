@@ -55,6 +55,8 @@ struct RunConfiguration: Identifiable, Codable, Hashable {
     var preLaunchTask: String?
     /// The debug adapter id (Developer settings ▸ Debug Adapters) — used for `debug` configurations.
     var adapter: String?
+    /// The debug request: `launch` (default) or `attach`.
+    var debugRequest: String?
     /// The program to launch (debug configurations). Defaults to `command`.
     var program: String?
     /// Space-separated program arguments (debug configurations).

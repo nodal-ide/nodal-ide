@@ -34,6 +34,8 @@ final class DebugSession: ObservableObject {
         let adapterExecutable: URL
         var adapterArguments: [String] = []
         let adapterID: String
+        /// The DAP request to send: `launch` (default) or `attach`.
+        var request: String = "launch"
         let launchArguments: [String: JSONValue]
         var workingDirectory: URL?
         var environment: [String: String]?
@@ -120,10 +122,10 @@ final class DebugSession: ObservableObject {
             return
         }
 
-        // Launch — the adapter may not respond until `configurationDone` is received.
+        // Launch/attach — the adapter may not respond until `configurationDone` is received.
         launchTask = Task { [weak self] in
             guard let self, let client = self.client else { return }
-            _ = try? await client.send(command: "launch", arguments: .object(options.launchArguments))
+            _ = try? await client.send(command: options.request, arguments: .object(options.launchArguments))
             if self.state == .launching {
                 self.state = .running
             }
@@ -216,6 +218,12 @@ final class DebugSession: ObservableObject {
     func selectFrame(_ frame: DAPStackFrame) async {
         currentFrameID = frame.id
         await refreshScopes(frameID: frame.id)
+    }
+
+    /// Switches to another thread and refreshes its stack.
+    func selectThread(_ id: Int) async {
+        currentThreadID = id
+        await refreshStackTrace(threadID: id)
     }
 
     func loadVariables(reference: Int) async {

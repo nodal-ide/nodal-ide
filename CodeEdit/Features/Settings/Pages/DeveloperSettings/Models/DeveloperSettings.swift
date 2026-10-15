@@ -27,6 +27,9 @@ extension SettingsData {
         /// A dictionary that stores a debug adapter id and the path to its executable.
         var debugAdapters: [String: String] = [:]
 
+        /// Optional extra command-line arguments per debug adapter id (space-separated).
+        var debugAdapterArguments: [String: String] = [:]
+
         /// Language identifiers that should use the app's built-in (native) language implementation instead of an
         /// external language server. Defaults to `php`, which ships with a native engine.
         var internalLanguages: [String] = InternalLanguage.defaultEnabledIdentifiers
@@ -49,6 +52,11 @@ extension SettingsData {
             self.debugAdapters = try container.decodeIfPresent(
                 [String: String].self,
                 forKey: .debugAdapters
+            ) ?? [:]
+
+            self.debugAdapterArguments = try container.decodeIfPresent(
+                [String: String].self,
+                forKey: .debugAdapterArguments
             ) ?? [:]
 
             self.internalLanguages = try container.decodeIfPresent(

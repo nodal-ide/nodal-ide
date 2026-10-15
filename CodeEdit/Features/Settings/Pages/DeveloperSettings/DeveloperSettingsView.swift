@@ -19,6 +19,9 @@ struct DeveloperSettingsView: View {
     @AppSettings(\.developerSettings.debugAdapters)
     var debugAdapters
 
+    @AppSettings(\.developerSettings.debugAdapterArguments)
+    var debugAdapterArguments
+
     var body: some View {
         SettingsForm {
             Section {
@@ -55,6 +58,19 @@ struct DeveloperSettingsView: View {
                 ) {
                     Text("Add a debug adapter")
                     Text("Specify an adapter id (e.g. php, python, lldb) and the path to its debug adapter executable.")
+                } actionBarTrailing: {
+                    EmptyView()
+                }
+                .frame(minHeight: 96)
+
+                KeyValueTable(
+                    items: $debugAdapterArguments,
+                    keyColumnName: "Adapter",
+                    valueColumnName: "Arguments",
+                    newItemInstruction: "Add adapter arguments"
+                ) {
+                    Text("Add adapter arguments")
+                    Text("Optional extra command-line arguments passed to the debug adapter (space-separated).")
                 } actionBarTrailing: {
                     EmptyView()
                 }

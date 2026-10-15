@@ -62,6 +62,24 @@ private struct DebugSessionContent: View {
     }
 
     @ViewBuilder private var callStack: some View {
+        if session.threads.count > 1 {
+            Menu {
+                ForEach(session.threads) { thread in
+                    Button(thread.name) {
+                        Task { await session.selectThread(thread.id) }
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "list.bullet")
+                    Text(session.threads.first { $0.id == session.currentThreadID }?.name ?? "Thread")
+                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 8))
+                }
+                .font(.system(size: 11))
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+        }
         if session.callStack.isEmpty {
             Text("Not stopped").font(.system(size: 11)).foregroundStyle(.secondary)
         } else {

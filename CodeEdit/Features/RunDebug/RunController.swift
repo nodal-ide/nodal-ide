@@ -70,11 +70,16 @@ final class RunController: ObservableObject {
             launch["cwd"] = .string(configuration.workingDirectory)
         }
 
+        let adapterArguments = (Settings.shared.preferences.developerSettings.debugAdapterArguments[adapterID] ?? "")
+            .split(separator: " ").map(String.init)
+
         runningConfigurationID = configuration.id
         debugController.start(
             DebugSession.LaunchOptions(
                 adapterExecutable: URL(filePath: path),
+                adapterArguments: adapterArguments,
                 adapterID: adapterID,
+                request: configuration.debugRequest == "attach" ? "attach" : "launch",
                 launchArguments: launch,
                 workingDirectory: workspace.fileURL
             )

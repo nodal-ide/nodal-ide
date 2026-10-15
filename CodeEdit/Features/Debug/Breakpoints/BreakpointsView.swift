@@ -47,11 +47,21 @@ private struct BreakpointsContent: View {
                         Text("line \(breakpoint.line)")
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
+                        if let condition = breakpoint.condition {
+                            Text(condition)
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
                         Spacer(minLength: 0)
                     }
                     .contentShape(Rectangle())
                     .onTapGesture { open(breakpoint) }
                     .contextMenu {
+                        Button("Edit Condition…") {
+                            editCondition(breakpoint)
+                        }
                         Button("Remove", role: .destructive) {
                             store.remove(breakpoint.id)
                         }
@@ -67,6 +77,27 @@ private struct BreakpointsContent: View {
             breakpoint.enabled
         } set: { enabled in
             store.setEnabled(breakpoint.id, enabled)
+        }
+    }
+
+    private func editCondition(_ breakpoint: Breakpoint) {
+        let alert = NSAlert()
+        alert.messageText = "Breakpoint Condition"
+        alert.informativeText = "The breakpoint stops only when this expression is true."
+        alert.addButton(withTitle: "Set")
+        alert.addButton(withTitle: "Clear")
+        alert.addButton(withTitle: "Cancel")
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
+        field.stringValue = breakpoint.condition ?? ""
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            store.setCondition(breakpoint.id, field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines))
+        case .alertSecondButtonReturn:
+            store.setCondition(breakpoint.id, nil)
+        default:
+            break
         }
     }
 

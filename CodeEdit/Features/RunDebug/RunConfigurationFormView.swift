@@ -63,6 +63,10 @@ struct RunConfigurationFormView: View {
                             Text(name).tag(name)
                         }
                     }
+                    Picker("Request", selection: requestBinding) {
+                        Text("Launch").tag("launch")
+                        Text("Attach").tag("attach")
+                    }
                     TextField("Program", text: programBinding, prompt: Text("Path to the program to debug"))
                     TextField("Arguments", text: argumentsBinding, prompt: Text("--flag value"))
                 } header: {
@@ -115,6 +119,12 @@ struct RunConfigurationFormView: View {
         Binding {
             configuration.adapter ?? ""
         } set: { configuration.adapter = $0.isEmpty ? nil : $0 }
+    }
+
+    private var requestBinding: Binding<String> {
+        Binding {
+            configuration.debugRequest ?? "launch"
+        } set: { configuration.debugRequest = $0 }
     }
 
     private var programBinding: Binding<String> {

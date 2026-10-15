@@ -59,6 +59,12 @@ final class BreakpointStore: ObservableObject {
         save()
     }
 
+    func setCondition(_ id: UUID, _ condition: String?) {
+        guard let index = breakpoints.firstIndex(where: { $0.id == id }) else { return }
+        breakpoints[index].condition = (condition?.isEmpty ?? true) ? nil : condition
+        save()
+    }
+
     /// Breakpoints grouped by file path (for the debug session).
     func groupedByFile() -> [String: [Breakpoint]] {
         Dictionary(grouping: breakpoints.filter(\.enabled), by: \.filePath)
