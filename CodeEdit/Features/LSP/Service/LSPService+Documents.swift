@@ -19,17 +19,9 @@ extension LSPService {
               !internalLanguages.contains(lspLanguage.rawValue) else {
             return
         }
-        guard hasServer(for: lspLanguage) else {
-            let configured = languageConfigs.keys.map(\.rawValue).joined(separator: ",")
-            let language = lspLanguage.rawValue
-            logger.info("openDocument: no config for \(language) (configured: \(configured, privacy: .public))")
-            return
-        }
+        guard hasServer(for: lspLanguage) else { return }
         let key = ClientKey(lspLanguage, workspacePath)
-        guard !failedClientKeys.contains(key) else {
-            logger.info("openDocument: skipping previously-failed \(lspLanguage.rawValue) server")
-            return
-        }
+        guard !failedClientKeys.contains(key) else { return }
         Task {
             let languageServer: LanguageServerType
             do {

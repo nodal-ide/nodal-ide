@@ -8,7 +8,6 @@
 
 import Foundation
 import AppKit
-import os
 import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
@@ -32,8 +31,6 @@ struct LSPCompletionEntry: CodeSuggestionEntry {
 
 /// A language provider backed by an LSP server.
 final class LSPLanguageProvider: LanguageProvider {
-    static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "LSPLanguageProvider")
-
     let languageID: String
     let priority: LanguageProviderPriority = .lsp
 

@@ -234,8 +234,7 @@ final class LSPService: ObservableObject {
             let server = try await task.value
             startingTasks[key] = nil
             languageClients[key] = server
-            // swiftlint:disable:next line_length
-            logger.info("Successfully started \(languageId.rawValue) language server (key path: \(workspacePath, privacy: .private))")
+            logger.info("Successfully started \(languageId.rawValue) language server")
             startListeningToEvents(for: key)
             return server
         } catch {

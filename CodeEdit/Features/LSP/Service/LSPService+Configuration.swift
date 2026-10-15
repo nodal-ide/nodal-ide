@@ -48,8 +48,6 @@ extension LSPService {
         }
 
         languageConfigs = configs
-        let keys = configs.keys.map(\.rawValue).joined(separator: ",")
-        logger.info("reloadConfigurations: \(configs.count) config(s) [\(keys, privacy: .public)]")
     }
 
     /// Default launch arguments for well-known language servers (most expect `--stdio`).
@@ -97,10 +95,10 @@ extension LSPService {
     /// Reloads configurations and (re)starts servers for any already-open documents.
     func reloadConfigurationsAndRestart() {
         reloadConfigurations()
-        let documents = NSDocumentController.shared.documents.compactMap { $0 as? CodeFileDocument }
-        logger.info("reloadConfigurationsAndRestart: reopening \(documents.count) document(s)")
-        for document in documents {
-            openDocument(document)
+        for document in NSDocumentController.shared.documents {
+            if let codeDocument = document as? CodeFileDocument {
+                openDocument(codeDocument)
+            }
         }
     }
 }

@@ -102,7 +102,6 @@ extension LSPService {
     /// Handles push diagnostics (`textDocument/publishDiagnostics`), which servers like
     /// `typescript-language-server` use instead of pull diagnostics.
     private func handlePublishDiagnostics(_ params: PublishDiagnosticsParams) {
-        logger.info("publishDiagnostics \(params.uri, privacy: .private) count=\(params.diagnostics.count)")
         // Feed the editor (inline diagnostics) and the Problems panel.
         LSPDiagnosticsCache.shared.update(uri: params.uri, diagnostics: params.diagnostics)
         NotificationCenter.default.post(name: Notification.Name("LSPDiagnosticsUpdated"), object: nil)
