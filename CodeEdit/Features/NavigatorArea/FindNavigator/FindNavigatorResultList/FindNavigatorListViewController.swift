@@ -42,6 +42,10 @@ final class FindNavigatorListViewController: NSViewController {
         self.scrollView.documentView = outlineView
         self.scrollView.contentView.automaticallyAdjustsContentInsets = false
         self.scrollView.contentView.contentInsets = .init(top: 0, left: 0, bottom: 0, right: 0)
+
+        let menu = NSMenu()
+        menu.delegate = self
+        outlineView.menu = menu
     }
 
     init(workspace: WorkspaceDocument) {
@@ -278,5 +282,32 @@ extension FindNavigatorListViewController: NSOutlineViewDelegate {
 // MARK: - NSMenuDelegate
 
 extension FindNavigatorListViewController: NSMenuDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
 
+        guard outlineView.clickedRow >= 0,
+              let match = outlineView.item(atRow: outlineView.clickedRow) as? SearchResultMatchModel,
+              let state = workspace.searchState else {
+            return
+        }
+
+        let replaceItem = NSMenuItem(
+            title: "Replace",
+            action: #selector(replaceClickedMatch(_:)),
+            keyEquivalent: ""
+        )
+        replaceItem.target = self
+        replaceItem.representedObject = match
+        menu.addItem(replaceItem)
+    }
+
+    @objc private func replaceClickedMatch(_ sender: NSMenuItem) {
+        guard let match = sender.representedObject as? SearchResultMatchModel,
+              let state = workspace.searchState else {
+            return
+        }
+        Task { @MainActor in
+            await state.replaceMatch(match, replacingTerm: state.replaceText)
+        }
+    }
 }

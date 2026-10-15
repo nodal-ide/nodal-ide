@@ -14,13 +14,17 @@ class SearchResultMatchModel: Hashable, Identifiable {
         rangeWithinFile: Range<String.Index>,
         file: CEWorkspaceFile,
         lineContent: String,
-        keywordRange: Range<String.Index>
+        keywordRange: Range<String.Index>,
+        offset: Int = 0,
+        matchedText: String = ""
     ) {
         self.id = UUID()
         self.file = file
         self.rangeWithinFile = rangeWithinFile
         self.lineContent = lineContent
         self.keywordRange = keywordRange
+        self.offset = offset
+        self.matchedText = matchedText
     }
 
     var id: UUID
@@ -28,6 +32,10 @@ class SearchResultMatchModel: Hashable, Identifiable {
     var rangeWithinFile: Range<String.Index>
     var lineContent: String
     var keywordRange: Range<String.Index>
+    /// The UTF-16 offset of the match within the file's content (at search time).
+    var offset: Int
+    /// The matched text.
+    var matchedText: String
 
     static func == (lhs: SearchResultMatchModel, rhs: SearchResultMatchModel) -> Bool {
         return lhs.id == rhs.id

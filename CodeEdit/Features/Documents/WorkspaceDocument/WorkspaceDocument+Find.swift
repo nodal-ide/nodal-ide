@@ -296,7 +296,9 @@ extension WorkspaceDocument.SearchState {
             rangeWithinFile: matchRange,
             file: file,
             lineContent: finalLine,
-            keywordRange: keywordRange
+            keywordRange: keywordRange,
+            offset: matchRange.lowerBound.utf16Offset(in: fileContent),
+            matchedText: String(fileContent[matchRange])
         )
     }
 

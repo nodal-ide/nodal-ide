@@ -169,6 +169,64 @@ extension WorkspaceDocument.SearchState {
         }
     }
 
+    /// Replaces a single search result (the "Replace" action for one match). Updates the open document if the
+    /// file is open, otherwise rewrites it on disk, then removes the match from the result list.
+    @MainActor
+    func replaceMatch(_ match: SearchResultMatchModel, replacingTerm: String) async {
+        let url = match.file.url
+
+        if let file = workspace.workspaceFileManager?.getFile(url.path)
+                    ?? workspace.workspaceFileManager?.getFile(url.relativePath),
+           let document = file.fileDocument,
+           let storage = document.content {
+            let ns = storage.string as NSString
+            guard let range = rangeForMatch(match, in: ns) else { return }
+            let updated = ns.replacingCharacters(in: range, with: replacingTerm)
+            storage.replaceCharacters(in: NSRange(location: 0, length: storage.length), with: updated)
+            document.updateChangeCount(.changeDone)
+        } else {
+            guard let content = try? String(contentsOf: url, encoding: .utf8) else { return }
+            let ns = content as NSString
+            guard let range = rangeForMatch(match, in: ns) else { return }
+            let updated = ns.replacingCharacters(in: range, with: replacingTerm)
+            try? updated.write(to: url, atomically: true, encoding: .utf8)
+        }
+
+        removeSearchResultMatch(match)
+    }
+
+    /// Locates a match in the given content, verifying the stored offset and falling back to a search.
+    private func rangeForMatch(_ match: SearchResultMatchModel, in content: NSString) -> NSRange? {
+        let length = (match.matchedText as NSString).length
+        guard length > 0 else { return nil }
+        let offset = min(max(match.offset, 0), content.length)
+        if offset + length <= content.length,
+           content.substring(with: NSRange(location: offset, length: length)) == match.matchedText {
+            return NSRange(location: offset, length: length)
+        }
+        let found = content.range(
+            of: match.matchedText,
+            options: [],
+            range: NSRange(location: offset, length: content.length - offset)
+        )
+        return found.location == NSNotFound ? nil : found
+    }
+
+    @MainActor
+    private func removeSearchResultMatch(_ match: SearchResultMatchModel) {
+        guard let index = searchResult.firstIndex(where: { result in
+            result.lineMatches.contains { $0.id == match.id }
+        }) else {
+            return
+        }
+        searchResult[index].lineMatches.removeAll { $0.id == match.id }
+        if searchResult[index].lineMatches.isEmpty {
+            searchResult.remove(at: index)
+        }
+        searchResultsCount = searchResult.reduce(0) { $0 + $1.lineMatches.count }
+        searchResultsFileCount = searchResult.count
+    }
+
     func setStatus(_ status: FindNavigatorStatus) async {
         await MainActor.run {
             self.findNavigatorStatus = status
