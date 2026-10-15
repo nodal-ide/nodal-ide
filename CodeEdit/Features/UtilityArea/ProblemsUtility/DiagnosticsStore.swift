@@ -111,7 +111,9 @@ final class DiagnosticsStore: ObservableObject {
 
     private static func isInside(_ url: URL, rootPath: String) -> Bool {
         let path = url.path(percentEncoded: false)
-        return path == rootPath || path.hasPrefix(rootPath + "/")
+        // Normalize a trailing slash so a workspace URL like `…/project/` still matches its files.
+        let root = rootPath.hasSuffix("/") ? String(rootPath.dropLast()) : rootPath
+        return path == root || path.hasPrefix(root + "/")
     }
 
     private func rebuild() {
