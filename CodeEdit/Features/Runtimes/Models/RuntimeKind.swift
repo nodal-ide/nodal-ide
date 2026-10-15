@@ -63,4 +63,13 @@ enum RuntimeVersionSource: String, Codable {
         case .volta: return "Volta"
         }
     }
+
+    /// Preference when the same version is found from multiple sources (lower wins).
+    var priority: Int {
+        switch self {
+        case .managed: return 0
+        case .brew, .nvm, .fnm, .volta: return 1
+        case .system: return 2
+        }
+    }
 }

@@ -8,6 +8,14 @@
 import Foundation
 
 enum RuntimeShell {
+    /// Common tool locations appended to `PATH` so Homebrew/system tools resolve even when a GUI app
+    /// launches us without the user's shell `PATH` (login shells from Finder/Xcode don't source `.zshrc`).
+    static let extraPathDirectories = [
+        "/opt/homebrew/bin", "/opt/homebrew/sbin",
+        "/usr/local/bin", "/usr/local/sbin",
+        "/usr/bin", "/bin", "/usr/sbin", "/sbin"
+    ]
+
     /// Runs a command in a non-interactive login shell and returns its trimmed stdout.
     @discardableResult
     static func run(_ command: String) -> String {
@@ -18,7 +26,9 @@ enum RuntimeShell {
     static func runResult(_ command: String) -> (output: String, status: Int32) {
         let task = Process()
         task.executableURL = URL(filePath: "/bin/zsh")
-        task.arguments = ["-lc", command]
+        // `export PATH` runs after the login profiles, guaranteeing Homebrew/system tools are reachable.
+        let extras = extraPathDirectories.joined(separator: ":")
+        task.arguments = ["-lc", "export PATH=\"$PATH:\(extras)\"; \(command)"]
         let pipe = Pipe()
         task.standardOutput = pipe
         task.standardError = pipe

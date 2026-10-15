@@ -153,9 +153,16 @@ final class NodeRuntimeProvider: RuntimeProvider {
     }
 
     private func deduped(_ runtimes: [InstalledRuntime]) -> [InstalledRuntime] {
-        var seen = Set<String>()
-        return runtimes
-            .filter { seen.insert($0.id).inserted }
-            .sorted { $0.version.compare($1.version, options: .numeric) == .orderedDescending }
+        var best: [String: InstalledRuntime] = [:]
+        for runtime in runtimes {
+            if let existing = best[runtime.version] {
+                if runtime.source.priority < existing.source.priority {
+                    best[runtime.version] = runtime
+                }
+            } else {
+                best[runtime.version] = runtime
+            }
+        }
+        return best.values.sorted { $0.version.compare($1.version, options: .numeric) == .orderedDescending }
     }
 }

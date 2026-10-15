@@ -112,8 +112,12 @@ enum RuntimeCatalog {
     // MARK: - Cache
 
     private struct Cache: Codable {
+        /// Bumped when the catalog's shape changes, to invalidate previously cached files.
+        let schema: Int?
         let fetchedAt: Date
         let versions: [RuntimeVersion]
+
+        static let currentSchema = 2
     }
 
     private static var cacheDirectory: URL {
@@ -148,12 +152,16 @@ enum RuntimeCatalog {
     }
 
     private static func load(_ kind: RuntimeKind) -> Cache? {
-        guard let data = try? Data(contentsOf: cacheURL(kind)) else { return nil }
-        return try? JSONDecoder().decode(Cache.self, from: data)
+        guard let data = try? Data(contentsOf: cacheURL(kind)),
+              let cache = try? JSONDecoder().decode(Cache.self, from: data),
+              cache.schema == Cache.currentSchema else {
+            return nil
+        }
+        return cache
     }
 
     private static func save(_ kind: RuntimeKind, _ versions: [RuntimeVersion]) {
-        let cache = Cache(fetchedAt: Date(), versions: versions)
+        let cache = Cache(schema: Cache.currentSchema, fetchedAt: Date(), versions: versions)
         guard let data = try? JSONEncoder().encode(cache) else { return }
         try? data.write(to: cacheURL(kind), options: .atomic)
     }
