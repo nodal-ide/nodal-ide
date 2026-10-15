@@ -52,6 +52,10 @@ struct EditorCommands: Commands {
                 LSPEditorActions.formatSelection(workspace: windowController?.workspace)
             }
 
+            Button("Organize Imports") {
+                LSPEditorActions.organizeImports(workspace: windowController?.workspace)
+            }
+
             Button("Rename Symbol…") {
                 LSPEditorActions.renameSymbol(workspace: windowController?.workspace)
             }

@@ -49,6 +49,41 @@ enum LSPEditorActions {
         }
     }
 
+    /// Requests and applies language-server "source" actions (e.g. organize imports) for the whole document.
+    /// The first action with edits is applied bottom-to-top.
+    static func organizeImports(workspace: WorkspaceDocument?) {
+        guard let workspace, let context = activeContext(workspace: workspace) else { return }
+        Task {
+            let length = context.controller.textView.textStorage?.length ?? 0
+            guard let range = context.controller.textView.lspRangeFrom(
+                nsRange: NSRange(location: 0, length: length)
+            ) else {
+                return
+            }
+            let actionContext = CodeActionContext(
+                diagnostics: [],
+                only: [.SourceOrganizeImports, .Source]
+            )
+            guard let response = try? await context.server.requestCodeActions(
+                for: context.fileURL.lspURI,
+                range: range,
+                context: actionContext
+            ) else {
+                return
+            }
+            for option in response {
+                guard case .optionB(var action) = option else { continue }
+                if action.edit == nil, action.data != nil,
+                   let resolved = try? await context.server.requestCodeActionResolve(action) {
+                    action = resolved
+                }
+                guard let edit = action.edit else { continue }
+                apply(edit, workspace: workspace, activeFileURL: context.fileURL, controller: context.controller)
+                return
+            }
+        }
+    }
+
     /// Formats a document's content in place before it is saved (format on save). Edits are applied
     /// bottom-to-top, and the content is only replaced if formatting actually changed it.
     static func formatForSave(document: CodeFileDocument, url: URL) async {
