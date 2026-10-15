@@ -30,6 +30,9 @@ extension SettingsData {
         /// Optional extra command-line arguments per debug adapter id (space-separated).
         var debugAdapterArguments: [String: String] = [:]
 
+        /// Global default runtime versions, keyed by runtime kind (`php`, `node`).
+        var defaultRuntimeVersions: [String: String] = [:]
+
         /// Language identifiers that should use the app's built-in (native) language implementation instead of an
         /// external language server. Defaults to `php`, which ships with a native engine.
         var internalLanguages: [String] = InternalLanguage.defaultEnabledIdentifiers
@@ -57,6 +60,11 @@ extension SettingsData {
             self.debugAdapterArguments = try container.decodeIfPresent(
                 [String: String].self,
                 forKey: .debugAdapterArguments
+            ) ?? [:]
+
+            self.defaultRuntimeVersions = try container.decodeIfPresent(
+                [String: String].self,
+                forKey: .defaultRuntimeVersions
             ) ?? [:]
 
             self.internalLanguages = try container.decodeIfPresent(
