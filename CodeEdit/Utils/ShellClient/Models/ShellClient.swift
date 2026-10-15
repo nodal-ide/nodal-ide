@@ -34,6 +34,10 @@ class ShellClient {
         task.standardError = pipe
         task.arguments = arguments
         task.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        // Include nvm/fnm/volta/Homebrew tool dirs so `npm`/`node` resolve even without the user's rc files.
+        var environment = ProcessInfo.processInfo.environment
+        environment["PATH"] = ShellEnvironment.augmentedPath()
+        task.environment = environment
         return (task, pipe)
     }
 
