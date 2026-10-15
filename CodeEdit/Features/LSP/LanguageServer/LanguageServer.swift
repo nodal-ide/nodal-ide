@@ -192,6 +192,11 @@ class LanguageServer<DocumentType: LanguageServerDocument> {
                     resolveSupport: CodeActionClientCapabilities.ResolveSupport(properties: ["edit"]),
                     honorsChangeAnnotations: false
                 ),
+                foldingRange: FoldingRangeClientCapabilities(
+                    dynamicRegistration: false,
+                    rangeLimit: nil,
+                    lineFoldingOnly: true
+                ),
                 // swiftlint:disable:next line_length
                 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokensClientCapabilities
                 semanticTokens: SemanticTokensClientCapabilities(

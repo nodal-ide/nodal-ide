@@ -12,7 +12,8 @@ import CodeEditLangPHP
 
 /// The set of editor delegate protocols a language provider (or the aggregator) implements.
 typealias LanguageDelegate = CodeSuggestionDelegate & JumpToDefinitionDelegate & HoverDelegate &
-    SignatureHelpDelegate & CodeActionDelegate & DiagnosticsDelegate & SymbolsDelegate & InlayHintDelegate
+    SignatureHelpDelegate & CodeActionDelegate & DiagnosticsDelegate & SymbolsDelegate & InlayHintDelegate &
+    FoldRangeDelegate
 
 /// Resolves the ordered list of ``LanguageProvider``s for an open file.
 ///

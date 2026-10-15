@@ -266,6 +266,24 @@ final class LSPLanguageProvider: LanguageProvider {
         }
     }
 
+    // MARK: - Folding ranges
+
+    @MainActor
+    func foldRanges(for textView: TextViewController) async -> [EditorFoldRange] {
+        guard let server = server,
+              let ranges = try? await server.requestFoldingRange(for: documentURI) else {
+            return []
+        }
+        return ranges.compactMap { range in
+            guard range.endLine > range.startLine else { return nil }
+            return EditorFoldRange(
+                startLine: range.startLine,
+                endLine: range.endLine,
+                kind: range.kind?.rawValue
+            )
+        }
+    }
+
     // MARK: - Completion
 
     @MainActor
