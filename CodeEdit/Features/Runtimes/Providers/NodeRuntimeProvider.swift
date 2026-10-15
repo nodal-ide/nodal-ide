@@ -114,6 +114,16 @@ final class NodeRuntimeProvider: RuntimeProvider {
         try FileManager.default.removeItem(at: runtime.executableDirectory.deletingLastPathComponent())
     }
 
+    func debugger(for runtime: InstalledRuntime) -> RuntimeDebugger? {
+        RuntimeDebugger(
+            kind: .node,
+            adapterID: "node",
+            adapterCandidates: ["js-debug", "dapDebugServer", "vscode-js-debug", "node-debug"],
+            environment: environment(for: runtime),
+            interpreterPath: runtime.executableDirectory.appending(path: "node").path(percentEncoded: false)
+        )
+    }
+
     // MARK: - Helpers
 
     private func scanDirectory(

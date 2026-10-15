@@ -58,41 +58,71 @@ final class RunController: ObservableObject {
         Task { await taskManager.runTask(task: task) }
     }
 
-    /// Starts a debug session using the configuration's adapter (Developer settings ▸ Debug Adapters).
+    /// Starts a debug session using the configuration's adapter (Developer settings ▸ Debug Adapters),
+    /// falling back to the project runtime's debugger when no adapter is configured.
     private func startDebug(_ configuration: RunConfiguration) {
         guard let workspace, let debugController = workspace.debugController else { return }
+        let program = (configuration.program?.isEmpty == false ? configuration.program : configuration.command) ?? ""
+        let args = (configuration.arguments ?? "").split(separator: " ").map(String.init)
+
         let adapters = Settings.shared.preferences.developerSettings.debugAdapters
-        guard let adapterID = configuration.adapter, adapterID.isEmpty == false,
-              let path = adapters[adapterID], !path.isEmpty else {
+        if let adapterID = configuration.adapter, adapterID.isEmpty == false,
+           let path = adapters[adapterID], !path.isEmpty {
+            var launch: [String: JSONValue] = [
+                "program": .string(program),
+                "args": .array(args.map { .string($0) }),
+                "env": .object(configuration.environmentDictionary.mapValues { .string($0) })
+            ]
+            if !configuration.workingDirectory.isEmpty {
+                launch["cwd"] = .string(configuration.workingDirectory)
+            }
+
+            let adapterArguments = (
+                Settings.shared.preferences.developerSettings.debugAdapterArguments[adapterID] ?? ""
+            ).split(separator: " ").map(String.init)
+
+            runningConfigurationID = configuration.id
+            debugController.start(
+                DebugSession.LaunchOptions(
+                    adapterExecutable: URL(filePath: path),
+                    adapterArguments: adapterArguments,
+                    adapterID: adapterID,
+                    request: configuration.debugRequest == "attach" ? "attach" : "launch",
+                    launchArguments: launch,
+                    workingDirectory: workspace.fileURL,
+                    environment: RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)
+                )
+            )
             return
         }
 
-        let program = (configuration.program?.isEmpty == false ? configuration.program : configuration.command) ?? ""
-        let args = (configuration.arguments ?? "").split(separator: " ").map(String.init)
-        var launch: [String: JSONValue] = [
-            "program": .string(program),
-            "args": .array(args.map { .string($0) }),
-            "env": .object(configuration.environmentDictionary.mapValues { .string($0) })
-        ]
-        if !configuration.workingDirectory.isEmpty {
-            launch["cwd"] = .string(configuration.workingDirectory)
-        }
-
-        let adapterArguments = (Settings.shared.preferences.developerSettings.debugAdapterArguments[adapterID] ?? "")
-            .split(separator: " ").map(String.init)
-
+        // No explicit adapter: auto-wire from the project's runtime.
         runningConfigurationID = configuration.id
-        debugController.start(
-            DebugSession.LaunchOptions(
-                adapterExecutable: URL(filePath: path),
-                adapterArguments: adapterArguments,
-                adapterID: adapterID,
-                request: configuration.debugRequest == "attach" ? "attach" : "launch",
-                launchArguments: launch,
-                workingDirectory: workspace.fileURL,
-                environment: RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)
-            )
-        )
+        Task { [weak self] in await self?.startAutoDebug(program: program, arguments: args) }
+    }
+
+    /// Starts a debug session for the active file, auto-wired from the project's runtime.
+    func debugCurrentFile() {
+        guard let workspace,
+              let url = workspace.editorManager?.activeEditor.selectedTab?.file.url else { return }
+        Task { [weak self] in
+            await self?.startAutoDebug(program: url.path(percentEncoded: false))
+        }
+    }
+
+    /// Starts a debug session using the runtime's debugger configuration.
+    private func startAutoDebug(program: String, arguments: [String] = []) async {
+        guard let workspace, let debugController = workspace.debugController else { return }
+        await RuntimeEnvironment.shared.refresh(workspace: workspace)
+        guard let options = await DebuggerAutoWiring.options(
+            workspace: workspace,
+            program: program,
+            arguments: arguments
+        ) else {
+            DebuggerAutoWiring.reportUnavailable(kind: DebuggerAutoWiring.kind(forProgram: program))
+            return
+        }
+        debugController.start(options)
     }
 
     func stop() {

@@ -64,6 +64,18 @@ final class PHPRuntimeProvider: RuntimeProvider {
         try FileManager.default.removeItem(at: runtime.executableDirectory.deletingLastPathComponent())
     }
 
+    func debugger(for runtime: InstalledRuntime) -> RuntimeDebugger? {
+        var environment = environment(for: runtime)
+        environment["XDEBUG_MODE"] = "debug"
+        return RuntimeDebugger(
+            kind: .php,
+            adapterID: "php",
+            adapterCandidates: ["php-debug-adapter", "php-debug", "phpDebug"],
+            environment: environment,
+            interpreterPath: runtime.executableDirectory.appending(path: "php").path(percentEncoded: false)
+        )
+    }
+
     // MARK: - Helpers
 
     /// Enumerates PHP versions installed via Homebrew under the Cellar.

@@ -31,6 +31,9 @@ protocol RuntimeProvider: AnyObject {
 
     /// The environment (e.g. a `PATH` prepend) to run tools with this runtime.
     func environment(for runtime: InstalledRuntime) -> [String: String]
+
+    /// Debugger wiring for this runtime, if supported.
+    func debugger(for runtime: InstalledRuntime) -> RuntimeDebugger?
 }
 
 extension RuntimeProvider {
@@ -38,6 +41,8 @@ extension RuntimeProvider {
         let bin = runtime.executableDirectory.path(percentEncoded: false)
         return ["PATH": bin + ":" + (ProcessInfo.processInfo.environment["PATH"] ?? "")]
     }
+
+    func debugger(for runtime: InstalledRuntime) -> RuntimeDebugger? { nil }
 
     /// Marks catalog versions that are installed on the system.
     func annotate(_ versions: [RuntimeVersion], installed: [InstalledRuntime]) -> [RuntimeVersion] {

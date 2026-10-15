@@ -27,6 +27,11 @@ struct RunCommands: Commands {
             }
             .disabled(!(runController?.isRunning ?? false))
 
+            Button("Debug Current File", systemImage: "ladybug") {
+                runController?.debugCurrentFile()
+            }
+            .keyboardShortcut("d", modifiers: [.control, .option])
+
             Divider()
 
             Menu("Run Configuration") {
