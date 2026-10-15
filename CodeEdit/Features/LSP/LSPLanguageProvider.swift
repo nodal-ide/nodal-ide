@@ -130,7 +130,10 @@ final class LSPLanguageProvider: LanguageProvider {
 
     @MainActor
     func diagnostics(for textView: TextViewController) async -> [EditorDiagnostic] {
-        guard let server = server, let report = try? await server.requestPullDiagnostics(document: documentURI) else {
+        // Only pull when the server advertises pull-diagnostics support; otherwise it pushes them.
+        guard let server = server,
+              server.serverCapabilities.diagnosticProvider != nil,
+              let report = try? await server.requestPullDiagnostics(document: documentURI) else {
             return []
         }
         return (report.items ?? []).compactMap { diagnostic in
@@ -152,7 +155,9 @@ final class LSPLanguageProvider: LanguageProvider {
               let lspRange = textView.textView.lspRangeFrom(nsRange: range) else {
             return []
         }
-        let diagnostics = (try? await server.requestPullDiagnostics(document: documentURI))?.items ?? []
+        let diagnostics = server.serverCapabilities.diagnosticProvider != nil
+            ? (try? await server.requestPullDiagnostics(document: documentURI))?.items ?? []
+            : []
         let context = CodeActionContext(diagnostics: diagnostics, only: nil)
         guard let response = try? await server.requestCodeActions(
             for: documentURI,
