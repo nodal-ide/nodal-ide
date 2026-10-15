@@ -58,7 +58,7 @@ final class PHPRuntimeProvider: RuntimeProvider {
     }
 
     func uninstall(_ runtime: InstalledRuntime) async throws {
-        guard runtime.isManaged else {
+        guard runtime.isManaged, RuntimeManager.isManagedPath(runtime.executableDirectory) else {
             throw RuntimeError.installFailed("Only managed runtimes can be removed.")
         }
         try FileManager.default.removeItem(at: runtime.executableDirectory.deletingLastPathComponent())

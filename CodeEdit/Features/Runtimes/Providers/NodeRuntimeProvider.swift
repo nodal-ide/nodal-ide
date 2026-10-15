@@ -17,9 +17,15 @@ final class NodeRuntimeProvider: RuntimeProvider {
         let home = FileManager.default.homeDirectoryForCurrentUser
         runtimes += scanDirectory(RuntimeManager.runtimesRoot.appending(path: "node"), source: .managed)
         runtimes += scanDirectory(home.appending(path: ".nvm/versions/node"), source: .nvm)
-        runtimes += scanDirectory(home.appending(path: ".fnm/node-versions"), source: .fnm, binSubdir: "installation/bin")
         runtimes += scanDirectory(
-            home.appending(path: "Library/Application Support/fnm/node-versions"), source: .fnm, binSubdir: "installation/bin"
+            home.appending(path: ".fnm/node-versions"),
+            source: .fnm,
+            binSubdir: "installation/bin"
+        )
+        runtimes += scanDirectory(
+            home.appending(path: "Library/Application Support/fnm/node-versions"),
+            source: .fnm,
+            binSubdir: "installation/bin"
         )
         runtimes += scanDirectory(home.appending(path: ".volta/tools/image/node"), source: .volta)
 
@@ -29,7 +35,9 @@ final class NodeRuntimeProvider: RuntimeProvider {
             guard !version.isEmpty else { continue }
             let binDirectory = URL(filePath: path).deletingLastPathComponent()
             guard !runtimes.contains(where: { $0.executableDirectory == binDirectory }) else { continue }
-            let source: RuntimeVersionSource = path.contains("/Cellar/") || path.contains("/homebrew/") ? .brew : .system
+            let source: RuntimeVersionSource = path.contains("/Cellar/") || path.contains("/homebrew/")
+                ? .brew
+                : .system
             runtimes.append(
                 InstalledRuntime(kind: .node, version: version, source: source, executableDirectory: binDirectory)
             )
@@ -70,7 +78,9 @@ final class NodeRuntimeProvider: RuntimeProvider {
         let extractDirectory = FileManager.default.temporaryDirectory
             .appending(path: "node-extract-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: extractDirectory, withIntermediateDirectories: true)
-        RuntimeShell.run("tar -xzf '\(temporary.path(percentEncoded: false))' -C '\(extractDirectory.path(percentEncoded: false))'")
+        let tempPath = temporary.path(percentEncoded: false)
+        let extractPath = extractDirectory.path(percentEncoded: false)
+        RuntimeShell.run("tar -xzf '\(tempPath)' -C '\(extractPath)'")
 
         let extracted = extractDirectory.appending(path: "node-v\(version.version)-darwin-\(arch)")
         guard FileManager.default.fileExists(atPath: extracted.path(percentEncoded: false)) else {
@@ -108,7 +118,7 @@ final class NodeRuntimeProvider: RuntimeProvider {
     }
 
     func uninstall(_ runtime: InstalledRuntime) async throws {
-        guard runtime.isManaged else {
+        guard runtime.isManaged, RuntimeManager.isManagedPath(runtime.executableDirectory) else {
             throw RuntimeError.installFailed("Only managed runtimes can be removed.")
         }
         try FileManager.default.removeItem(at: runtime.executableDirectory.deletingLastPathComponent())

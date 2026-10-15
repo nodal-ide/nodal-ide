@@ -14,6 +14,9 @@ enum RuntimeKind: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
+    /// Kinds the Runtime Manager window manages directly (TypeScript rides on Node).
+    static var manageable: [RuntimeKind] { [.php, .node] }
+
     var title: String {
         switch self {
         case .php: return "PHP"

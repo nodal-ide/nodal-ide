@@ -53,7 +53,16 @@ enum RuntimeCatalog {
     }
 
     private static func fetchPHP() async -> [RuntimeVersion] {
-        // Homebrew keeps one formula per PHP minor (`php@8.3`, …) plus the default `php`.
+        // Homebrew core keeps recent minors; older minors (7.x/5.6) live in the shivammathur/php tap.
+        var versions = await fetchPHPCore()
+        versions += legacyPHPVersions()
+        // Prefer the live (core) entry per minor; keep one row per minor, newest first.
+        return deduplicatedByMinor(versions)
+            .sorted { $0.version.compare($1.version, options: .numeric) == .orderedDescending }
+    }
+
+    /// Fetches the stable version for each Homebrew-core PHP formula.
+    private static func fetchPHPCore() async -> [RuntimeVersion] {
         let formulae = ["php", "php@8.4", "php@8.3", "php@8.2", "php@8.1", "php@8.0"]
         var versions: [RuntimeVersion] = []
 
@@ -69,12 +78,35 @@ enum RuntimeCatalog {
                 RuntimeVersion(version: stable, isLTS: formula == "php", installIdentifier: formula)
             )
         }
-        return deduplicated(versions)
+        return versions
     }
 
-    private static func deduplicated(_ versions: [RuntimeVersion]) -> [RuntimeVersion] {
+    /// Older PHP minors installed via the `shivammathur/php` tap (for legacy projects).
+    /// Also a fallback when Homebrew's API is unreachable.
+    private static func legacyPHPVersions() -> [RuntimeVersion] {
+        let legacy: [(version: String, formula: String)] = [
+            ("8.4.0", "shivammathur/php/php@8.4"),
+            ("8.3.0", "shivammathur/php/php@8.3"),
+            ("8.2.0", "shivammathur/php/php@8.2"),
+            ("8.1.0", "shivammathur/php/php@8.1"),
+            ("8.0.30", "shivammathur/php/php@8.0"),
+            ("7.4.33", "shivammathur/php/php@7.4"),
+            ("7.3.33", "shivammathur/php/php@7.3"),
+            ("7.2.34", "shivammathur/php/php@7.2"),
+            ("7.1.33", "shivammathur/php/php@7.1"),
+            ("7.0.33", "shivammathur/php/php@7.0"),
+            ("5.6.40", "shivammathur/php/php@5.6")
+        ]
+        return legacy.map { RuntimeVersion(version: $0.version, installIdentifier: $0.formula) }
+    }
+
+    /// Keeps one entry per major.minor (first occurrence wins), preserving order.
+    private static func deduplicatedByMinor(_ versions: [RuntimeVersion]) -> [RuntimeVersion] {
         var seen = Set<String>()
-        return versions.filter { seen.insert($0.version).inserted }
+        return versions.filter { version in
+            let minor = version.version.split(separator: ".").prefix(2).joined(separator: ".")
+            return seen.insert(minor).inserted
+        }
     }
 
     // MARK: - Cache
@@ -95,6 +127,24 @@ enum RuntimeCatalog {
 
     private static func cacheURL(_ kind: RuntimeKind) -> URL {
         cacheDirectory.appending(path: "\(kind.rawValue).json")
+    }
+
+    /// Removes cached catalogs older than `maxAge` (default 30 days).
+    static func pruneStaleCache(olderThan maxAge: TimeInterval = 30 * 24 * 3600) {
+        let keys: [URLResourceKey] = [.contentModificationDateKey]
+        guard let entries = try? FileManager.default.contentsOfDirectory(
+            at: cacheDirectory,
+            includingPropertiesForKeys: keys
+        ) else {
+            return
+        }
+        let cutoff = Date().addingTimeInterval(-maxAge)
+        for entry in entries {
+            let date = (try? entry.resourceValues(forKeys: Set(keys)).contentModificationDate) ?? .distantPast
+            if date < cutoff {
+                try? FileManager.default.removeItem(at: entry)
+            }
+        }
     }
 
     private static func load(_ kind: RuntimeKind) -> Cache? {

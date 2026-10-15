@@ -92,7 +92,7 @@ final class RuntimeManagerViewModel: ObservableObject {
 
     func loadAll() async {
         await withTaskGroup(of: Void.self) { group in
-            for kind in RuntimeKind.allCases {
+            for kind in RuntimeKind.manageable {
                 group.addTask { await self.load(kind) }
             }
         }
@@ -107,15 +107,20 @@ final class RuntimeManagerViewModel: ObservableObject {
     }
 
     private func loadDiskUsage(for installed: [InstalledRuntime]) async {
+        let maxConcurrent = 4
         await withTaskGroup(of: (String, Int64?).self) { group in
-            for runtime in installed {
-                group.addTask {
-                    (runtime.id, await RuntimeDiskUsage.size(of: runtime.executableDirectory))
-                }
+            var iterator = installed.makeIterator()
+            var running = 0
+            while running < maxConcurrent, let runtime = iterator.next() {
+                group.addTask { (runtime.id, await RuntimeDiskUsage.size(of: runtime.executableDirectory)) }
+                running += 1
             }
-            for await (id, size) in group {
+            while let (id, size) = await group.next() {
                 if let size {
                     diskUsage[id] = size
+                }
+                if let runtime = iterator.next() {
+                    group.addTask { (runtime.id, await RuntimeDiskUsage.size(of: runtime.executableDirectory)) }
                 }
             }
         }

@@ -32,6 +32,14 @@ final class RuntimeManager: ObservableObject {
     private init() {
         register(NodeRuntimeProvider())
         register(PHPRuntimeProvider())
+        RuntimeCatalog.pruneStaleCache()
+    }
+
+    /// Whether a path is inside the managed runtimes root (`~/.codeedit/runtimes`).
+    static func isManagedPath(_ url: URL) -> Bool {
+        let root = runtimesRoot.standardizedFileURL.path(percentEncoded: false)
+        let path = url.standardizedFileURL.path(percentEncoded: false)
+        return path == root || path.hasPrefix(root + "/")
     }
 
     // MARK: - Install / uninstall
@@ -45,8 +53,7 @@ final class RuntimeManager: ObservableObject {
 
     func uninstall(_ runtime: InstalledRuntime) async {
         guard let provider = provider(for: runtime.kind) else { return }
-        await jobs.run(kind: runtime.kind, version: runtime.version, operation: .uninstall) { progress in
-            let _ = progress
+        await jobs.run(kind: runtime.kind, version: runtime.version, operation: .uninstall) { _ in
             try await provider.uninstall(runtime)
         }
     }

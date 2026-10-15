@@ -36,7 +36,7 @@ struct RuntimeManagerView: View {
     private var header: some View {
         VStack(spacing: 10) {
             Picker("", selection: $model.selectedKind) {
-                ForEach(RuntimeKind.allCases) { kind in
+                ForEach(RuntimeKind.manageable) { kind in
                     Text(kind.title).tag(kind)
                 }
             }
@@ -114,7 +114,7 @@ struct RuntimeVersionListView: View {
             } else if model.currentRows.isEmpty {
                 emptyState
             } else {
-                VStack(spacing: 0) {
+                LazyVStack(spacing: 0) {
                     ForEach(model.currentRows) { row in
                         RuntimeVersionRowView(row: row, model: model)
                         if row.id != model.currentRows.last?.id {
