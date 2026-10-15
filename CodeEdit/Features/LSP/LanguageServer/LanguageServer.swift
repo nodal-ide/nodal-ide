@@ -200,6 +200,13 @@ class LanguageServer<DocumentType: LanguageServerDocument> {
                     resolveSupport: CodeActionClientCapabilities.ResolveSupport(properties: ["edit"]),
                     honorsChangeAnnotations: false
                 ),
+                publishDiagnostics: PublishDiagnosticsClientCapabilities(
+                    relatedInformation: true,
+                    tagSupport: ValueSet(valueSet: [DiagnosticTag.unnecessary, DiagnosticTag.deprecated]),
+                    versionSupport: true,
+                    codeDescriptionSupport: true,
+                    dataSupport: true
+                ),
                 foldingRange: FoldingRangeClientCapabilities(
                     dynamicRegistration: false,
                     rangeLimit: nil,
