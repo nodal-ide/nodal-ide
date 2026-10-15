@@ -34,7 +34,13 @@ final class DiffViewerPresenter {
         )
         panel.title = "Diff"
         panel.isReleasedWhenClosed = false
-        panel.contentView = NSHostingView(rootView: DiffViewerView(state: DiffViewerState.shared))
+        panel.contentMinSize = NSSize(width: 620, height: 420)
+
+        let hostingView = NSHostingView(rootView: DiffViewerView(state: DiffViewerState.shared))
+        hostingView.frame = NSRect(x: 0, y: 0, width: 820, height: 560)
+        panel.contentView = hostingView
+        panel.setContentSize(NSSize(width: 820, height: 560))
+
         panel.center()
         panel.makeKeyAndOrderFront(nil)
         self.panel = panel
