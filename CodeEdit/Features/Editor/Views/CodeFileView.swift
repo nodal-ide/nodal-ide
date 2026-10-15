@@ -257,7 +257,8 @@ struct CodeFileView: View {
             signatureHelpDelegate: languageDelegate,
             codeActionDelegate: languageDelegate,
             diagnosticsDelegate: languageDelegate,
-            symbolsDelegate: languageDelegate
+            symbolsDelegate: languageDelegate,
+            inlayHintDelegate: languageDelegate
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))

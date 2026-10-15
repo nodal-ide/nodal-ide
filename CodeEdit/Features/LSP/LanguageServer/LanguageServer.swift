@@ -204,6 +204,10 @@ class LanguageServer<DocumentType: LanguageServerDocument> {
                     multilineTokenSupport: true,
                     serverCancelSupport: false,
                     augmentsSyntaxTokens: true
+                ),
+                inlayHint: InlayHintClientCapabilities(
+                    dynamicRegistration: false,
+                    resolveSupport: nil
                 )
             )
 

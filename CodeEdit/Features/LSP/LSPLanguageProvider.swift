@@ -241,6 +241,31 @@ final class LSPLanguageProvider: LanguageProvider {
         }
     }
 
+    // MARK: - Inlay hints
+
+    @MainActor
+    func inlayHints(forVisibleRange range: NSRange, textView: TextViewController) async -> [EditorInlayHint] {
+        guard let server = server,
+              let lspRange = textView.textView.lspRangeFrom(nsRange: range) else {
+            return []
+        }
+        guard let hints = try? await server.requestInlayHint(for: documentURI, lspRange) else {
+            return []
+        }
+        return hints.compactMap { hint in
+            guard let offset = textView.textView.offset(forLSPPosition: hint.position) else { return nil }
+            let label: String
+            switch hint.label {
+            case .optionA(let string):
+                label = string
+            case .optionB(let parts):
+                label = parts.map(\.value).joined()
+            }
+            guard !label.isEmpty else { return nil }
+            return EditorInlayHint(offset: offset, text: label)
+        }
+    }
+
     // MARK: - Completion
 
     @MainActor
