@@ -175,7 +175,8 @@ struct UtilityAreaTerminalView: View {
                     },
                     onOpenLink: { link in
                         openTerminalLink(link)
-                    }
+                    },
+                    environment: RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)
                 )
                 .frame(height: fill ? nil : max(0, constrainedHeight - 1))
                 .id(terminal.id)
@@ -283,6 +284,7 @@ struct UtilityAreaTerminalView: View {
                 return
             }
             utilityAreaViewModel.initializeTerminals(workspaceURL: workspaceURL)
+            Task { await RuntimeEnvironment.shared.refresh(workspace: workspace) }
         }
         .accessibilityIdentifier("terminal-area")
     }

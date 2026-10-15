@@ -47,6 +47,8 @@ struct TerminalEmulatorView: NSViewRepresentable {
     public var onCommandStart: () -> Void
     public var onCommandFinish: (Int?) -> Void
     public var onOpenLink: (String) -> Void
+    /// Environment overrides applied when starting the shell (e.g. runtime `PATH`).
+    public var environmentOverrides: [String: String]
 
     /// Create an emulator view
     /// - Parameters:
@@ -62,7 +64,8 @@ struct TerminalEmulatorView: NSViewRepresentable {
         onCwdChange: @escaping (URL?) -> Void = { _ in },
         onCommandStart: @escaping () -> Void = {},
         onCommandFinish: @escaping (Int?) -> Void = { _ in },
-        onOpenLink: @escaping (String) -> Void = { _ in }
+        onOpenLink: @escaping (String) -> Void = { _ in },
+        environment: [String: String] = [:]
     ) {
         self.url = url
         self.terminalID = terminalID
@@ -72,6 +75,7 @@ struct TerminalEmulatorView: NSViewRepresentable {
         self.onCommandStart = onCommandStart
         self.onCommandFinish = onCommandFinish
         self.onOpenLink = onOpenLink
+        self.environmentOverrides = environment
     }
 
     init(url: URL, task: CEActiveTask) {
@@ -83,6 +87,7 @@ struct TerminalEmulatorView: NSViewRepresentable {
         self.onCommandStart = {}
         self.onCommandFinish = { _ in }
         self.onOpenLink = { _ in }
+        self.environmentOverrides = [:]
     }
 
     // MARK: - Settings
@@ -175,7 +180,11 @@ struct TerminalEmulatorView: NSViewRepresentable {
             let isCached = TerminalCache.shared.getTerminalView(terminalID) != nil
             view = TerminalCache.shared.getTerminalView(terminalID) ?? CELocalShellTerminalView(frame: .zero)
             if !isCached {
-                view.startProcess(workspaceURL: url, shell: shellType)
+                view.startProcess(
+                    workspaceURL: url,
+                    shell: shellType,
+                    environment: environmentOverrides.map { "\($0.key)=\($0.value)" }
+                )
                 configureView(view)
             }
         case .task(let activeTask):

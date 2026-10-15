@@ -39,6 +39,14 @@ final class RunController: ObservableObject {
     }
 
     func run(_ configuration: RunConfiguration) {
+        Task { [weak self] in
+            guard let self, let workspace = self.workspace else { return }
+            await RuntimeEnvironment.shared.refresh(workspace: workspace)
+            self.performRun(configuration)
+        }
+    }
+
+    private func performRun(_ configuration: RunConfiguration) {
         if configuration.kind == .debug {
             startDebug(configuration)
             return
@@ -81,7 +89,8 @@ final class RunController: ObservableObject {
                 adapterID: adapterID,
                 request: configuration.debugRequest == "attach" ? "attach" : "launch",
                 launchArguments: launch,
-                workingDirectory: workspace.fileURL
+                workingDirectory: workspace.fileURL,
+                environment: RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)
             )
         )
     }
