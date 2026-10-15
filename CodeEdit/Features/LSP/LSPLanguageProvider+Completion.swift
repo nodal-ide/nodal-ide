@@ -16,9 +16,12 @@ extension LSPLanguageProvider {
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
-        guard let server = server,
-              let position = textView.textView.lspRangeFrom(nsRange: cursorPosition.range)?.start else {
-            Self.logger.info("completion: no server or position")
+        guard let server = server else {
+            Self.logger.info("completion: server nil (lang=\(self.languageID), path=\(self.workspacePath))")
+            return nil
+        }
+        guard let position = textView.textView.lspRangeFrom(nsRange: cursorPosition.range)?.start else {
+            Self.logger.info("completion: position nil (range=\(cursorPosition.range))")
             return nil
         }
         let completionResponse: CompletionResponse

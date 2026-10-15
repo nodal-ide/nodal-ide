@@ -216,7 +216,8 @@ final class LSPService: ObservableObject {
             workspacePath: workspacePath
         )
         languageClients[ClientKey(languageId, workspacePath)] = server
-        logger.info("Successfully started \(languageId.rawValue) language server")
+        // swiftlint:disable:next line_length
+        logger.info("Successfully started \(languageId.rawValue) language server (key path: \(workspacePath, privacy: .private))")
 
         self.startListeningToEvents(for: ClientKey(languageId, workspacePath))
         return server

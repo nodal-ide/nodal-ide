@@ -38,7 +38,7 @@ final class LSPLanguageProvider: LanguageProvider {
     let priority: LanguageProviderPriority = .lsp
 
     private let fileURL: URL
-    private let workspacePath: String
+    let workspacePath: String
     private let openLinkHandler: (JumpToDefinitionLink) -> Void
 
     /// The running server for this file's language, resolved lazily (it may still be starting when the
