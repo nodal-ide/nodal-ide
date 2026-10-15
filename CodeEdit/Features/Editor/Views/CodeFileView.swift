@@ -169,6 +169,8 @@ struct CodeFileView: View {
                 }
                 .store(in: &cancellables)
         }
+
+        ensureLanguageServerStarted()
     }
 
     @State private var font: NSFont = Settings[\.textEditing].font.current
@@ -301,6 +303,16 @@ extension CodeFileView {
         return (delegate, phpProvider)
     }
 
+    /// Ensures the language server starts for this document. Documents restored at launch may open before the
+    /// workspace/configs are ready, so the `didOpen` notification alone can miss them.
+    private func ensureLanguageServerStarted() {
+        guard codeFile.getLanguage().lspLanguage != nil,
+              let lsp = ServiceContainer.resolve(.singleton, LSPService.self) else {
+            return
+        }
+        lsp.openDocument(codeFile)
+    }
+
     /// Seeds the gutter breakpoint markers and debug line, keeping them in sync with the workspace.
     private func setUpBreakpoints() {
         guard let workspace = codeFile.findWorkspace() else { return }
@@ -361,38 +373,5 @@ extension CodeFileView {
         case .underline:
             return .underline(color: color)
         }
-    }
-}
-
-// This extension is kept here because it should not be used elsewhere in the app and may cause confusion
-// due to the similar type name from the CETV module.
-private extension SettingsData.TextEditingSettings.IndentOption {
-    func textViewOption() -> IndentOption {
-        switch self.indentType {
-        case .spaces:
-            return IndentOption.spaces(count: spaceCount)
-        case .tab:
-            return IndentOption.tab
-        }
-    }
-}
-
-private extension SettingsData.TextEditingSettings.InvisibleCharactersConfig {
-    func textViewOption() -> InvisibleCharactersConfiguration {
-        guard self.enabled else { return .empty }
-        var config = InvisibleCharactersConfiguration(
-            showSpaces: self.showSpaces,
-            showTabs: self.showTabs,
-            showLineEndings: self.showLineEndings
-        )
-
-        config.spaceReplacement = self.spaceReplacement
-        config.tabReplacement = self.tabReplacement
-        config.carriageReturnReplacement = self.carriageReturnReplacement
-        config.lineFeedReplacement = self.lineFeedReplacement
-        config.paragraphSeparatorReplacement = self.paragraphSeparatorReplacement
-        config.lineSeparatorReplacement = self.lineSeparatorReplacement
-
-        return config
     }
 }
