@@ -48,6 +48,9 @@ struct SourceControlNavigatorChangesList: View {
                         Button("Show Blame") {
                             BlameViewerPresenter.shared.show(url: file.fileURL, manager: sourceControlManager)
                         }
+                        Button("Resolve Conflicts") {
+                            ConflictResolverPresenter.shared.show(url: file.fileURL, manager: sourceControlManager)
+                        }
                     }
                     if file.anyStatus() != .none {
                         Group {

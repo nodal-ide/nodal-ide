@@ -192,6 +192,7 @@ final class ProjectNavigatorMenu: NSMenu {
         let sourceControlMenu = NSMenu(title: "Source Control")
         sourceControlMenu.addItem(menuItem("Show Diff", action: #selector(showDiff)))
         sourceControlMenu.addItem(menuItem("Show Blame", action: #selector(showBlame)))
+        sourceControlMenu.addItem(menuItem("Resolve Conflicts", action: #selector(resolveConflicts)))
         sourceControlMenu.addItem(.separator())
         sourceControlMenu.addItem(
             withTitle: "Commit \"\(String(describing: item.fileName()))\"...",

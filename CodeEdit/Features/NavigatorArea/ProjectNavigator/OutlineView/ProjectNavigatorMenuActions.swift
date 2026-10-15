@@ -67,6 +67,18 @@ extension ProjectNavigatorMenu {
         BlameViewerPresenter.shared.show(url: file.url, manager: manager)
     }
 
+    /// Opens the merge-conflict resolver for the selected file.
+    @MainActor
+    @objc
+    func resolveConflicts() {
+        guard let workspace,
+              let manager = workspace.sourceControlManager,
+              let file = selectedItems().first ?? item else {
+            return
+        }
+        ConflictResolverPresenter.shared.show(url: file.url, manager: manager)
+    }
+
     /// Action that opens **Finder** at the items location.
     @objc
     func showInFinder() {
