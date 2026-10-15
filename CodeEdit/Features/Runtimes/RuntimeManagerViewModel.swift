@@ -34,11 +34,26 @@ final class RuntimeManagerViewModel: ObservableObject {
     @Published private(set) var packageManagers: [String: String] = [:]
     @Published private(set) var isLoadingPackages = false
     @Published var packageManagerInput = ""
+    @Published private(set) var jobs: [RuntimeJob] = []
 
     private let manager = RuntimeManager.shared
+    private var cancellables = Set<AnyCancellable>()
 
     init() {
         loadDefaults()
+        manager.jobs.$jobs
+            .receive(on: RunLoop.main)
+            .sink { [weak self] jobs in self?.jobs = jobs }
+            .store(in: &cancellables)
+    }
+
+    /// The running install/uninstall job for a version (in the selected kind), if any.
+    func runningJob(for version: String) -> RuntimeJob? {
+        jobs.first { $0.kind == selectedKind && $0.version == version && $0.status == .running }
+    }
+
+    func cancel(_ job: RuntimeJob) {
+        manager.jobs.cancel(id: job.id)
     }
 
     // MARK: - Derived

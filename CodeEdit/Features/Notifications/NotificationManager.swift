@@ -124,6 +124,17 @@ final class NotificationManager: NSObject, ObservableObject {
         postNotification(notification)
     }
 
+    /// Updates an existing notification's title and/or description in place.
+    func updateNotification(_ notification: CENotification, title: String? = nil, description: String? = nil) {
+        guard let index = notifications.firstIndex(where: { $0.id == notification.id }) else { return }
+        if let title {
+            notifications[index].title = title
+        }
+        if let description {
+            notifications[index].description = description
+        }
+    }
+
     /// Dismisses a specific notification
     func dismissNotification(_ notification: CENotification) {
         notifications.removeAll(where: { $0.id == notification.id })

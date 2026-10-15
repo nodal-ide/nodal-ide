@@ -202,7 +202,22 @@ struct RuntimeVersionRowView: View {
 
     private var trailing: some View {
         Group {
-            if row.isInstalled {
+            if let job = model.runningJob(for: row.version) {
+                HStack(spacing: 8) {
+                    if let fraction = job.fraction {
+                        ProgressView(value: fraction)
+                            .progressViewStyle(.linear)
+                            .frame(width: 80)
+                    } else {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                    Button("Stop") {
+                        model.cancel(job)
+                    }
+                    .controlSize(.small)
+                }
+            } else if row.isInstalled {
                 Button(model.isDefault(row) ? "Default" : "Set Default") {
                     model.setDefault(model.isDefault(row) ? nil : row.version, kind: model.selectedKind)
                 }
@@ -218,6 +233,12 @@ struct RuntimeVersionRowView: View {
     }
 
     private var subtitle: String {
+        if let job = model.runningJob(for: row.version) {
+            if let message = job.phase.title.isEmpty ? nil : job.phase.title {
+                let percent = job.fraction.map { " · \(Int($0 * 100))%" } ?? ""
+                return "\(message)\(percent)"
+            }
+        }
         if let installed = row.installed {
             var parts = ["Installed", installed.source.title]
             if let size = model.diskUsage[installed.id] {

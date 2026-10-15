@@ -64,6 +64,7 @@ final class NodeRuntimeProvider: RuntimeProvider {
         try await RuntimeInstaller.download(url, to: temporary) { fraction in
             progress(.init(phase: .downloading, fraction: fraction))
         }
+        try Task.checkCancellation()
 
         progress(.init(phase: .verifying))
         if let expected = await expectedChecksum(version: version.version, fileName: fileName) {
@@ -87,6 +88,7 @@ final class NodeRuntimeProvider: RuntimeProvider {
             throw RuntimeError.installFailed("Extraction failed.")
         }
 
+        try Task.checkCancellation()
         progress(.init(phase: .installing))
         let destination = RuntimeManager.runtimesRoot.appending(path: "node").appending(path: version.version)
         try? FileManager.default.removeItem(at: destination)

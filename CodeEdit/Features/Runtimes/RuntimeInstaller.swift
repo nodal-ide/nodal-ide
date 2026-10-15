@@ -19,12 +19,14 @@ enum RuntimeInstaller {
     }
 
     /// Downloads `url` to `destination`, reporting progress (0…1) on the main queue.
+    ///
+    /// Cancelling the calling task cancels the underlying URL session task.
     static func download(_ url: URL, to destination: URL, progress: @escaping (Double) -> Void) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            let delegate = DownloadDelegate(destination: destination, progress: progress) { result in
-                continuation.resume(with: result)
-            }
-            delegate.start(url)
+        let client = DownloadClient(destination: destination, progress: progress)
+        try await withTaskCancellationHandler {
+            try await client.start(url)
+        } onCancel: {
+            client.cancel()
         }
     }
 
@@ -43,27 +45,38 @@ enum RuntimeInstaller {
     }
 }
 
-private final class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
+private final class DownloadClient: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
     private let destination: URL
     private let progress: (Double) -> Void
-    private let completion: (Result<Void, Error>) -> Void
     private var session: URLSession?
+    private var downloadTask: URLSessionDownloadTask?
+    private var continuation: CheckedContinuation<Void, Error>?
     private var finished = false
+    private let lock = NSLock()
 
-    init(
-        destination: URL,
-        progress: @escaping (Double) -> Void,
-        completion: @escaping (Result<Void, Error>) -> Void
-    ) {
+    init(destination: URL, progress: @escaping (Double) -> Void) {
         self.destination = destination
         self.progress = progress
-        self.completion = completion
         super.init()
         session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
     }
 
-    func start(_ url: URL) {
-        session?.downloadTask(with: url).resume()
+    func start(_ url: URL) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            lock.lock()
+            self.continuation = continuation
+            let task = session?.downloadTask(with: url)
+            self.downloadTask = task
+            lock.unlock()
+            task?.resume()
+        }
+    }
+
+    func cancel() {
+        lock.lock()
+        let task = downloadTask
+        lock.unlock()
+        task?.cancel()
     }
 
     func urlSession(
@@ -99,9 +112,16 @@ private final class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
     }
 
     private func finish(_ result: Result<Void, Error>) {
-        guard !finished else { return }
+        lock.lock()
+        guard !finished else {
+            lock.unlock()
+            return
+        }
         finished = true
+        let continuation = self.continuation
+        self.continuation = nil
+        lock.unlock()
         session?.finishTasksAndInvalidate()
-        completion(result)
+        continuation?.resume(with: result)
     }
 }

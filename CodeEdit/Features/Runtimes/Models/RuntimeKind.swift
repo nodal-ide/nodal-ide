@@ -27,9 +27,9 @@ enum RuntimeKind: String, CaseIterable, Identifiable, Codable {
 
     var systemImage: String {
         switch self {
-        case .php: return "elephant"
-        case .node: return "hexagon"
-        case .typescript: return "ts.circle"
+        case .php: return "p.circle.fill"
+        case .node: return "hexagon.fill"
+        case .typescript: return "t.circle.fill"
         }
     }
 

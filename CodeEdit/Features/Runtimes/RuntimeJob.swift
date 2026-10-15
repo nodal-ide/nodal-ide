@@ -29,6 +29,7 @@ struct RuntimeJob: Identifiable, Equatable {
     enum Status: Equatable {
         case running
         case done
+        case cancelled
         case failed(String)
     }
 

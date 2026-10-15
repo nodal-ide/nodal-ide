@@ -11,8 +11,8 @@ import SwiftUI
 struct CENotification: Identifiable, Equatable {
     let id: UUID
     let icon: IconType
-    let title: String
-    let description: String
+    var title: String
+    var description: String
     let actionButtonTitle: String
     let action: () -> Void
     let isSticky: Bool

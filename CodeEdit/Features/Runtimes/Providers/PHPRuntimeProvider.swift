@@ -40,21 +40,22 @@ final class PHPRuntimeProvider: RuntimeProvider {
         guard let formula = version.installIdentifier else {
             throw RuntimeError.unsupported
         }
-        progress(.init(phase: .installing, message: "brew install \(formula)"))
-        let result = await run("brew install \(formula)")
-        guard result.status == 0 else {
-            throw RuntimeError.installFailed(result.output.isEmpty ? "Homebrew failed." : result.output)
-        }
-        progress(.init(phase: .done))
-    }
-
-    /// Runs a command off the main thread.
-    private func run(_ command: String) async -> (output: String, status: Int32) {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.global().async {
-                continuation.resume(returning: RuntimeShell.runResult(command))
+        progress(.init(phase: .resolving, message: "Preparing \(formula)…"))
+        // Stream `brew install` so the user sees activity and can stop it.
+        let status = try await RuntimeShell.runStreaming("brew install \(formula)") { line in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard trimmed.hasPrefix("==>") || trimmed.contains("%") else { return }
+            Task { @MainActor in
+                progress(.init(phase: .installing, message: trimmed))
             }
         }
+        if Task.isCancelled {
+            throw CancellationError()
+        }
+        guard status == 0 else {
+            throw RuntimeError.installFailed("Homebrew exited with status \(status).")
+        }
+        progress(.init(phase: .done))
     }
 
     func uninstall(_ runtime: InstalledRuntime) async throws {
