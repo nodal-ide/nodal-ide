@@ -62,7 +62,7 @@ class UtilityAreaViewModel: ObservableObject {
 
     func restoreFromState(_ workspace: WorkspaceDocument) {
         isCollapsed = workspace.getFromWorkspaceState(.utilityAreaCollapsed) as? Bool ?? true
-        currentHeight = workspace.getFromWorkspaceState(.utilityAreaHeight) as? Double ?? 300.0
+        currentHeight = workspace.getFromWorkspaceState(.utilityAreaHeight) as? Double ?? 420.0
         isMaximized = workspace.getFromWorkspaceState(.utilityAreaMaximized) as? Bool ?? false
     }
 

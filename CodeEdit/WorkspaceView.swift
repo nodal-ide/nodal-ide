@@ -198,7 +198,7 @@ struct WorkspaceView: View {
             .collapsed($utilityAreaViewModel.isCollapsed)
             .splitViewCanAnimate($utilityAreaViewModel.animateCollapse)
             .opacity(0)
-            .frame(idealHeight: 260)
+            .frame(idealHeight: 420)
             .frame(minHeight: 100)
             .background {
                 GeometryReader { geo in
