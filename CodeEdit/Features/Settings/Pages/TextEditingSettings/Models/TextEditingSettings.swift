@@ -57,6 +57,9 @@ extension SettingsData {
         /// A flag indicating whether braces are automatically completed
         var autocompleteBraces: Bool = true
 
+        /// A flag indicating whether the document is formatted (via its language server) before saving.
+        var formatOnSave: Bool = false
+
         /// A flag indicating whether to wrap lines to editor width
         var wrapLinesToEditorWidth: Bool = true
 
@@ -121,6 +124,10 @@ extension SettingsData {
                 Bool.self,
                 forKey: .autocompleteBraces
             ) ?? true
+            self.formatOnSave = try container.decodeIfPresent(
+                Bool.self,
+                forKey: .formatOnSave
+            ) ?? false
             self.wrapLinesToEditorWidth = try container.decodeIfPresent(
                 Bool.self,
                 forKey: .wrapLinesToEditorWidth

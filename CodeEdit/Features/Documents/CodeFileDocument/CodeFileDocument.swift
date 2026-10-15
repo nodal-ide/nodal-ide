@@ -146,6 +146,23 @@ final class CodeFileDocument: NSDocument, ObservableObject {
         return data
     }
 
+    /// Formats the document with its language server before writing, when "Format on save" is enabled.
+    override func save(
+        to url: URL,
+        ofType typeName: String,
+        for saveOperation: NSDocument.SaveOperationType,
+        completionHandler: @escaping (Error?) -> Void
+    ) {
+        guard Settings.shared.preferences.textEditing.formatOnSave else {
+            super.save(to: url, ofType: typeName, for: saveOperation, completionHandler: completionHandler)
+            return
+        }
+        Task { @MainActor in
+            await LSPEditorActions.formatForSave(document: self, url: url)
+            super.save(to: url, ofType: typeName, for: saveOperation, completionHandler: completionHandler)
+        }
+    }
+
     // MARK: - Read
 
     /// This function is used for decoding files.

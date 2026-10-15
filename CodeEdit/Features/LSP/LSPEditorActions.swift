@@ -49,6 +49,30 @@ enum LSPEditorActions {
         }
     }
 
+    /// Formats a document's content in place before it is saved (format on save). Edits are applied
+    /// bottom-to-top, and the content is only replaced if formatting actually changed it.
+    static func formatForSave(document: CodeFileDocument, url: URL) async {
+        guard let language = document.getLanguage().lspLanguage,
+              let lsp = ServiceContainer.resolve(.singleton, LSPService.self) else {
+            return
+        }
+        let workspacePath = document.findWorkspace()?.fileURL?.absolutePath ?? ""
+        guard let server = lsp.languageClient(for: language, workspacePath: workspacePath),
+              let edits = try? await server.requestFormatting(
+                for: url.lspURI,
+                withFormat: formattingOptions()
+              ), !edits.isEmpty else {
+            return
+        }
+
+        guard let content = document.content else { return }
+        let original = content.string
+        let updated = apply(edits, to: original)
+        guard updated != original else { return }
+        content.replaceCharacters(in: NSRange(location: 0, length: content.length), with: updated)
+        document.updateChangeCount(.changeDone)
+    }
+
     // MARK: - Rename
 
     static func renameSymbol(workspace: WorkspaceDocument?) {

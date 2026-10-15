@@ -41,6 +41,7 @@ struct TextEditingSettingsView: View {
             Section {
                 autocompleteBraces
                 enableTypeOverCompletion
+                formatOnSave
             }
             Section {
                 bracketPairHighlight
@@ -81,6 +82,11 @@ private extension TextEditingSettingsView {
 
     @ViewBuilder private var enableTypeOverCompletion: some View {
         Toggle("Enable type-over completion", isOn: $textEditing.enableTypeOverCompletion)
+    }
+
+    @ViewBuilder private var formatOnSave: some View {
+        Toggle("Format on save", isOn: $textEditing.formatOnSave)
+            .help("Format the document with its language server before saving.")
     }
 
     @ViewBuilder private var wrapLinesToEditorWidth: some View {
