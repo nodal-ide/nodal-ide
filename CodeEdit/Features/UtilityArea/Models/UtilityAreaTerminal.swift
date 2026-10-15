@@ -7,6 +7,12 @@
 
 import Foundation
 
+/// The orientation of a terminal split.
+enum TerminalSplitAxis: String {
+    case horizontal
+    case vertical
+}
+
 final class UtilityAreaTerminal: ObservableObject, Identifiable, Equatable {
     let id: UUID
     @Published var url: URL

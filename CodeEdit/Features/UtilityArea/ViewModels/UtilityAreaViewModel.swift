@@ -18,6 +18,28 @@ class UtilityAreaViewModel: ObservableObject {
 
     @Published var selectedTerminals: Set<UtilityAreaTerminal.ID> = []
 
+    /// The secondary pane's terminal id when the terminal area is split (`nil` = single pane).
+    @Published var splitTerminalID: UUID?
+    /// The split orientation when ``splitTerminalID`` is set.
+    @Published var splitAxis: TerminalSplitAxis = .horizontal
+    /// The focused pane (primary or split).
+    @Published var focusedTerminalID: UUID?
+
+    /// Whether the terminal area is currently split into two panes.
+    var isSplit: Bool { splitTerminalID != nil }
+
+    /// The terminal ids currently shown (one or two, primary first).
+    var visibleTerminalIDs: [UUID] {
+        var ids: [UUID] = []
+        if let primary = selectedTerminals.first {
+            ids.append(primary)
+        }
+        if let split = splitTerminalID, !ids.contains(split) {
+            ids.append(split)
+        }
+        return ids
+    }
+
     /// Indicates whether debugger is collapse or not
     @Published var isCollapsed: Bool = true
 
@@ -68,6 +90,10 @@ class UtilityAreaViewModel: ObservableObject {
             terminals.remove(at: idx)
         }
 
+        if let split = splitTerminalID, ids.contains(split) {
+            splitTerminalID = nil
+        }
+
         var newSelection = selectedTerminals.subtracting(ids)
 
         if newSelection.isEmpty, let terminal = terminals.last {
@@ -75,6 +101,10 @@ class UtilityAreaViewModel: ObservableObject {
         }
 
         selectedTerminals = newSelection
+
+        if let focused = focusedTerminalID, ids.contains(focused) || !visibleTerminalIDs.contains(focused) {
+            focusedTerminalID = selectedTerminals.first
+        }
     }
 
     /// Update a terminal's title.
@@ -107,8 +137,16 @@ class UtilityAreaViewModel: ObservableObject {
     ///   - shell: The shell to use, `nil` if auto-detect the default shell.
     ///   - rootURL: The url to start the new terminal at. If left `nil` defaults to the user's home directory.
     func addTerminal(shell: Shell? = nil, rootURL: URL?) {
-        let id = UUID()
+        let id = insertTerminal(shell: shell, rootURL: rootURL)
+        selectedTerminals = [id]
+        focusedTerminalID = id
+    }
 
+    /// Appends a new terminal without changing the selection.
+    /// - Returns: The new terminal's id.
+    @discardableResult
+    func insertTerminal(shell: Shell? = nil, rootURL: URL?) -> UUID {
+        let id = UUID()
         terminals.append(
             UtilityAreaTerminal(
                 id: id,
@@ -117,8 +155,38 @@ class UtilityAreaViewModel: ObservableObject {
                 shell: shell
             )
         )
+        return id
+    }
 
-        selectedTerminals = [id]
+    /// Splits the terminal area, showing the focused terminal alongside another one.
+    /// - Parameter axis: The split orientation.
+    func splitFocusedTerminal(axis: TerminalSplitAxis = .horizontal) {
+        guard splitTerminalID == nil, let primary = selectedTerminals.first else { return }
+        let focused = focusedTerminalID ?? primary
+        let baseURL = terminals.first(where: { $0.id == focused })?.url
+
+        let secondary: UUID
+        if let existing = terminals.first(where: { $0.id != focused })?.id {
+            secondary = existing
+        } else {
+            secondary = insertTerminal(rootURL: baseURL)
+        }
+
+        splitTerminalID = secondary
+        splitAxis = axis
+        focusedTerminalID = secondary
+    }
+
+    /// Removes the split, keeping the primary pane.
+    func closeSplit() {
+        splitTerminalID = nil
+        focusedTerminalID = selectedTerminals.first
+    }
+
+    /// Focuses a visible pane.
+    func focusTerminal(_ id: UUID) {
+        guard visibleTerminalIDs.contains(id) else { return }
+        focusedTerminalID = id
     }
 
     /// Replaces the terminal with a given ID, killing the shell and restarting it at the same directory.
@@ -145,6 +213,13 @@ class UtilityAreaViewModel: ObservableObject {
             shell: shell
         )
         TerminalCache.shared.removeCachedView(replacing)
+
+        if splitTerminalID == replacing {
+            splitTerminalID = id
+        }
+        if focusedTerminalID == replacing || focusedTerminalID == nil {
+            focusedTerminalID = id
+        }
 
         selectedTerminals = [id]
         return
