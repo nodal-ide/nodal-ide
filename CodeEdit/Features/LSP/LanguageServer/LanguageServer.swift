@@ -172,6 +172,7 @@ class LanguageServer<DocumentType: LanguageServerDocument> {
                         itemDefaults: ["default1", "default2"]
                     )
                 ),
+                documentHighlight: DocumentHighlightClientCapabilities(dynamicRegistration: false),
                 codeAction: CodeActionClientCapabilities(
                     dynamicRegistration: false,
                     codeActionLiteralSupport: CodeActionClientCapabilities.CodeActionLiteralSupport(

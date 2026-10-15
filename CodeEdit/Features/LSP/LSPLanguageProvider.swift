@@ -266,6 +266,29 @@ final class LSPLanguageProvider: LanguageProvider {
         }
     }
 
+    // MARK: - Document highlights
+
+    @MainActor
+    func documentHighlights(
+        at position: CursorPosition,
+        textView: TextViewController
+    ) async -> [EditorDocumentHighlight] {
+        guard let server = server,
+              let lspPosition = textView.textView.lspRangeFrom(nsRange: position.range)?.start else {
+            return []
+        }
+        guard let highlights = try? await server.requestHighlight(
+            for: documentURI,
+            position: lspPosition
+        ) else {
+            return []
+        }
+        return highlights.compactMap { highlight in
+            guard let range = textView.textView.nsRange(fromLSP: highlight.range) else { return nil }
+            return EditorDocumentHighlight(range: range, kind: highlight.kind?.rawValue)
+        }
+    }
+
     // MARK: - Folding ranges
 
     @MainActor

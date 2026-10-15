@@ -261,7 +261,8 @@ struct CodeFileView: View {
             diagnosticsDelegate: languageDelegate,
             symbolsDelegate: languageDelegate,
             inlayHintDelegate: showInlayHints ? languageDelegate : nil,
-            foldRangeDelegate: languageDelegate
+            foldRangeDelegate: languageDelegate,
+            documentHighlightDelegate: languageDelegate
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))
