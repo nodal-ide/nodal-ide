@@ -24,6 +24,9 @@ final class RuntimeManager: ObservableObject {
     /// Running/finished install & uninstall jobs (surfaced in the activity area).
     let jobs = RuntimeJobCenter()
 
+    /// Detected host tooling (Homebrew, developer tools, network).
+    let tooling = RuntimeTooling()
+
     private(set) var providers: [RuntimeKind: any RuntimeProvider] = [:]
 
     private init() {
