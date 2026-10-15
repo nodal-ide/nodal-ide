@@ -41,10 +41,30 @@ struct ProblemsView: View {
             withContentsOf: problem.fileURL,
             display: true
         ) { document, _, _ in
-            (document as? CodeFileDocument)?.openOptions = .init(
-                cursorPositions: [CursorPosition(range: problem.range)]
-            )
+            guard let document = document as? CodeFileDocument else { return }
+            var range = problem.range
+            // Task problems only carry a line/column; compute the offset from the document.
+            if range.location == 0, range.length == 0,
+               let line = problem.line, let content = document.content?.string {
+                range = NSRange(
+                    location: offset(forLine: line - 1, column: (problem.column ?? 1) - 1, in: content as NSString),
+                    length: 0
+                )
+            }
+            document.openOptions = .init(cursorPositions: [CursorPosition(range: range)])
         }
+    }
+
+    private func offset(forLine line: Int, column: Int, in text: NSString) -> Int {
+        var currentLine = 0
+        var index = 0
+        while index < text.length, currentLine < line {
+            if text.character(at: index) == 0x0A {
+                currentLine += 1
+            }
+            index += 1
+        }
+        return min(index + max(0, column), text.length)
     }
 }
 
