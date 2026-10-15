@@ -14,6 +14,9 @@ final class RunConfigurationStore: ObservableObject {
 
     private let fileURL: URL
 
+    /// The on-disk location of the configurations (`<workspace>/.codeedit/launch.json`).
+    var launchFileURL: URL { fileURL }
+
     init(workspaceURL: URL?) {
         if let workspaceURL {
             fileURL = workspaceURL

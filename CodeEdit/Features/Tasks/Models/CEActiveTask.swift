@@ -52,9 +52,67 @@ class CEActiveTask: ObservableObject, Identifiable, Hashable {
         updateTaskStatus(to: .running)
 
         let view = output ?? CEActiveTaskTerminalView(activeTask: self)
+        configureMatcher(view: view, workspaceURL: workspaceURL)
         view.startProcess(workspaceURL: workspaceURL, shell: shell)
 
         output = view
+    }
+
+    // MARK: - Problem matchers
+
+    private var matcherParser: ProblemMatcherParser?
+    private var matcherProblems: [TaskProblem] = []
+    private var outputLineBuffer = ""
+
+    /// Owner key for this task's problems in the Problems panel.
+    private var matcherOwner: String { "task:\(task.id.uuidString)" }
+
+    @MainActor
+    private func configureMatcher(view: CEActiveTaskTerminalView, workspaceURL: URL?) {
+        guard let name = task.problemMatcher,
+              let matcher = ProblemMatcher.preset(named: name),
+              let workingDirectory = workspaceURL else {
+            return
+        }
+        DiagnosticsStore.shared.clear(owner: matcherOwner)
+        matcherProblems = []
+        outputLineBuffer = ""
+        matcherParser = ProblemMatcherParser(matcher: matcher, workingDirectory: workingDirectory)
+
+        view.outputTap = { [weak self] slice in
+            guard let text = String(bytes: slice, encoding: .utf8) else { return }
+            DispatchQueue.main.async {
+                self?.consumeOutput(text)
+            }
+        }
+    }
+
+    @MainActor
+    private func consumeOutput(_ text: String) {
+        outputLineBuffer += text
+        while let newline = outputLineBuffer.firstIndex(of: "\n") {
+            let line = String(outputLineBuffer[..<newline])
+            outputLineBuffer = String(outputLineBuffer[outputLineBuffer.index(after: newline)...])
+
+            let found = matcherParser?.consume(line) ?? []
+            guard !found.isEmpty else { continue }
+            matcherProblems.append(contentsOf: found)
+            DiagnosticsStore.shared.replaceProblems(
+                owner: matcherOwner,
+                problems: matcherProblems.map(Self.editorProblem)
+            )
+        }
+    }
+
+    private static func editorProblem(_ problem: TaskProblem) -> EditorProblem {
+        EditorProblem(
+            fileURL: problem.fileURL,
+            range: NSRange(location: 0, length: 0),
+            line: problem.line,
+            column: problem.column,
+            severity: problem.severity,
+            message: problem.message
+        )
     }
 
     @MainActor

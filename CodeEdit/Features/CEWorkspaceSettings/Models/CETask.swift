@@ -15,6 +15,8 @@ class CETask: ObservableObject, Identifiable, Hashable, Codable {
     @Published var workingDirectory: String = ""
     @Published var command: String = ""
     @Published var environmentVariables: [EnvironmentVariable]  = []
+    /// Optional problem matcher name (e.g. `$gcc`, `$tsc`) applied to this task's output.
+    @Published var problemMatcher: String?
 
     init(
         name: String = "",
@@ -63,6 +65,7 @@ class CETask: ObservableObject, Identifiable, Hashable, Codable {
         case workingDirectory
         case command
         case environmentVariables
+        case problemMatcher
     }
 
     struct EnvironmentVariable: Identifiable, Hashable {
@@ -84,6 +87,7 @@ class CETask: ObservableObject, Identifiable, Hashable, Codable {
         target = try container.decodeIfPresent(String.self, forKey: .target) ?? ""
         workingDirectory = try container.decodeIfPresent(String.self, forKey: .workingDirectory) ?? ""
         command = try container.decode(String.self, forKey: .command)
+        problemMatcher = try container.decodeIfPresent(String.self, forKey: .problemMatcher)
 
         // Decode environment variables from a dictionary-like structure
         if let envDict = try container.decodeIfPresent([String: String].self, forKey: .environmentVariables) {
@@ -116,6 +120,9 @@ class CETask: ObservableObject, Identifiable, Hashable, Codable {
             }
             try container.encode(envDict, forKey: .environmentVariables)
         }
+        if let problemMatcher {
+            try container.encode(problemMatcher, forKey: .problemMatcher)
+        }
     }
 }
 
@@ -126,7 +133,8 @@ extension CETask {
         lhs.target == rhs.target &&
         lhs.workingDirectory == rhs.workingDirectory &&
         lhs.command == rhs.command &&
-        lhs.environmentVariables == rhs.environmentVariables
+        lhs.environmentVariables == rhs.environmentVariables &&
+        lhs.problemMatcher == rhs.problemMatcher
     }
 
     func hash(into hasher: inout Hasher) {

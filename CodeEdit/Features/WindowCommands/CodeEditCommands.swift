@@ -12,16 +12,19 @@ struct CodeEditCommands: Commands {
     private var sourceControlIsEnabled
 
     var body: some Commands {
-        Group { // SwiftUI limits to 9 items in an initializer, so we have to group every 9 items.
-            MainCommands()
-            FileCommands()
-            ViewCommands()
-            FindCommands()
-            NavigateCommands()
-            TasksCommands()
-            if sourceControlIsEnabled { SourceControlCommands() }
-            EditorCommands()
-            ExtensionCommands()
+        Group { // SwiftUI limits the item count, so we split into groups.
+            Group {
+                MainCommands()
+                FileCommands()
+                ViewCommands()
+                FindCommands()
+                NavigateCommands()
+                TasksCommands()
+                if sourceControlIsEnabled { SourceControlCommands() }
+                EditorCommands()
+                ExtensionCommands()
+            }
+            RunCommands()
             WindowCommands()
         }
         HelpCommands()

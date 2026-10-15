@@ -11,6 +11,14 @@ import SwiftTerm
 class CEActiveTaskTerminalView: CELocalShellTerminalView {
     var activeTask: CEActiveTask
 
+    /// Optional tap that receives raw output chunks (used by problem matchers).
+    var outputTap: ((ArraySlice<UInt8>) -> Void)?
+
+    override func dataReceived(slice: ArraySlice<UInt8>) {
+        outputTap?(slice)
+        super.dataReceived(slice: slice)
+    }
+
     var isUserCommandRunning: Bool {
         activeTask.status == .running || activeTask.status == .stopped
     }
