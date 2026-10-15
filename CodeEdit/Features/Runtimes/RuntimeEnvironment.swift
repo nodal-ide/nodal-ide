@@ -28,8 +28,16 @@ final class RuntimeEnvironment: ObservableObject {
 
         var environment: [String: String] = [:]
         if !binPaths.isEmpty {
-            let existing = ProcessInfo.processInfo.environment["PATH"] ?? ""
-            environment["PATH"] = binPaths.joined(separator: ":") + ":" + existing
+            // Runtime bins first, then the common tool dirs, then the app's PATH (deduped).
+            var parts = binPaths
+            for dir in RuntimeShell.extraPathDirectories where !parts.contains(dir) {
+                parts.append(dir)
+            }
+            let existing = (ProcessInfo.processInfo.environment["PATH"] ?? "").split(separator: ":").map(String.init)
+            for dir in existing where !parts.contains(dir) {
+                parts.append(dir)
+            }
+            environment["PATH"] = parts.joined(separator: ":")
         }
 
         if let path = workspace.fileURL?.path(percentEncoded: false) {

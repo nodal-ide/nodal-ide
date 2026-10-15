@@ -21,12 +21,20 @@ struct WorkspaceSettingsRuntimesView: View {
             } header: {
                 Text("Versions")
             } footer: {
-                Text(
-                    "Pin the PHP and Node.js versions this project uses. "
-                    + "Versions are installed in the Runtime Manager (Runtimes ▸ Manage Runtimes…)."
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(
+                        "Pin the PHP and Node.js versions this project uses. "
+                        + "Versions are installed in the Runtime Manager (Runtimes ▸ Manage Runtimes…)."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                    ForEach(missingPins, id: \.self) { message in
+                        Label(message, systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
             }
 
             Section {
@@ -46,16 +54,59 @@ struct WorkspaceSettingsRuntimesView: View {
     // MARK: - Pickers
 
     private func versionPicker(kind: RuntimeKind, installed: [InstalledRuntime]) -> some View {
-        Picker(kind.title, selection: versionBinding(kind)) {
-            Text(inheritTitle(for: kind)).tag(String?.none)
-            ForEach(installed) { runtime in
-                Text("v\(runtime.version) — \(runtime.source.title)").tag(String?.some(runtime.version))
+        let current = pinnedVersion(kind)
+        return LabeledContent(kind.title) {
+            Menu {
+                Button {
+                    setVersion(nil, kind: kind)
+                } label: {
+                    menuLabel(inheritTitle(for: kind), selected: current == nil)
+                }
+
+                Divider()
+
+                ForEach(installed) { runtime in
+                    Button {
+                        setVersion(runtime.version, kind: kind)
+                    } label: {
+                        menuLabel(
+                            "v\(runtime.version) — \(runtime.source.title)",
+                            selected: current == runtime.version
+                        )
+                    }
+                }
+
+                if let current, !installed.contains(where: { $0.version == current }) {
+                    Divider()
+                    Button {
+                        setVersion(current, kind: kind)
+                    } label: {
+                        menuLabel("v\(current) — not installed", selected: true)
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(current.map { "v\($0)" } ?? "Inherit")
+                        .foregroundStyle(current == nil ? .secondary : .primary)
+                        .lineLimit(1)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                }
             }
-            if let pinned = pinnedVersion(kind), !installed.contains(where: { $0.version == pinned }) {
-                Text("v\(pinned) — not installed").tag(String?.some(pinned))
-            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
         }
         .accessibilityLabel("\(kind.title) version")
+    }
+
+    private func menuLabel(_ text: String, selected: Bool) -> some View {
+        HStack {
+            Text(text)
+            if selected {
+                Image(systemName: "checkmark")
+            }
+        }
     }
 
     private var packageManagerField: some View {
@@ -69,17 +120,13 @@ struct WorkspaceSettingsRuntimesView: View {
         workspaceSettingsManager.settings.runtimes.selection(for: kind).version
     }
 
-    private func versionBinding(_ kind: RuntimeKind) -> Binding<String?> {
-        Binding {
-            workspaceSettingsManager.settings.runtimes.selection(for: kind).version
-        } set: { newValue in
-            // Assign the whole `runtimes` value so `@Published` always fires.
-            var runtimes = workspaceSettingsManager.settings.runtimes
-            var selection = runtimes.selection(for: kind)
-            selection.version = newValue
-            runtimes.setSelection(selection, for: kind)
-            workspaceSettingsManager.settings.runtimes = runtimes
-        }
+    private func setVersion(_ version: String?, kind: RuntimeKind) {
+        // Assign the whole `runtimes` value so `@Published` always fires.
+        var runtimes = workspaceSettingsManager.settings.runtimes
+        var selection = runtimes.selection(for: kind)
+        selection.version = version
+        runtimes.setSelection(selection, for: kind)
+        workspaceSettingsManager.settings.runtimes = runtimes
     }
 
     private var packageManagerBinding: Binding<String> {
@@ -94,6 +141,17 @@ struct WorkspaceSettingsRuntimesView: View {
     }
 
     // MARK: - Helpers
+
+    private var missingPins: [String] {
+        var result: [String] = []
+        if let php = pinnedVersion(.php), !installedPHP.contains(where: { $0.version == php }) {
+            result.append("PHP v\(php) isn't installed — the terminal will use the newest installed PHP.")
+        }
+        if let node = pinnedVersion(.node), !installedNode.contains(where: { $0.version == node }) {
+            result.append("Node v\(node) isn't installed — the terminal will use the newest installed Node.")
+        }
+        return result
+    }
 
     private func inheritTitle(for kind: RuntimeKind) -> String {
         if let global = Settings.shared.preferences.developerSettings.defaultRuntimeVersions[kind.rawValue],

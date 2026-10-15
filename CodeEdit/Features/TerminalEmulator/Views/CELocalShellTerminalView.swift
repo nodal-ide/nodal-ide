@@ -115,7 +115,7 @@ class CELocalShellTerminalView: CETerminalView, TerminalViewDelegate, LocalProce
                 shellArgs = []
             }
 
-            terminalEnvironment.append(contentsOf: environment)
+            terminalEnvironment = Self.merging(terminalEnvironment, with: environment)
 
             process.startProcess(
                 executable: shellPath,
@@ -127,6 +127,24 @@ class CELocalShellTerminalView: CETerminalView, TerminalViewDelegate, LocalProce
         } catch {
             terminal.feed(text: "Failed to start a terminal session: \(error.localizedDescription)")
         }
+    }
+
+    /// Merges `overrides` into `base`, **replacing** entries with the same key (e.g. `PATH`).
+    ///
+    /// Appending would create duplicate entries and `getenv` would keep returning the original value.
+    static func merging(_ base: [String], with overrides: [String]) -> [String] {
+        guard !overrides.isEmpty else { return base }
+        var order: [String] = []
+        var values: [String: String] = [:]
+        for entry in base + overrides {
+            guard let separator = entry.firstIndex(of: "=") else { continue }
+            let key = String(entry[..<separator])
+            if values[key] == nil {
+                order.append(key)
+            }
+            values[key] = String(entry[entry.index(after: separator)...])
+        }
+        return order.map { "\($0)=\(values[$0] ?? "")" }
     }
 
     /// Returns a string of a shell path to use

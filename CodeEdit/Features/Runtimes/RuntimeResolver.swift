@@ -61,8 +61,13 @@ enum RuntimeResolver {
         if let exact = installed.first(where: { $0.version == version }) {
             return exact
         }
-        // A major/minor pin (e.g. "8.3" or "20") matches the newest compatible version.
-        return installed.first { $0.version.hasPrefix(version + ".") }
+        // Fall back to the same major.minor (e.g. a "8.1.34" pin matches an installed "8.1.31").
+        let minor = minorVersion(version)
+        return installed.first { minorVersion($0.version) == minor }
+    }
+
+    private static func minorVersion(_ version: String) -> String {
+        version.split(separator: ".").prefix(2).joined(separator: ".")
     }
 
     private static func readTrimmed(_ url: URL) -> String? {
