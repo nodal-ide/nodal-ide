@@ -54,7 +54,7 @@ struct DiffViewerView: View {
             Text(error).foregroundStyle(.secondary).frame(maxWidth: .infinity)
             Spacer()
         } else if let diff = state.diff, !diff.hunks.isEmpty {
-            ScrollView([.vertical, .horizontal]) {
+            ScrollView(.vertical) {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(diff.hunks) { hunk in
                         hunkHeader(hunk)
@@ -104,6 +104,7 @@ private struct DiffLineRow: View {
         .font(.system(size: 12, design: .monospaced))
         .padding(.vertical, 1)
         .padding(.trailing, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(background)
     }
 
