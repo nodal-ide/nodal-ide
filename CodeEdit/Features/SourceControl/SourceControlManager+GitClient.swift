@@ -315,3 +315,38 @@ extension SourceControlManager {
         try await gitClient.initiate()
     }
 }
+
+// MARK: - Diff
+
+extension SourceControlManager {
+    /// Returns the parsed diff for a changed file. Untracked files are shown entirely as additions.
+    ///
+    /// - Parameters:
+    ///   - file: The changed file to diff.
+    ///   - staged: When `true`, diffs the staged (index) changes.
+    func fileDiff(for file: GitChangedFile, staged: Bool = false) async -> FileDiff? {
+        if file.anyStatus() == .untracked || file.status == .untracked || file.stagedStatus == .untracked {
+            return untrackedDiff(for: file.fileURL)
+        }
+
+        let root = gitClient.directoryURL.standardizedFileURL.path
+        let path = file.fileURL.standardizedFileURL.path
+        let relative = path.hasPrefix(root + "/") ? String(path.dropFirst(root.count + 1)) : path
+        guard let diffText = try? await gitClient.diff(for: relative, staged: staged) else { return nil }
+        return DiffParser.parse(diffText)
+    }
+
+    /// Builds a diff showing the whole file as additions (for untracked files).
+    private func untrackedDiff(for url: URL) -> FileDiff? {
+        guard let content = try? String(contentsOf: url, encoding: .utf8) else { return nil }
+        var rawLines = content.components(separatedBy: "\n")
+        if rawLines.last == "" {
+            rawLines.removeLast()
+        }
+        let lines = rawLines.enumerated().map { index, text in
+            DiffLine(kind: .addition, text: text, oldLineNumber: nil, newLineNumber: index + 1)
+        }
+        let hunk = DiffHunk(oldStart: 0, oldCount: 0, newStart: 1, newCount: lines.count, lines: lines)
+        return FileDiff(oldPath: "/dev/null", newPath: url.lastPathComponent, hunks: [hunk])
+    }
+}
