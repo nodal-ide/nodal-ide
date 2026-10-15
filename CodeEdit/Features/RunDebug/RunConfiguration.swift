@@ -53,6 +53,12 @@ struct RunConfiguration: Identifiable, Codable, Hashable {
     var problemMatcher: String?
     /// A task (by name) to run before this configuration.
     var preLaunchTask: String?
+    /// The debug adapter id (Developer settings ▸ Debug Adapters) — used for `debug` configurations.
+    var adapter: String?
+    /// The program to launch (debug configurations). Defaults to `command`.
+    var program: String?
+    /// Space-separated program arguments (debug configurations).
+    var arguments: String?
 
     var isInvalid: Bool { name.isEmpty || command.isEmpty }
 

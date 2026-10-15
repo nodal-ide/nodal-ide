@@ -24,6 +24,9 @@ extension SettingsData {
         /// A dictionary that stores a file type and a path to an LSP binary
         var lspBinaries: [String: String] = [:]
 
+        /// A dictionary that stores a debug adapter id and the path to its executable.
+        var debugAdapters: [String: String] = [:]
+
         /// Language identifiers that should use the app's built-in (native) language implementation instead of an
         /// external language server. Defaults to `php`, which ships with a native engine.
         var internalLanguages: [String] = InternalLanguage.defaultEnabledIdentifiers
@@ -41,6 +44,11 @@ extension SettingsData {
             self.lspBinaries = try container.decodeIfPresent(
                 [String: String].self,
                 forKey: .lspBinaries
+            ) ?? [:]
+
+            self.debugAdapters = try container.decodeIfPresent(
+                [String: String].self,
+                forKey: .debugAdapters
             ) ?? [:]
 
             self.internalLanguages = try container.decodeIfPresent(

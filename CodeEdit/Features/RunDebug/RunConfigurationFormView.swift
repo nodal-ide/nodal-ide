@@ -55,6 +55,24 @@ struct RunConfigurationFormView: View {
                 Text("Environment Variables")
             }
 
+            if configuration.kind == .debug {
+                Section {
+                    Picker("Adapter", selection: adapterBinding) {
+                        Text("None").tag("")
+                        ForEach(adapterNames, id: \.self) { name in
+                            Text(name).tag(name)
+                        }
+                    }
+                    TextField("Program", text: programBinding, prompt: Text("Path to the program to debug"))
+                    TextField("Arguments", text: argumentsBinding, prompt: Text("--flag value"))
+                } header: {
+                    Text("Debug")
+                } footer: {
+                    Text("Configure debug adapters in Settings ▸ Developer ▸ Debug Adapters.")
+                        .font(.caption)
+                }
+            }
+
             Section {
                 Picker("Problem Matcher", selection: $configuration.problemMatcher) {
                     Text("None").tag(String?.none)
@@ -87,5 +105,27 @@ struct RunConfigurationFormView: View {
         } set: { newValue in
             configuration.preLaunchTask = newValue.isEmpty ? nil : newValue
         }
+    }
+
+    private var adapterNames: [String] {
+        Settings.shared.preferences.developerSettings.debugAdapters.keys.sorted()
+    }
+
+    private var adapterBinding: Binding<String> {
+        Binding {
+            configuration.adapter ?? ""
+        } set: { configuration.adapter = $0.isEmpty ? nil : $0 }
+    }
+
+    private var programBinding: Binding<String> {
+        Binding {
+            configuration.program ?? ""
+        } set: { configuration.program = $0.isEmpty ? nil : $0 }
+    }
+
+    private var argumentsBinding: Binding<String> {
+        Binding {
+            configuration.arguments ?? ""
+        } set: { configuration.arguments = $0.isEmpty ? nil : $0 }
     }
 }

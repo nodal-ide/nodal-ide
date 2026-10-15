@@ -16,6 +16,9 @@ struct DeveloperSettingsView: View {
     @AppSettings(\.developerSettings.showInternalDevelopmentInspector)
     var showInternalDevelopmentInspector
 
+    @AppSettings(\.developerSettings.debugAdapters)
+    var debugAdapters
+
     var body: some View {
         SettingsForm {
             Section {
@@ -41,6 +44,24 @@ struct DeveloperSettingsView: View {
             } header: {
                 Text("LSP Binaries")
                 Text("Specify the language and the absolute path to the language server binary.")
+            }
+
+            Section {
+                KeyValueTable(
+                    items: $debugAdapters,
+                    keyColumnName: "Adapter",
+                    valueColumnName: "Debug Adapter Path",
+                    newItemInstruction: "Add a debug adapter"
+                ) {
+                    Text("Add a debug adapter")
+                    Text("Specify an adapter id (e.g. php, python, lldb) and the path to its debug adapter executable.")
+                } actionBarTrailing: {
+                    EmptyView()
+                }
+                .frame(minHeight: 96)
+            } header: {
+                Text("Debug Adapters")
+                Text("Used by Debug run configurations. The adapter id is referenced from a configuration.")
             }
         }
     }

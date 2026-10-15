@@ -39,6 +39,10 @@ final class RunController: ObservableObject {
     }
 
     func run(_ configuration: RunConfiguration) {
+        if configuration.kind == .debug {
+            startDebug(configuration)
+            return
+        }
         guard let taskManager = workspace?.taskManager else { return }
         let task = Self.task(from: configuration)
         runningTaskID = task.id
@@ -46,8 +50,43 @@ final class RunController: ObservableObject {
         Task { await taskManager.runTask(task: task) }
     }
 
+    /// Starts a debug session using the configuration's adapter (Developer settings ▸ Debug Adapters).
+    private func startDebug(_ configuration: RunConfiguration) {
+        guard let workspace, let debugController = workspace.debugController else { return }
+        let adapters = Settings.shared.preferences.developerSettings.debugAdapters
+        guard let adapterID = configuration.adapter, adapterID.isEmpty == false,
+              let path = adapters[adapterID], !path.isEmpty else {
+            return
+        }
+
+        let program = (configuration.program?.isEmpty == false ? configuration.program : configuration.command) ?? ""
+        let args = (configuration.arguments ?? "").split(separator: " ").map(String.init)
+        var launch: [String: JSONValue] = [
+            "program": .string(program),
+            "args": .array(args.map { .string($0) }),
+            "env": .object(configuration.environmentDictionary.mapValues { .string($0) })
+        ]
+        if !configuration.workingDirectory.isEmpty {
+            launch["cwd"] = .string(configuration.workingDirectory)
+        }
+
+        runningConfigurationID = configuration.id
+        debugController.start(
+            DebugSession.LaunchOptions(
+                adapterExecutable: URL(filePath: path),
+                adapterID: adapterID,
+                launchArguments: launch,
+                workingDirectory: workspace.fileURL
+            )
+        )
+    }
+
     func stop() {
-        guard let taskManager = workspace?.taskManager, let runningTaskID else { return }
+        workspace?.debugController?.stop()
+        guard let taskManager = workspace?.taskManager, let runningTaskID else {
+            runningConfigurationID = nil
+            return
+        }
         taskManager.terminateTask(taskID: runningTaskID)
         self.runningTaskID = nil
         runningConfigurationID = nil
