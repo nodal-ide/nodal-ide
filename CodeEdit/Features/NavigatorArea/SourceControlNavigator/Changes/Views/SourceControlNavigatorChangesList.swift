@@ -11,6 +11,7 @@ import SwiftUI
 struct SourceControlNavigatorChangesList: View {
     @EnvironmentObject var workspace: WorkspaceDocument
     @EnvironmentObject var sourceControlManager: SourceControlManager
+    @Environment(\.openWindow) private var openWindow
 
     @State var selection = Set<GitChangedFile>()
 
@@ -41,6 +42,11 @@ struct SourceControlNavigatorChangesList: View {
                         }
                         Button("Open in New Window") {}
                             .disabled(true) // TODO: Implementation Needed
+                        Divider()
+                        Button("Show Diff") {
+                            DiffViewerState.shared.load(file: file, manager: sourceControlManager)
+                            openWindow(sceneID: .diff)
+                        }
                     }
                     if file.anyStatus() != .none {
                         Group {

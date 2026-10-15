@@ -47,6 +47,8 @@ struct CodeEditApp: App {
 
             KnowledgeWindow()
 
+            DiffViewerWindow()
+
             AboutWindow(
                 subtitleView: { AboutSubtitleView() },
                 actions: {
