@@ -2,7 +2,7 @@
 //  CEWorkspaceSettingsView.swift
 //  CodeEdit
 //
-//  Created by Tommy Ludwig on 01.07.24.
+//  The Project (Workspace) Settings window: a sidebar of pages with grouped detail panes.
 //
 
 import SwiftUI
@@ -13,96 +13,54 @@ struct CEWorkspaceSettingsView: View {
     @EnvironmentObject var workspaceSettingsManager: CEWorkspaceSettings
     @EnvironmentObject var workspace: WorkspaceDocument
 
-    @State var selectedTaskID: UUID?
-    @State var showAddTaskSheet: Bool = false
-    @State var selectedRunConfigurationID: UUID?
-    @State var showRunConfigurationSheet: Bool = false
+    @State private var selection: WorkspaceSettingsPage = .general
 
     var body: some View {
-        VStack(spacing: 0) {
-            Form {
-                Section {
-                    TextField(
-                        "Name",
-                        text: $workspaceSettingsManager.settings.project.projectName
-                    )
-                    .accessibilityLabel("Workspace Name")
-                } header: {
-                    Text("Workspace")
-                        .accessibilityHidden(true)
-                }
+        NavigationSplitView {
+            sidebar
+        } detail: {
+            detail
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .navigationTitle(selection.title)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) { bottomBar }
+        .frame(minWidth: 720, minHeight: 540)
+    }
 
-                Section {
-                    TextField(
-                        "Language",
-                        text: $workspaceSettingsManager.settings.project.language,
-                        prompt: Text("php")
-                    )
-                    .accessibilityLabel("Project Language")
-
-                    TextField(
-                        "Frameworks",
-                        text: frameworksBinding,
-                        prompt: Text("laravel/framework, symfony/symfony")
-                    )
-                    .accessibilityLabel("Project Frameworks")
-
-                    Text("Comma-separated. Activates matching language extensions without scanning the project.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } header: {
-                    Text("Languages")
-                }
-                .onChange(of: workspaceSettingsManager.settings.project.language) { _, _ in reloadExtensions() }
-                .onChange(of: workspaceSettingsManager.settings.project.frameworks) { _, _ in reloadExtensions() }
-
-                Section {
-                    CEWorkspaceSettingsTaskListView(
-                        settings: workspaceSettingsManager.settings,
-                        selectedTaskID: $selectedTaskID,
-                        showAddTaskSheet: $showAddTaskSheet
-                    )
-                } header: {
-                    Text("Tasks")
-                } footer: {
-                    HStack {
-                        Spacer()
-                        Button {
-                            selectedTaskID = nil
-                            showAddTaskSheet = true
-                        } label: {
-                            Text("Add Task...")
-                        }
+    private var sidebar: some View {
+        List(selection: $selection) {
+            Section {
+                ForEach(WorkspaceSettingsPage.allCases) { page in
+                    Label {
+                        Text(page.title)
+                    } icon: {
+                        FeatureIcon(symbol: page.systemImage, color: page.baseColor, size: 20)
                     }
-                }
-
-                WorkspaceRuntimesSection()
-
-                if let store = workspace.runConfigurationStore {
-                    Section {
-                        RunConfigurationListView(
-                            store: store,
-                            selectedID: $selectedRunConfigurationID,
-                            showEditor: $showRunConfigurationSheet
-                        )
-                    } header: {
-                        Text("Run Configurations")
-                    } footer: {
-                        HStack {
-                            Spacer()
-                            Button {
-                                selectedRunConfigurationID = nil
-                                showRunConfigurationSheet = true
-                            } label: {
-                                Text("Add Configuration...")
-                            }
-                        }
-                    }
+                    .tag(page)
                 }
             }
-            .formStyle(.grouped)
-            .scrollContentBackground(.hidden)
+        }
+        .navigationSplitViewColumnWidth(200)
+        .navigationTitle(projectName)
+    }
 
+    private var detail: some View {
+        Group {
+            switch selection {
+            case .general:
+                WorkspaceSettingsGeneralView()
+            case .tasks:
+                WorkspaceSettingsTasksView()
+            case .runConfigurations:
+                WorkspaceSettingsRunConfigurationsView()
+            case .runtimes:
+                WorkspaceSettingsRuntimesView()
+            }
+        }
+    }
+
+    private var bottomBar: some View {
+        VStack(spacing: 0) {
             Divider()
             HStack {
                 Spacer()
@@ -113,50 +71,16 @@ struct CEWorkspaceSettingsView: View {
                         .frame(minWidth: 56)
                 }
                 .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
             }
             .padding()
         }
-        .sheet(isPresented: $showAddTaskSheet) {
-            if let selectedTaskIndex = workspaceSettingsManager.settings.tasks.firstIndex(where: {
-                $0.id == selectedTaskID
-            }) {
-                EditCETaskView(
-                    task: workspaceSettingsManager.settings.tasks[selectedTaskIndex],
-                    selectedTaskIndex: selectedTaskIndex
-                )
-            } else {
-                AddCETaskView()
-            }
-        }
-        .sheet(isPresented: $showRunConfigurationSheet) {
-            if let store = workspace.runConfigurationStore {
-                let taskNames = workspaceSettingsManager.settings.tasks.map(\.name)
-                if let id = selectedRunConfigurationID,
-                   let configuration = store.configurations.first(where: { $0.id == id }) {
-                    RunConfigurationEditorSheet(store: store, configuration: configuration, taskNames: taskNames)
-                } else {
-                    RunConfigurationEditorSheet(store: store, configuration: nil, taskNames: taskNames)
-                }
-            }
-        }
+        .background(.bar)
     }
 
-    /// Comma-separated editing binding over the frameworks array.
-    private var frameworksBinding: Binding<String> {
-        Binding {
-            workspaceSettingsManager.settings.project.frameworks.joined(separator: ", ")
-        } set: { newValue in
-            workspaceSettingsManager.settings.project.frameworks = newValue
-                .split(separator: ",")
-                .map { $0.trimmingCharacters(in: .whitespaces) }
-                .filter { !$0.isEmpty }
-        }
-    }
-
-    /// Re-evaluates language extensions for this workspace after the project language/frameworks change.
-    private func reloadExtensions() {
-        guard let root = workspace.fileURL else { return }
-        LanguageProviderRegistry.shared.reloadExtensions(for: root)
+    private var projectName: String {
+        let name = workspaceSettingsManager.settings.project.projectName
+        return name.isEmpty ? "Project" : name
     }
 }
 

@@ -1,33 +1,45 @@
 //
-//  WorkspaceRuntimesSection.swift
+//  WorkspaceSettingsRuntimesView.swift
 //  CodeEdit
 //
-//  The "Runtimes" section of the project settings (PHP/Node pins + Node package manager).
+//  The "Runtimes" page of the Project Settings window (PHP/Node pins + Node package manager).
 //
 
 import SwiftUI
 
-struct WorkspaceRuntimesSection: View {
+struct WorkspaceSettingsRuntimesView: View {
     @EnvironmentObject private var workspaceSettingsManager: CEWorkspaceSettings
 
     @State private var installedPHP: [InstalledRuntime] = []
     @State private var installedNode: [InstalledRuntime] = []
 
     var body: some View {
-        Section {
-            versionPicker(kind: .php, installed: installedPHP)
-            versionPicker(kind: .node, installed: installedNode)
-            packageManagerField
-        } header: {
-            Text("Runtimes")
-        } footer: {
-            Text(
-                "Pin the PHP and Node.js versions this project uses. "
-                + "Versions are installed in the Runtime Manager (Runtimes ▸ Manage Runtimes…)."
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
+        Form {
+            Section {
+                versionPicker(kind: .php, installed: installedPHP)
+                versionPicker(kind: .node, installed: installedNode)
+            } header: {
+                Text("Versions")
+            } footer: {
+                Text(
+                    "Pin the PHP and Node.js versions this project uses. "
+                    + "Versions are installed in the Runtime Manager (Runtimes ▸ Manage Runtimes…)."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            Section {
+                packageManagerField
+            } header: {
+                Text("Package Managers")
+            } footer: {
+                Text("Optional. Activated via corepack for the pinned Node.js version.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
+        .formStyle(.grouped)
         .task { await loadInstalled() }
     }
 
@@ -44,13 +56,8 @@ struct WorkspaceRuntimesSection: View {
     }
 
     private var packageManagerField: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            TextField("Node package manager", text: packageManagerBinding, prompt: Text("pnpm@9"))
-                .accessibilityLabel("Node package manager")
-            Text("Optional. Activated via corepack for the pinned Node.js version.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
+        TextField("Node package manager", text: packageManagerBinding, prompt: Text("pnpm@9"))
+            .accessibilityLabel("Node package manager")
     }
 
     // MARK: - Bindings
