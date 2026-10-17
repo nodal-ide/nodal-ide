@@ -190,6 +190,7 @@ final class DebugSession: ObservableObject {
         guard let threadID = currentThreadID else { return }
         callStack = []
         scopes = []
+        variablesByReference = [:]
         send("continue", ["threadId": threadID])
     }
 
@@ -204,6 +205,7 @@ final class DebugSession: ObservableObject {
 
     private func step(_ command: String) {
         guard let threadID = currentThreadID else { return }
+        variablesByReference = [:]
         send(command, ["threadId": threadID])
     }
 
