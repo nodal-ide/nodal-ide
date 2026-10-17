@@ -2,7 +2,7 @@
 //  ProblemsView.swift
 //  CodeEdit
 //
-//  The Utility Area Problems panel.
+//  The Problems navigator: filterable, grouped diagnostics.
 //
 
 import AppKit
@@ -33,50 +33,52 @@ struct ProblemsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
+            controls
             Divider()
             content
         }
         .task(id: cacheKey) { await refresh() }
     }
 
-    // MARK: - Header
+    // MARK: - Controls
 
-    private var header: some View {
-        VStack(spacing: 8) {
+    private var controls: some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 6) {
+                DebugSearchField(text: $searchText)
+                Spacer(minLength: 4)
+                scopeMenu
+                groupToggle
+            }
             HStack(spacing: 6) {
                 ForEach(EditorDiagnosticSeverity.allCasesForProblems, id: \.self) { severity in
                     severityChip(severity)
                 }
                 Spacer(minLength: 4)
-                Button {
-                    rescan()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .buttonStyle(.plain)
-                .help("Rescan project")
-            }
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField("Filter", text: $searchText)
-                    .textFieldStyle(.plain)
-                Picker("", selection: $scope) {
-                    ForEach(Scope.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .labelsHidden()
-                .pickerStyle(.menu)
-                .fixedSize()
-                Button {
-                    groupByFile.toggle()
-                } label: {
-                    Image(systemName: groupByFile ? "list.bullet" : "rectangle.grid.1x2")
-                }
-                .buttonStyle(.plain)
-                .help(groupByFile ? "Show flat list" : "Group by file")
             }
         }
-        .padding(10)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+    }
+
+    private var scopeMenu: some View {
+        Picker("", selection: $scope) {
+            ForEach(Scope.allCases) { Text($0.rawValue).tag($0) }
+        }
+        .labelsHidden()
+        .pickerStyle(.menu)
+        .fixedSize()
+        .help("Scope")
+    }
+
+    private var groupToggle: some View {
+        Button {
+            groupByFile.toggle()
+        } label: {
+            Image(systemName: groupByFile ? "rectangle.grid.1x2" : "list.bullet")
+        }
+        .buttonStyle(.plain)
+        .help(groupByFile ? "Show flat list" : "Group by file")
     }
 
     private func severityChip(_ severity: EditorDiagnosticSeverity) -> some View {
@@ -89,12 +91,12 @@ struct ProblemsView: View {
                 enabledSeverities.insert(severity)
             }
         } label: {
-            HStack(spacing: 4) {
-                Image(systemName: severity.problemIcon).font(.system(size: 10))
-                Text("\(count)").font(.system(size: 11, weight: .medium))
+            HStack(spacing: 3) {
+                Image(systemName: severity.problemIcon).font(.system(size: 9))
+                Text("\(count)").font(.system(size: 10, weight: .medium))
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
             .background((isEnabled ? severity.problemColor : Color.secondary).opacity(0.15))
             .foregroundStyle(isEnabled ? severity.problemColor : Color.secondary)
             .clipShape(Capsule())
@@ -118,7 +120,7 @@ struct ProblemsView: View {
                     }
                     if total > Self.maxRows {
                         Divider()
-                        Text("Showing first \(Self.maxRows) of \(total) problems")
+                        Text("Showing first \(Self.maxRows) of \(total)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity)
@@ -235,11 +237,6 @@ struct ProblemsView: View {
 
     // MARK: - Actions
 
-    private func rescan() {
-        guard let root = workspace.fileURL else { return }
-        PHPWorkspaceIndex.shared.rescan(root: root)
-    }
-
     /// Inserts a `// @codeedit-ignore-next-line <rule>` comment above the problem.
     private func ignoreRule(_ problem: EditorProblem) {
         guard let ruleID = problem.ruleID else { return }
@@ -305,5 +302,36 @@ private extension ProblemsView {
             }
             document.openOptions = .init(cursorPositions: [CursorPosition(range: range)])
         }
+    }
+}
+
+// MARK: - Navigator bottom bar
+
+struct ProblemsNavigatorToolbarBottom: View {
+    @ObservedObject private var store = DiagnosticsStore.shared
+    @EnvironmentObject private var workspace: WorkspaceDocument
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(store.problems.isEmpty ? "No Problems" : "\(store.problems.count) Problems")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 4)
+            Button {
+                rescan()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .buttonStyle(.plain)
+            .help("Rescan project")
+        }
+        .padding(.horizontal, 8)
+        .frame(height: 24)
+        .background(Color(nsColor: .controlBackgroundColor))
+    }
+
+    private func rescan() {
+        guard let root = workspace.fileURL else { return }
+        PHPWorkspaceIndex.shared.rescan(root: root)
     }
 }

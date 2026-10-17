@@ -53,6 +53,12 @@ final class BreakpointStore: ObservableObject {
         save()
     }
 
+    /// Removes every breakpoint.
+    func removeAll() {
+        breakpoints.removeAll()
+        save()
+    }
+
     func setEnabled(_ id: UUID, _ enabled: Bool) {
         guard let index = breakpoints.firstIndex(where: { $0.id == id }) else { return }
         breakpoints[index].enabled = enabled
