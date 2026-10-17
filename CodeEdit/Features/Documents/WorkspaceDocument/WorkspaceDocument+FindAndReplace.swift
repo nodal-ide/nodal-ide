@@ -109,15 +109,19 @@ extension WorkspaceDocument.SearchState {
             return true
         }
 
-        let fileContent = try String(contentsOf: fileURL, encoding: .utf8)
-        let updatedContent = fileContent.replacingOccurrences(
-            of: query,
-            with: replacingTerm,
-            options: replaceOptions
-        )
-        guard updatedContent != fileContent else { return false }
-        try updatedContent.write(to: fileURL, atomically: true, encoding: .utf8)
-        return true
+        // The file isn't open in the workspace: do the read/modify/write off the main actor.
+        let options = replaceOptions
+        return try await Task.detached(priority: .userInitiated) {
+            let fileContent = try String(contentsOf: fileURL, encoding: .utf8)
+            let updatedContent = fileContent.replacingOccurrences(
+                of: query,
+                with: replacingTerm,
+                options: options
+            )
+            guard updatedContent != fileContent else { return false }
+            try updatedContent.write(to: fileURL, atomically: true, encoding: .utf8)
+            return true
+        }.value
     }
 
     /// Replaces a specified range of text within a file with a new string.
@@ -174,38 +178,47 @@ extension WorkspaceDocument.SearchState {
     @MainActor
     func replaceMatch(_ match: SearchResultMatchModel, replacingTerm: String) async {
         let url = match.file.url
+        let matchedText = match.matchedText
+        let offset = match.offset
 
         if let file = workspace.workspaceFileManager?.getFile(url.path)
                     ?? workspace.workspaceFileManager?.getFile(url.relativePath),
            let document = file.fileDocument,
            let storage = document.content {
             let nsString = storage.string as NSString
-            guard let range = rangeForMatch(match, in: nsString) else { return }
+            guard let range = Self.rangeForMatch(matchedText: matchedText, offset: offset, in: nsString) else {
+                return
+            }
             let updated = nsString.replacingCharacters(in: range, with: replacingTerm)
             storage.replaceCharacters(in: NSRange(location: 0, length: storage.length), with: updated)
             document.updateChangeCount(.changeDone)
         } else {
-            guard let content = try? String(contentsOf: url, encoding: .utf8) else { return }
-            let nsString = content as NSString
-            guard let range = rangeForMatch(match, in: nsString) else { return }
-            let updated = nsString.replacingCharacters(in: range, with: replacingTerm)
-            try? updated.write(to: url, atomically: true, encoding: .utf8)
+            // Not open in the workspace: do the read/modify/write off the main actor.
+            await Task.detached(priority: .userInitiated) {
+                guard let content = try? String(contentsOf: url, encoding: .utf8) else { return }
+                let nsString = content as NSString
+                guard let range = Self.rangeForMatch(
+                    matchedText: matchedText, offset: offset, in: nsString
+                ) else { return }
+                let updated = nsString.replacingCharacters(in: range, with: replacingTerm)
+                try? updated.write(to: url, atomically: true, encoding: .utf8)
+            }.value
         }
 
         removeSearchResultMatch(match)
     }
 
     /// Locates a match in the given content, verifying the stored offset and falling back to a search.
-    private func rangeForMatch(_ match: SearchResultMatchModel, in content: NSString) -> NSRange? {
-        let length = (match.matchedText as NSString).length
+    static func rangeForMatch(matchedText: String, offset: Int, in content: NSString) -> NSRange? {
+        let length = (matchedText as NSString).length
         guard length > 0 else { return nil }
-        let offset = min(max(match.offset, 0), content.length)
+        let offset = min(max(offset, 0), content.length)
         if offset + length <= content.length,
-           content.substring(with: NSRange(location: offset, length: length)) == match.matchedText {
+           content.substring(with: NSRange(location: offset, length: length)) == matchedText {
             return NSRange(location: offset, length: length)
         }
         let found = content.range(
-            of: match.matchedText,
+            of: matchedText,
             options: [],
             range: NSRange(location: offset, length: content.length - offset)
         )

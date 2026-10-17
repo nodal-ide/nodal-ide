@@ -94,7 +94,8 @@ struct CodeFileView: View {
     /// Provides access to the LSP service to decide whether an LSP-backed highlight provider is worthwhile.
     @Service var lspService: LSPService
 
-    private var cancellables = Set<AnyCancellable>()
+    /// Owns the document-change tracking, symbol-index refresh, and language-server start (stable lifetime).
+    @StateObject private var lifecycle = CodeFileLifecycleCoordinator()
 
     private let isEditable: Bool
 
@@ -149,29 +150,6 @@ struct CodeFileView: View {
             codeFile.openOptions = nil
             editorInstance.cursorPositions = openOptions.cursorPositions
         }
-
-        codeFile
-            .contentCoordinator
-            .textUpdatePublisher
-            .sink { [weak codeFile] _ in
-                codeFile?.updateChangeCount(.changeDone)
-            }
-            .store(in: &cancellables)
-
-        // Keep the workspace symbol index fresh while editing (debounced).
-        if nativeProvider != nil, let fileURL = codeFile.fileURL {
-            codeFile
-                .contentCoordinator
-                .textUpdatePublisher
-                .debounce(for: .milliseconds(800), scheduler: RunLoop.main)
-                .sink { [weak codeFile] _ in
-                    guard let source = codeFile?.content?.string else { return }
-                    PHPWorkspaceIndex.shared.refreshFromSource(file: fileURL, source: source)
-                }
-                .store(in: &cancellables)
-        }
-
-        ensureLanguageServerStarted()
     }
 
     @State private var font: NSFont = Settings[\.textEditing].font.current
@@ -264,7 +242,11 @@ struct CodeFileView: View {
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))
         // Subscribe once; the values are recomputed from the current file each render.
-        .onAppear(perform: observeEditorState)
+        .onAppear {
+            observeEditorState()
+            lifecycle.start(codeFile: codeFile, refreshSymbolIndex: nativeProvider != nil)
+            lifecycle.ensureLanguageServerStarted(codeFile: codeFile)
+        }
         .background {
             if colorScheme == .dark {
                 EffectView(.underPageBackground)
@@ -311,16 +293,6 @@ extension CodeFileView {
         default: delegate = LanguageProviderAggregator(providers: providers)
         }
         return (delegate, phpProvider)
-    }
-
-    /// Ensures the language server starts for this document. Documents restored at launch may open before the
-    /// workspace/configs are ready, so the `didOpen` notification alone can miss them.
-    private func ensureLanguageServerStarted() {
-        guard codeFile.getLanguage().lspLanguage != nil,
-              let lsp = ServiceContainer.resolve(.singleton, LSPService.self) else {
-            return
-        }
-        lsp.openDocument(codeFile)
     }
 
     /// Maps the app's PHP diagnostics settings to the engine's configuration.

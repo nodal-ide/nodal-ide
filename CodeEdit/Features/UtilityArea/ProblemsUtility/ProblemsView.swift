@@ -213,7 +213,7 @@ struct ProblemsView: View {
         }
         if problem.ruleID != nil {
             Divider()
-            Button("Ignore This Rule") { ignoreRule(problem) }
+            Button("Ignore This Rule") { ProblemSuppression.ignoreRule(problem) }
         }
     }
 
@@ -279,50 +279,6 @@ private extension ProblemsView {
         let relative = relativePath(url)
         guard let slash = relative.lastIndex(of: "/") else { return "" }
         return String(relative[..<slash])
-    }
-
-    /// Inserts a `// @codeedit-ignore-next-line <rule>` comment above the problem.
-    func ignoreRule(_ problem: EditorProblem) {
-        guard let ruleID = problem.ruleID else { return }
-        CodeEditDocumentController.shared.openDocument(
-            withContentsOf: problem.fileURL,
-            display: true
-        ) { document, _, _ in
-            guard let document = document as? CodeFileDocument, let content = document.content else { return }
-            let text = content.string as NSString
-            let offset = ProblemsView.offset(forLine: (problem.line ?? 1) - 1, column: 0, in: text)
-            let indent = ProblemsView.leadingWhitespace(in: text, at: offset)
-            content.replaceCharacters(
-                in: NSRange(location: offset, length: 0),
-                with: "\(indent)// @codeedit-ignore-next-line \(ruleID)\n"
-            )
-            document.updateChangeCount(.changeDone)
-        }
-    }
-
-    static func offset(forLine line: Int, column: Int, in text: NSString) -> Int {
-        var currentLine = 0
-        var index = 0
-        while index < text.length, currentLine < line {
-            if text.character(at: index) == 0x0A {
-                currentLine += 1
-            }
-            index += 1
-        }
-        return min(index + max(0, column), text.length)
-    }
-
-    static func leadingWhitespace(in text: NSString, at offset: Int) -> String {
-        var index = offset
-        while index < text.length {
-            let char = text.character(at: index)
-            if char == 0x20 || char == 0x09 {
-                index += 1
-            } else {
-                break
-            }
-        }
-        return text.substring(with: NSRange(location: offset, length: index - offset))
     }
 
     /// Opens the problem's file and scrolls to its location.
