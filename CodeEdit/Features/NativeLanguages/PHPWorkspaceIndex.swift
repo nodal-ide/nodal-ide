@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 import CodeEditSourceEditor
 import CodeEditLang
 import CodeEditLangPHP
@@ -24,6 +25,7 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
     private var providers: [URL: PHPProvider] = [:]
     private var pendingDiagnostics: [URL: [PHPDiagnostic]] = [:]
     private var flushScheduled = false
+    private var scanNotifications: [String: CENotification] = [:]
 
     /// All workspace roots that currently have an index (used when reloading extensions globally).
     var allRoots: [URL] {
@@ -47,6 +49,9 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
         indexer.diagnosticsConfig = Self.currentDiagnosticsConfig()
         indexer.onDiagnostics = { [weak self] url, issues in
             self?.enqueueDiagnostics(url: url, issues: issues)
+        }
+        indexer.onProgress = { [weak self] completed, total in
+            self?.reportScanProgress(root: root, completed: completed, total: total)
         }
         indexes[key] = symbolIndex
         indexers[key] = indexer
@@ -88,6 +93,43 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
         Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(400))
             self?.flushDiagnostics()
+        }
+    }
+
+    /// Shows project-scan progress in the top-right activity indicator (`N / M files`), then a completion.
+    private func reportScanProgress(root: URL, completed: Int, total: Int) {
+        let key = root.path(percentEncoded: false)
+        Task { @MainActor in
+            guard total > 0 else { return }
+            if completed >= total {
+                if let notification = scanNotifications[key] {
+                    NotificationManager.shared.dismissNotification(notification)
+                    scanNotifications[key] = nil
+                }
+                NotificationManager.shared.post(
+                    iconSymbol: "checkmark.seal.fill",
+                    iconColor: .green,
+                    title: "Project scan complete",
+                    description: "Scanned \(total) file\(total == 1 ? "" : "s").",
+                    actionButtonTitle: "Dismiss",
+                    action: {},
+                    isSticky: false
+                )
+            } else {
+                let description = "\(completed) / \(total) files"
+                if let notification = scanNotifications[key] {
+                    NotificationManager.shared.updateNotification(notification, description: description)
+                } else {
+                    scanNotifications[key] = NotificationManager.shared.post(
+                        iconSymbol: "magnifyingglass",
+                        title: "Scanning project…",
+                        description: description,
+                        actionButtonTitle: "Hide",
+                        action: {},
+                        isSticky: true
+                    )
+                }
+            }
         }
     }
 

@@ -8,7 +8,6 @@
 import AppKit
 import SwiftUI
 import CodeEditSourceEditor
-import CodeEditTextView
 
 struct ProblemsView: View {
     @ObservedObject private var store = DiagnosticsStore.shared
@@ -18,6 +17,13 @@ struct ProblemsView: View {
     @State private var enabledSeverities: Set<EditorDiagnosticSeverity> = [.error, .warning, .info, .hint]
     @State private var groupByFile = true
     @State private var scope: Scope = .project
+
+    @State private var groups: [ProblemGroup] = []
+    @State private var flat: [EditorProblem] = []
+    @State private var counts: [EditorDiagnosticSeverity: Int] = [:]
+    @State private var total = 0
+
+    static let maxRows = 2000
 
     enum Scope: String, CaseIterable, Identifiable {
         case project = "Project"
@@ -31,6 +37,7 @@ struct ProblemsView: View {
             Divider()
             content
         }
+        .task(id: cacheKey) { await refresh() }
     }
 
     // MARK: - Header
@@ -100,25 +107,34 @@ struct ProblemsView: View {
 
     private var content: some View {
         Group {
-            if filtered.isEmpty {
+            if flat.isEmpty {
                 emptyState
-            } else if groupByFile {
-                groupedList
             } else {
-                flatList
+                VStack(spacing: 0) {
+                    if groupByFile {
+                        groupedList
+                    } else {
+                        flatList
+                    }
+                    if total > Self.maxRows {
+                        Divider()
+                        Text("Showing first \(Self.maxRows) of \(total) problems")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(6)
+                    }
+                }
             }
         }
     }
 
     private var groupedList: some View {
         List {
-            ForEach(groups, id: \.file) { group in
+            ForEach(groups) { group in
                 Section {
                     ForEach(group.problems) { problem in
-                        ProblemRow(problem: problem, showFile: false)
-                            .contentShape(Rectangle())
-                            .onTapGesture { open(problem) }
-                            .contextMenu { contextMenu(problem) }
+                        row(problem, showFile: false)
                     }
                 } header: {
                     HStack(spacing: 6) {
@@ -135,13 +151,17 @@ struct ProblemsView: View {
     }
 
     private var flatList: some View {
-        List(filtered) { problem in
-            ProblemRow(problem: problem, showFile: true)
-                .contentShape(Rectangle())
-                .onTapGesture { open(problem) }
-                .contextMenu { contextMenu(problem) }
+        List(flat) { problem in
+            row(problem, showFile: true)
         }
         .listStyle(.plain)
+    }
+
+    private func row(_ problem: EditorProblem, showFile: Bool) -> some View {
+        ProblemRow(problem: problem, showFile: showFile)
+            .contentShape(Rectangle())
+            .onTapGesture { open(problem) }
+            .contextMenu { contextMenu(problem) }
     }
 
     private var emptyState: some View {
@@ -168,41 +188,40 @@ struct ProblemsView: View {
         }
     }
 
-    // MARK: - Derived
+    // MARK: - Derivation
 
     private var currentFileURL: URL? {
         workspace.editorManager?.activeEditor.selectedTab?.file.url
     }
 
-    /// Problems in scope (ignores the severity filter so the chips show totals).
-    private var scopedProblems: [EditorProblem] {
-        var problems = workspace.fileURL.map { store.problems(in: $0) } ?? store.problems
-        if scope == .currentFile, let current = currentFileURL {
-            problems = problems.filter { $0.fileURL.standardizedFileURL == current.standardizedFileURL }
-        }
-        if !searchText.isEmpty {
-            problems = problems.filter {
-                $0.message.localizedCaseInsensitiveContains(searchText)
-                    || $0.fileURL.lastPathComponent.localizedCaseInsensitiveContains(searchText)
-            }
-        }
-        return problems
+    private var cacheKey: String {
+        let severities = enabledSeverities.map(\.rawValue).sorted().map(String.init).joined(separator: ",")
+        let current = currentFileURL?.path(percentEncoded: false) ?? ""
+        let root = workspace.fileURL?.path(percentEncoded: false) ?? ""
+        return "\(store.revision)|\(searchText)|\(scope.rawValue)|\(groupByFile)|\(severities)|\(current)|\(root)"
     }
 
-    private var filtered: [EditorProblem] {
-        scopedProblems.filter { enabledSeverities.contains($0.severity) }
-    }
+    private func refresh() async {
+        try? await Task.sleep(for: .milliseconds(120))
+        guard !Task.isCancelled else { return }
 
-    private var counts: [EditorDiagnosticSeverity: Int] {
-        scopedProblems.reduce(into: [:]) { counts, problem in
-            counts[problem.severity, default: 0] += 1
-        }
-    }
-
-    private var groups: [(file: URL, problems: [EditorProblem])] {
-        Dictionary(grouping: filtered, by: \.fileURL)
-            .map { (file: $0.key, problems: $0.value.sorted { ($0.line ?? 0) < ($1.line ?? 0) }) }
-            .sorted { $0.file.path(percentEncoded: false) < $1.file.path(percentEncoded: false) }
+        let snapshot = store.problems
+        let query = ProblemsDerivation.Query(
+            root: workspace.fileURL,
+            currentFile: currentFileURL,
+            severities: enabledSeverities,
+            search: searchText,
+            groupByFile: groupByFile,
+            maxRows: Self.maxRows
+        )
+        let output = await Task.detached(priority: .userInitiated) {
+            ProblemsDerivation.derive(problems: snapshot, query: query)
+        }.value
+        guard !Task.isCancelled else { return }
+        groups = output.groups
+        flat = output.flat
+        counts = output.counts
+        total = output.total
     }
 
     private func relativePath(_ url: URL) -> String {
@@ -221,26 +240,6 @@ struct ProblemsView: View {
         PHPWorkspaceIndex.shared.rescan(root: root)
     }
 
-    private func open(_ problem: EditorProblem) {
-        CodeEditDocumentController.shared.openDocument(
-            withContentsOf: problem.fileURL,
-            display: true
-        ) { document, _, _ in
-            guard let document = document as? CodeFileDocument else { return }
-            var range = problem.range
-            // Task problems only carry a line/column; compute the offset from the document.
-            if range.location == 0, range.length == 0,
-               let line = problem.line, let content = document.content?.string {
-                let column = (problem.column ?? 1) - 1
-                range = NSRange(
-                    location: Self.offset(forLine: line - 1, column: column, in: content as NSString),
-                    length: 0
-                )
-            }
-            document.openOptions = .init(cursorPositions: [CursorPosition(range: range)])
-        }
-    }
-
     /// Inserts a `// @codeedit-ignore-next-line <rule>` comment above the problem.
     private func ignoreRule(_ problem: EditorProblem) {
         guard let ruleID = problem.ruleID else { return }
@@ -250,8 +249,8 @@ struct ProblemsView: View {
         ) { document, _, _ in
             guard let document = document as? CodeFileDocument, let content = document.content else { return }
             let text = content.string as NSString
-            let offset = Self.offset(forLine: (problem.line ?? 1) - 1, column: 0, in: text)
-            let indent = Self.leadingWhitespace(in: text, at: offset)
+            let offset = ProblemsView.offset(forLine: (problem.line ?? 1) - 1, column: 0, in: text)
+            let indent = ProblemsView.leadingWhitespace(in: text, at: offset)
             content.replaceCharacters(
                 in: NSRange(location: offset, length: 0),
                 with: "\(indent)// @codeedit-ignore-next-line \(ruleID)\n"
@@ -260,7 +259,7 @@ struct ProblemsView: View {
         }
     }
 
-    private static func offset(forLine line: Int, column: Int, in text: NSString) -> Int {
+    static func offset(forLine line: Int, column: Int, in text: NSString) -> Int {
         var currentLine = 0
         var index = 0
         while index < text.length, currentLine < line {
@@ -272,7 +271,7 @@ struct ProblemsView: View {
         return min(index + max(0, column), text.length)
     }
 
-    private static func leadingWhitespace(in text: NSString, at offset: Int) -> String {
+    static func leadingWhitespace(in text: NSString, at offset: Int) -> String {
         var index = offset
         while index < text.length {
             let char = text.character(at: index)
@@ -286,67 +285,25 @@ struct ProblemsView: View {
     }
 }
 
-private struct ProblemRow: View {
-    let problem: EditorProblem
-    let showFile: Bool
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: problem.severity.problemIcon)
-                .foregroundStyle(problem.severity.problemColor)
-                .font(.system(size: 12))
-            VStack(alignment: .leading, spacing: 1) {
-                Text(problem.message)
-                    .font(.system(size: 12))
-                    .lineLimit(2)
-                Text(subtitle)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
+private extension ProblemsView {
+    /// Opens the problem's file and moves the cursor to its location.
+    func open(_ problem: EditorProblem) {
+        CodeEditDocumentController.shared.openDocument(
+            withContentsOf: problem.fileURL,
+            display: true
+        ) { document, _, _ in
+            guard let document = document as? CodeFileDocument else { return }
+            var range = problem.range
+            // Task problems only carry a line/column; compute the offset from the document.
+            if range.location == 0, range.length == 0,
+               let line = problem.line, let content = document.content?.string {
+                let column = (problem.column ?? 1) - 1
+                range = NSRange(
+                    location: ProblemsView.offset(forLine: line - 1, column: column, in: content as NSString),
+                    length: 0
+                )
             }
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 2)
-    }
-
-    private var subtitle: String {
-        var parts: [String] = []
-        if showFile {
-            parts.append(problem.fileURL.lastPathComponent)
-        }
-        if let line = problem.line {
-            parts.append("line \(line)")
-        }
-        return parts.joined(separator: " · ")
-    }
-}
-
-extension EditorDiagnosticSeverity {
-    static var allCasesForProblems: [EditorDiagnosticSeverity] { [.error, .warning, .info, .hint] }
-
-    var problemName: String {
-        switch self {
-        case .error: return "errors"
-        case .warning: return "warnings"
-        case .info: return "info"
-        case .hint: return "hints"
-        }
-    }
-
-    var problemIcon: String {
-        switch self {
-        case .error: return "xmark.octagon.fill"
-        case .warning: return "exclamationmark.triangle.fill"
-        case .info: return "info.circle.fill"
-        case .hint: return "lightbulb.fill"
-        }
-    }
-
-    var problemColor: Color {
-        switch self {
-        case .error: return .red
-        case .warning: return .orange
-        case .info: return .blue
-        case .hint: return .secondary
+            document.openOptions = .init(cursorPositions: [CursorPosition(range: range)])
         }
     }
 }

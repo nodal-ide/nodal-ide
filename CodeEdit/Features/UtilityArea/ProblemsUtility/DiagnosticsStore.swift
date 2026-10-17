@@ -46,6 +46,9 @@ final class DiagnosticsStore: ObservableObject {
 
     @Published private(set) var problems: [EditorProblem] = []
 
+    /// Increments whenever `problems` changes; used to debounce/cache derived UI state.
+    @Published private(set) var revision = 0
+
     /// Language diagnostics, per file.
     private var byFile: [URL: [EditorProblem]] = [:]
     /// Task-output problems (from problem matchers), grouped by owner then file.
@@ -138,5 +141,6 @@ final class DiagnosticsStore: ObservableObject {
             if lhs.fileURL != rhs.fileURL { return lhs.fileURL.path < rhs.fileURL.path }
             return (lhs.line ?? 0) < (rhs.line ?? 0)
         }
+        revision &+= 1
     }
 }
