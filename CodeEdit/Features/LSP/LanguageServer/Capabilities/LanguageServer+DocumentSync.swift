@@ -105,7 +105,7 @@ extension LanguageServer {
             // Note for future: If a related LSP object need notifying about document changes, do it here.
             try await document.languageServerObjects.highlightProvider.documentDidChange()
         } catch {
-            logger.warning("closeDocument: Error \(error)")
+            logger.warning("documentChanged: Error \(error)")
             throw error
         }
     }
