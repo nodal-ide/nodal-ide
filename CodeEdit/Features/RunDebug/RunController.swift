@@ -77,6 +77,11 @@ final class RunController: ObservableObject {
             if !configuration.workingDirectory.isEmpty {
                 launch["cwd"] = .string(configuration.workingDirectory)
             }
+            DebuggerAutoWiring.apply(
+                launch: &launch,
+                clientPort: configuration.clientPort,
+                pathMappings: configuration.pathMappingDictionary
+            )
 
             let adapterArguments = (
                 Settings.shared.preferences.developerSettings.debugAdapterArguments[adapterID] ?? ""
@@ -100,7 +105,14 @@ final class RunController: ObservableObject {
 
         // No explicit adapter: auto-wire from the project's runtime.
         runningConfigurationID = configuration.id
-        Task { [weak self] in await self?.startAutoDebug(program: program, arguments: args) }
+        Task { [weak self] in
+            await self?.startAutoDebug(
+                program: program,
+                arguments: args,
+                clientPort: configuration.clientPort,
+                pathMappings: configuration.pathMappingDictionary
+            )
+        }
     }
 
     /// Starts a debug session for the active file, auto-wired from the project's runtime.
@@ -128,13 +140,20 @@ final class RunController: ObservableObject {
     }
 
     /// Starts a debug session using the runtime's debugger configuration.
-    private func startAutoDebug(program: String, arguments: [String] = []) async {
+    private func startAutoDebug(
+        program: String,
+        arguments: [String] = [],
+        clientPort: Int? = nil,
+        pathMappings: [String: String] = [:]
+    ) async {
         guard let workspace, let debugController = workspace.debugController else { return }
         await RuntimeEnvironment.shared.refresh(workspace: workspace)
         guard let options = await DebuggerAutoWiring.options(
             workspace: workspace,
             program: program,
-            arguments: arguments
+            arguments: arguments,
+            clientPort: clientPort,
+            pathMappings: pathMappings
         ) else {
             DebuggerAutoWiring.reportUnavailable(kind: DebuggerAutoWiring.kind(forProgram: program))
             return

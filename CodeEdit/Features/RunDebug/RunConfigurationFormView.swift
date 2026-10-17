@@ -81,6 +81,32 @@ struct RunConfigurationFormView: View {
                     Text("Configure debug adapters in Settings ▸ Developer ▸ Debug Adapters.")
                         .font(.caption)
                 }
+
+                Section {
+                    TextField("Port", text: clientPortBinding, prompt: Text("9003"))
+                    ForEach(pathMappingsBinding) { $mapping in
+                        HStack {
+                            TextField("Local Path", text: $mapping.key)
+                            TextField("Remote Path", text: $mapping.value)
+                        }
+                    }
+                    .onDelete { configuration.pathMappings?.remove(atOffsets: $0) }
+                    Button {
+                        var mappings = configuration.pathMappings ?? []
+                        mappings.append(RunConfiguration.EnvironmentVariable())
+                        configuration.pathMappings = mappings
+                    } label: {
+                        Label("Add Path Mapping", systemImage: "plus")
+                    }
+                } header: {
+                    Text("PHP / Xdebug")
+                } footer: {
+                    Text(
+                        "Client port Xdebug connects to (default 9003). "
+                        + "Path mappings map local → remote (Docker/remote)."
+                    )
+                        .font(.caption)
+                }
             }
 
             Section {
@@ -143,5 +169,21 @@ struct RunConfigurationFormView: View {
         Binding {
             configuration.arguments ?? ""
         } set: { configuration.arguments = $0.isEmpty ? nil : $0 }
+    }
+
+    private var clientPortBinding: Binding<String> {
+        Binding {
+            configuration.clientPort.map(String.init) ?? ""
+        } set: { newValue in
+            configuration.clientPort = Int(newValue.trimmingCharacters(in: .whitespaces))
+        }
+    }
+
+    private var pathMappingsBinding: Binding<[RunConfiguration.EnvironmentVariable]> {
+        Binding {
+            configuration.pathMappings ?? []
+        } set: { newValue in
+            configuration.pathMappings = newValue
+        }
     }
 }

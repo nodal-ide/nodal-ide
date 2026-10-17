@@ -61,8 +61,17 @@ struct RunConfiguration: Identifiable, Codable, Hashable {
     var program: String?
     /// Space-separated program arguments (debug configurations).
     var arguments: String?
+    /// The debug adapter's client port (PHP/Xdebug). `nil` uses the Developer setting.
+    var clientPort: Int?
+    /// Local→remote path mappings, for remote/Docker debugging.
+    var pathMappings: [EnvironmentVariable]?
 
     var isInvalid: Bool { name.isEmpty || command.isEmpty }
+
+    /// The path mappings as a dictionary.
+    var pathMappingDictionary: [String: String] {
+        (pathMappings ?? []).reduce(into: [:]) { $0[$1.key] = $1.value }
+    }
 
     /// The shell command, changing into the working directory first when set.
     var fullCommand: String {

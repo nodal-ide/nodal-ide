@@ -24,7 +24,9 @@ enum DebuggerAutoWiring {
         workspace: WorkspaceDocument,
         program: String,
         arguments: [String] = [],
-        request: String = "launch"
+        request: String = "launch",
+        clientPort: Int? = nil,
+        pathMappings: [String: String] = [:]
     ) async -> DebugSession.LaunchOptions? {
         guard !program.isEmpty else { return nil }
         let runtimeKind = kind(forProgram: program)
@@ -35,11 +37,12 @@ enum DebuggerAutoWiring {
             return nil
         }
 
-        let launch = debugger.launchArguments(
+        var launch = debugger.launchArguments(
             program: program,
             arguments: arguments,
             cwd: workspace.fileURL?.path(percentEncoded: false)
         )
+        Self.apply(launch: &launch, clientPort: clientPort, pathMappings: pathMappings)
         return makeOptions(
             workspace: workspace,
             debugger: debugger,
@@ -49,11 +52,22 @@ enum DebuggerAutoWiring {
         )
     }
 
+    /// Merges the PHP/Xdebug `port` and `pathMappings` overrides into a launch-arguments dictionary.
+    static func apply(launch: inout [String: JSONValue], clientPort: Int?, pathMappings: [String: String]) {
+        if let clientPort {
+            launch["port"] = .number(Double(clientPort))
+        }
+        if !pathMappings.isEmpty {
+            launch["pathMappings"] = .object(pathMappings.mapValues { .string($0) })
+        }
+    }
+
     /// Builds a **listening** (attach) session for the project's PHP/Xdebug runtime. The adapter waits
     /// for Xdebug to connect (start a request with `XDEBUG_MODE=debug`), so no program is launched.
     static func listenOptions(
         workspace: WorkspaceDocument,
-        host: String = "127.0.0.1"
+        host: String = "127.0.0.1",
+        port: Int? = nil
     ) async -> DebugSession.LaunchOptions? {
         guard let provider = RuntimeManager.shared.provider(for: .php),
               let runtime = await RuntimeResolver.resolve(kind: .php, workspace: workspace),
@@ -61,7 +75,7 @@ enum DebuggerAutoWiring {
               let adapter = adapterExecutable(for: debugger) else {
             return nil
         }
-        let port = Settings.shared.preferences.developerSettings.phpDebugClientPort
+        let port = port ?? Settings.shared.preferences.developerSettings.phpDebugClientPort
         return makeOptions(
             workspace: workspace,
             debugger: debugger,
