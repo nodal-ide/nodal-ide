@@ -9,12 +9,6 @@ import SwiftUI
 import Combine
 import CodeEditSymbols
 
-/// A crumb's pop-up button that renders the title/icon but never handles mouse events itself, so the
-/// menu is opened exactly once (by the SwiftUI gesture) instead of twice (button + gesture).
-final class JumpBarCrumbButton: NSPopUpButton {
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }
-}
-
 struct EditorJumpBarComponent: View {
     private let fileItem: CEWorkspaceFile
     private let tappedOpenFile: (CEWorkspaceFile) -> Void
@@ -31,7 +25,7 @@ struct EditorJumpBarComponent: View {
     @State var position: NSPoint?
     @State var selection: CEWorkspaceFile
     @State var isHovering: Bool = false
-    @State var button = JumpBarCrumbButton()
+    @State var button = NSPopUpButton()
     @Binding var truncatedCrumbWidth: CGFloat?
 
     init(
@@ -74,6 +68,9 @@ struct EditorJumpBarComponent: View {
 
             return button
         }
+        // The button is render-only; the menu is opened by the gesture below. This avoids the button
+        // and the gesture both opening the menu (which made it close and immediately reopen).
+        .allowsHitTesting(false)
         .frame(
             maxWidth: isHovering || isLastItem ? nil : truncatedCrumbWidth,
             alignment: .leading
