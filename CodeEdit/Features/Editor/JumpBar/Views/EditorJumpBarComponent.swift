@@ -68,9 +68,6 @@ struct EditorJumpBarComponent: View {
 
             return button
         }
-        // The button is render-only; the menu is opened by the gesture below. This avoids the button
-        // and the gesture both opening the menu (which made it close and immediately reopen).
-        .allowsHitTesting(false)
         .frame(
             maxWidth: isHovering || isLastItem ? nil : truncatedCrumbWidth,
             alignment: .leading
@@ -114,9 +111,6 @@ struct EditorJumpBarComponent: View {
             withAnimation(.easeInOut(duration: 0.2)) {
                 isHovering = hover
             }
-        }
-        .onLongPressGesture(minimumDuration: 0) {
-            button.performClick(nil)
         }
         .opacity(activeState != .inactive ? 1 : 0.75)
     }
