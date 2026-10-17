@@ -187,6 +187,7 @@ final class SplitViewController: NSSplitViewController {
 
     override func loadView() {
         splitView = CustomSplitView()
+        splitView.wantsLayer = true
         super.loadView()
     }
 
