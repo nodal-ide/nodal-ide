@@ -78,8 +78,14 @@ final class PHPAdapterInstaller: ObservableObject {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let path = directory.path(percentEncoded: false)
 
+        // Use the resolved Node runtime (global default -> newest installed), like the terminal, and
+        // fall back to discovered nvm/fnm/Homebrew so `npm` resolves.
+        var searchPath = ShellEnvironment.augmentedPath()
+        if let node = await RuntimeResolver.resolve(kind: .node, workspace: nil) {
+            searchPath = node.executableDirectory.path(percentEncoded: false) + ":" + searchPath
+        }
         let result = await Self.run(
-            "cd '\(path)' && npm install vscode-php-debug --no-fund --no-audit 2>&1"
+            "export PATH=\"\(searchPath)\"; cd '\(path)' && npm install vscode-php-debug --no-fund --no-audit 2>&1"
         )
         guard result.status == 0 else {
             let message = result.output.isEmpty ? "npm install failed." : result.output
