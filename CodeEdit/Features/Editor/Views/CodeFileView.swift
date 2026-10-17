@@ -142,7 +142,7 @@ struct CodeFileView: View {
         }
 
         // Build the language-provider pipeline (extensions + built-in engine).
-        let pipeline = Self.buildLanguagePipeline(codeFile: codeFile, openLink: openLink)
+        let pipeline = CodeFileLanguagePipeline.build(for: codeFile, openLink: openLink)
         self.nativeProvider = pipeline.provider
         self.languageDelegate = pipeline.delegate
 
@@ -265,54 +265,6 @@ struct CodeFileView: View {
 }
 
 extension CodeFileView {
-    /// Builds the language-provider pipeline (extensions + built-in engine) for a file.
-    private static func buildLanguagePipeline(
-        codeFile: CodeFileDocument,
-        openLink: @escaping (JumpToDefinitionLink) -> Void
-    ) -> (delegate: (any LanguageDelegate)?, provider: PHPProvider?) {
-        var providers: [any LanguageProvider] = []
-        if let workspaceRoot = codeFile.findWorkspace()?.fileURL, let fileURL = codeFile.fileURL {
-            providers = LanguageProviderRegistry.shared.providers(
-                for: fileURL,
-                root: workspaceRoot,
-                languageID: codeFile.getLanguage().id.rawValue,
-                openLink: openLink
-            )
-        }
-
-        let phpProvider = providers.compactMap { $0 as? PHPProvider }.first
-        phpProvider?.diagnosticsConfig = Self.phpDiagnosticsConfig()
-        phpProvider?.onDiagnostics = { url, diagnostics in
-            DiagnosticsStore.shared.update(file: url, diagnostics: diagnostics)
-        }
-
-        let delegate: (any LanguageDelegate)?
-        switch providers.count {
-        case 0: delegate = nil
-        case 1: delegate = providers[0]
-        default: delegate = LanguageProviderAggregator(providers: providers)
-        }
-        return (delegate, phpProvider)
-    }
-
-    /// Maps the app's PHP diagnostics settings to the engine's configuration.
-    private static func phpDiagnosticsConfig() -> PHPDiagnosticsConfig {
-        let settings = Settings.shared.preferences.phpDiagnostics
-        var config = PHPDiagnosticsConfig()
-        config.classLength = settings.classLength
-        config.methodLength = settings.methodLength
-        config.fileLength = settings.fileLength
-        config.parameterCount = settings.parameterCount
-        config.complexity = settings.complexity
-        config.lineLength = settings.lineLength
-        config.requireStrictTypes = settings.requireStrictTypes
-        config.reportTodos = settings.reportTodos
-        config.reportNaming = settings.reportNaming
-        config.disabledRules = Set(settings.disabledRules)
-        config.skipPatterns = settings.skipPatterns
-        return config
-    }
-
     private var currentTheme: Theme {
         themeModel.selectedTheme ?? themeModel.themes.first!
     }
