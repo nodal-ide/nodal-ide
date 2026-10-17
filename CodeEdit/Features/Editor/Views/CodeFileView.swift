@@ -82,9 +82,8 @@ struct CodeFileView: View {
 
     @EnvironmentObject var undoRegistration: UndoManagerRegistration
 
-    @State private var breakpointLines: Set<Int> = []
-    @State private var debugLine: Int?
-    @State private var breakpointCancellables = Set<AnyCancellable>()
+    @State private var breakpointRevision = 0
+    @State private var debugRevision = 0
 
     @ObservedObject private var themeModel: ThemeModel = .shared
 
@@ -244,21 +243,21 @@ struct CodeFileView: View {
             inlayHintDelegate: showInlayHints ? languageDelegate : nil,
             foldRangeDelegate: languageDelegate,
             documentHighlightDelegate: languageDelegate,
-            breakpointLines: breakpointLines,
+            breakpointLines: currentBreakpointLines,
             onToggleBreakpoint: { line in
                 guard let store = codeFile.findWorkspace()?.breakpointStore, let url = codeFile.fileURL else {
                     return
                 }
                 store.toggle(url, line: line)
             },
-            debugLine: debugLine
+            debugLine: currentDebugLine
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))
-        .onAppear(perform: setUpBreakpoints)
-        // This view is reused across tab switches, so re-seed when the file changes (otherwise the
-        // breakpoint subscription stays bound to the first file's URL).
-        .onChange(of: codeFile.fileURL) { _, _ in setUpBreakpoints() }
+        // Re-derive the gutter markers whenever the store or the session changes. The values are
+        // computed from the *current* file each render, so they can never go stale across tabs.
+        .onReceive(breakpointChanges) { _ in breakpointRevision &+= 1 }
+        .onReceive(debugChanges) { _ in debugRevision &+= 1 }
         .background {
             if colorScheme == .dark {
                 EffectView(.underPageBackground)
@@ -335,42 +334,41 @@ extension CodeFileView {
         return config
     }
 
-    /// Seeds the gutter breakpoint markers and debug line, keeping them in sync with the workspace.
-    private func setUpBreakpoints() {
-        breakpointCancellables.removeAll()
-        guard let workspace = codeFile.findWorkspace() else { return }
-        if let store = workspace.breakpointStore, let url = codeFile.fileURL {
-            breakpointLines = store.lines(for: url)
-            store.$breakpoints
-                .receive(on: RunLoop.main)
-                .sink { _ in
-                    breakpointLines = store.lines(for: url)
-                }
-                .store(in: &breakpointCancellables)
+    /// The gutter breakpoint markers for the current file, recomputed on every render.
+    private var currentBreakpointLines: Set<Int> {
+        _ = breakpointRevision
+        guard let store = codeFile.findWorkspace()?.breakpointStore, let url = codeFile.fileURL else {
+            return []
         }
-        if let session = workspace.debugController?.session {
-            updateDebugLine(session)
-            session.objectWillChange
-                .receive(on: RunLoop.main)
-                .sink { [weak session] _ in
-                    DispatchQueue.main.async {
-                        if let session { updateDebugLine(session) }
-                    }
-                }
-                .store(in: &breakpointCancellables)
-        }
+        return store.lines(for: url)
     }
 
-    /// Highlights the current debug stop line when it's in this file.
-    private func updateDebugLine(_ session: DebugSession) {
-        guard session.state.isStopped,
+    /// The current debug stop line, when the stop is in this file.
+    private var currentDebugLine: Int? {
+        _ = debugRevision
+        guard let session = codeFile.findWorkspace()?.debugController?.session,
+              session.state.isStopped,
               let frame = session.currentFrame,
               let path = frame.source?.path,
               path == codeFile.fileURL?.path(percentEncoded: false) else {
-            debugLine = nil
-            return
+            return nil
         }
-        debugLine = frame.line
+        return frame.line
+    }
+
+    /// Propagates breakpoint-store changes so the gutter re-renders.
+    private var breakpointChanges: AnyPublisher<Void, Never> {
+        codeFile.findWorkspace()?.breakpointStore?.$breakpoints
+            .map { _ in () }
+            .eraseToAnyPublisher() ?? Empty<Void, Never>().eraseToAnyPublisher()
+    }
+
+    /// Propagates debug-session changes so the stop line re-renders.
+    private var debugChanges: AnyPublisher<Void, Never> {
+        codeFile.findWorkspace()?.debugController?.session.objectWillChange
+            .receive(on: RunLoop.main)
+            .map { _ in () }
+            .eraseToAnyPublisher() ?? Empty<Void, Never>().eraseToAnyPublisher()
     }
 
     private var currentTheme: Theme {

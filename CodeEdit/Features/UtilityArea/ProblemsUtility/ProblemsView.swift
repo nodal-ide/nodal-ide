@@ -225,7 +225,7 @@ struct ProblemsView: View {
         let snapshot = store.problems
         let query = ProblemsDerivation.Query(
             root: workspace.fileURL,
-            currentFile: currentFileURL,
+            currentFile: scope == .currentFile ? currentFileURL : nil,
             severities: enabledSeverities,
             search: searchText,
             groupByFile: groupByFile,
