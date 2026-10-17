@@ -16,6 +16,10 @@ extension LSPLanguageProvider {
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
+        // Coalesce rapid re-requests while typing: a newer request cancels this one before it hits the server.
+        try? await Task.sleep(for: .milliseconds(40))
+        guard !Task.isCancelled else { return nil }
+
         guard let server = server,
               let position = textView.textView.lspRangeFrom(nsRange: cursorPosition.range)?.start else {
             return nil

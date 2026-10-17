@@ -30,6 +30,9 @@ class LSPContentCoordinator<DocumentType: LanguageServerDocument>: TextViewCoord
     private var editedRange: LSPRange?
     private var sequenceContinuation: AsyncStream<SequenceElement>.Continuation?
     private var task: Task<Void, Never>?
+    /// How often batched edits are flushed to the server. Larger documents sync less often (each flush sends
+    /// the full document).
+    private var sendInterval: Duration = .milliseconds(250)
 
     weak var languageServer: LanguageServer<DocumentType>?
     var documentURI: String?
@@ -54,9 +57,10 @@ class LSPContentCoordinator<DocumentType: LanguageServerDocument>: TextViewCoord
             self.sequenceContinuation = continuation
         }
 
+        let interval = sendInterval
         task = Task.detached { [weak self] in
-            // Send edit events every 250ms
-            for await events in stream.chunked(by: .repeating(every: .milliseconds(250), clock: .continuous)) {
+            // Send edit events on the interval chosen for this document's size.
+            for await events in stream.chunked(by: .repeating(every: interval, clock: .continuous)) {
                 guard !Task.isCancelled, self != nil else { return }
                 guard !events.isEmpty, let uri = events.first?.uri else { continue }
                 // Errors thrown here are already logged, not much else to do right now.
@@ -71,6 +75,13 @@ class LSPContentCoordinator<DocumentType: LanguageServerDocument>: TextViewCoord
     }
 
     func prepareCoordinator(controller: TextViewController) {
+        // Each flush re-sends the whole document, so batch less often for large files.
+        let length = controller.textView.textStorage.length
+        switch length {
+        case ..<50_000: sendInterval = .milliseconds(250)
+        case ..<300_000: sendInterval = .milliseconds(600)
+        default: sendInterval = .milliseconds(1200)
+        }
         setUpUpdatesTask()
     }
 
