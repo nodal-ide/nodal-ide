@@ -36,6 +36,9 @@ extension SettingsData {
         /// Global default runtime versions, keyed by runtime kind (`php`, `node`).
         var defaultRuntimeVersions: [String: String] = [:]
 
+        /// The client port Xdebug connects to (PHP debugging). Defaults to Xdebug 3's `9003`.
+        var phpDebugClientPort: Int = 9003
+
         /// Language identifiers that should use the app's built-in (native) language implementation instead of an
         /// external language server. Defaults to `php`, which ships with a native engine.
         var internalLanguages: [String] = InternalLanguage.defaultEnabledIdentifiers
@@ -74,6 +77,11 @@ extension SettingsData {
                 [String: String].self,
                 forKey: .defaultRuntimeVersions
             ) ?? [:]
+
+            self.phpDebugClientPort = try container.decodeIfPresent(
+                Int.self,
+                forKey: .phpDebugClientPort
+            ) ?? 9003
 
             self.internalLanguages = try container.decodeIfPresent(
                 [String].self,

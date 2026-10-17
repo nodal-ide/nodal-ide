@@ -25,6 +25,9 @@ struct DeveloperSettingsView: View {
     @AppSettings(\.developerSettings.lspServerArguments)
     var lspServerArguments
 
+    @AppSettings(\.developerSettings.phpDebugClientPort)
+    var phpDebugClientPort
+
     var body: some View {
         SettingsForm {
             Section {
@@ -97,6 +100,14 @@ struct DeveloperSettingsView: View {
             } header: {
                 Text("Debug Adapters")
                 Text("Used by Debug run configurations. The adapter id is referenced from a configuration.")
+            }
+
+            Section {
+                XdebugStatusRow()
+                Stepper("Debug port: \(phpDebugClientPort)", value: $phpDebugClientPort, in: 1...65535, step: 1)
+            } header: {
+                Text("PHP Debugging")
+                Text("Xdebug is enabled per session (XDEBUG_MODE=debug) — your php.ini isn't modified.")
             }
         }
     }

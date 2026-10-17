@@ -36,6 +36,7 @@ struct RuntimeDebugger {
             if let interpreterPath {
                 launch["runtimeExecutable"] = .string(interpreterPath)
             }
+            launch["port"] = .number(Double(Settings.shared.preferences.developerSettings.phpDebugClientPort))
             launch["xdebugSettings"] = .object([
                 "max_children": .number(128),
                 "max_data": .number(2048),
