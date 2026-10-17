@@ -67,6 +67,8 @@ struct DeveloperSettingsView: View {
             }
 
             Section {
+                PHPAdapterSettingsRow()
+
                 KeyValueTable(
                     items: $debugAdapters,
                     keyColumnName: "Adapter",
