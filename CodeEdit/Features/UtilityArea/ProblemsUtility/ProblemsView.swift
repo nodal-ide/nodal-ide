@@ -22,6 +22,7 @@ struct ProblemsView: View {
     @State private var flat: [EditorProblem] = []
     @State private var counts: [EditorDiagnosticSeverity: Int] = [:]
     @State private var total = 0
+    @State private var hasLoaded = false
 
     static let maxRows = 2000
 
@@ -38,6 +39,13 @@ struct ProblemsView: View {
             content
         }
         .task(id: cacheKey) { await refresh() }
+        .onAppear {
+            // Show the previous derivation instantly when returning to the tab.
+            if let cached = ProblemsResultsCache.shared.value(for: cacheKey) {
+                apply(cached)
+                hasLoaded = true
+            }
+        }
     }
 
     // MARK: - Controls
@@ -109,7 +117,11 @@ struct ProblemsView: View {
 
     private var content: some View {
         Group {
-            if flat.isEmpty {
+            if !hasLoaded {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if flat.isEmpty {
                 emptyState
             } else {
                 VStack(spacing: 0) {
@@ -219,8 +231,11 @@ struct ProblemsView: View {
     }
 
     private func refresh() async {
-        try? await Task.sleep(for: .milliseconds(120))
-        guard !Task.isCancelled else { return }
+        // Debounce only after the first load (search/filter changes), not on the initial appearance.
+        if hasLoaded {
+            try? await Task.sleep(for: .milliseconds(120))
+            guard !Task.isCancelled else { return }
+        }
 
         let snapshot = store.problems
         let query = ProblemsDerivation.Query(
@@ -235,6 +250,12 @@ struct ProblemsView: View {
             ProblemsDerivation.derive(problems: snapshot, query: query)
         }.value
         guard !Task.isCancelled else { return }
+        apply(output)
+        hasLoaded = true
+        ProblemsResultsCache.shared.set(output, for: cacheKey)
+    }
+
+    private func apply(_ output: ProblemsDerivation.Output) {
         groups = output.groups
         flat = output.flat
         counts = output.counts
@@ -304,25 +325,13 @@ private extension ProblemsView {
         return text.substring(with: NSRange(location: offset, length: index - offset))
     }
 
-    /// Opens the problem's file and moves the cursor to its location.
+    /// Opens the problem's file and scrolls to its location.
     func open(_ problem: EditorProblem) {
-        CodeEditDocumentController.shared.openDocument(
-            withContentsOf: problem.fileURL,
-            display: true
-        ) { document, _, _ in
-            guard let document = document as? CodeFileDocument else { return }
-            var range = problem.range
-            // Task problems only carry a line/column; compute the offset from the document.
-            if range.location == 0, range.length == 0,
-               let line = problem.line, let content = document.content?.string {
-                let column = (problem.column ?? 1) - 1
-                range = NSRange(
-                    location: ProblemsView.offset(forLine: line - 1, column: column, in: content as NSString),
-                    length: 0
-                )
-            }
-            document.openOptions = .init(cursorPositions: [CursorPosition(range: range)])
-        }
+        workspace.revealSourceLocation(
+            url: problem.fileURL,
+            line: problem.line ?? 1,
+            column: problem.column ?? 1
+        )
     }
 }
 

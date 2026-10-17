@@ -7,7 +7,6 @@
 
 import AppKit
 import SwiftUI
-import CodeEditSourceEditor
 
 struct BreakpointsView: View {
     @EnvironmentObject private var workspace: WorkspaceDocument
@@ -153,6 +152,7 @@ private struct BreakpointRowView: View {
     let breakpoint: Breakpoint
     let lineText: String?
 
+    @EnvironmentObject private var workspace: WorkspaceDocument
     @State private var hovering = false
 
     var body: some View {
@@ -199,9 +199,11 @@ private struct BreakpointRowView: View {
         .background(hovering ? Color.secondary.opacity(0.08) : .clear)
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
-        .onTapGesture { BreakpointActions.reveal(breakpoint) }
+        .onTapGesture { workspace.revealSourceLocation(url: breakpoint.fileURL, line: breakpoint.line) }
         .contextMenu {
-            Button("Reveal in Editor") { BreakpointActions.reveal(breakpoint) }
+            Button("Reveal in Editor") {
+                workspace.revealSourceLocation(url: breakpoint.fileURL, line: breakpoint.line)
+            }
             Button("Edit Condition…") { BreakpointActions.editCondition(store: store, breakpoint: breakpoint) }
             Button(breakpoint.enabled ? "Disable" : "Enable") {
                 store.setEnabled(breakpoint.id, !breakpoint.enabled)
@@ -214,19 +216,6 @@ private struct BreakpointRowView: View {
 
 @MainActor
 enum BreakpointActions {
-    /// Opens the breakpoint's file and moves the cursor to its line.
-    static func reveal(_ breakpoint: Breakpoint) {
-        CodeEditDocumentController.shared.openDocument(
-            withContentsOf: breakpoint.fileURL,
-            display: true
-        ) { document, _, _ in
-            guard let document = document as? CodeFileDocument, let content = document.content else { return }
-            let text = content.string as NSString
-            let offset = self.offset(forLine: breakpoint.line - 1, column: 0, in: text)
-            document.openOptions = .init(cursorPositions: [CursorPosition(range: NSRange(location: offset, length: 0))])
-        }
-    }
-
     /// Prompts for a breakpoint condition and stores it.
     static func editCondition(store: BreakpointStore, breakpoint: Breakpoint) {
         let alert = NSAlert()
@@ -241,18 +230,6 @@ enum BreakpointActions {
         if alert.runModal() == .alertFirstButtonReturn {
             store.setCondition(breakpoint.id, field.stringValue)
         }
-    }
-
-    static func offset(forLine line: Int, column: Int, in text: NSString) -> Int {
-        var currentLine = 0
-        var index = 0
-        while index < text.length, currentLine < line {
-            if text.character(at: index) == 0x0A {
-                currentLine += 1
-            }
-            index += 1
-        }
-        return min(index + max(0, column), text.length)
     }
 }
 

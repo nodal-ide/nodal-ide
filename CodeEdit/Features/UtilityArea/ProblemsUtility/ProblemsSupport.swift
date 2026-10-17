@@ -15,6 +15,16 @@ struct ProblemGroup: Identifiable, Sendable {
     var id: URL { file }
 }
 
+/// Caches the last Problems derivation per query key so the panel shows results instantly on revisit.
+@MainActor
+final class ProblemsResultsCache {
+    static let shared = ProblemsResultsCache()
+    private var storage: [String: ProblemsDerivation.Output] = [:]
+
+    func value(for key: String) -> ProblemsDerivation.Output? { storage[key] }
+    func set(_ output: ProblemsDerivation.Output, for key: String) { storage[key] = output }
+}
+
 /// Pure, off-main-thread derivation of the panel's displayed data.
 enum ProblemsDerivation {
     struct Query: Sendable {

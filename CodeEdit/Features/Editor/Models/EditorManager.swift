@@ -9,6 +9,7 @@ import Combine
 import Foundation
 import DequeModule
 import os
+import CodeEditSourceEditor
 
 class EditorManager: ObservableObject {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "EditorManager")
@@ -95,6 +96,26 @@ class EditorManager: ObservableObject {
     func openTab(item: CEWorkspaceFile, in editor: Editor? = nil, asTemporary: Bool = false) {
         let editor = editor ?? activeEditor
         editor.openTab(file: item, asTemporary: asTemporary)
+    }
+
+    /// Selects the open tab showing `url` and scrolls it to `line`/`column`. Returns `false` when the
+    /// file isn't open (or its editor isn't ready yet), so callers can fall back to opening it.
+    @discardableResult
+    func reveal(url: URL, line: Int, column: Int = 1) -> Bool {
+        let target = url.standardizedFileURL
+        for editor in flattenedEditors {
+            let instance = editor.tabs.first { $0.file.url.standardizedFileURL == target }
+                ?? (editor.temporaryTab?.file.url.standardizedFileURL == target ? editor.temporaryTab : nil)
+            guard let instance, let controller = instance.rangeTranslator.controller else { continue }
+            activeEditor = editor
+            editor.setSelectedTab(instance.file)
+            let position = CursorPosition(line: max(1, line), column: max(1, column))
+            instance.cursorPositions = [position]
+            controller.setCursorPositions([position], scrollToVisible: true)
+            controller.view.window?.makeFirstResponder(controller.textView)
+            return true
+        }
+        return false
     }
 
     /// bind active tap group to listen to file selection changes.

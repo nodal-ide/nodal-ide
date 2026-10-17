@@ -91,25 +91,7 @@ private struct TestsContentView: View {
 
     private func open(_ result: TestResult) {
         guard let url = result.fileURL else { return }
-        CodeEditDocumentController.shared.openDocument(
-            withContentsOf: url,
-            display: true
-        ) { document, _, _ in
-            guard let line = result.line, let document = document as? CodeFileDocument,
-                  let content = document.content?.string else {
-                return
-            }
-            var currentLine = 1
-            var index = 0
-            let text = content as NSString
-            while index < text.length, currentLine < line {
-                if text.character(at: index) == 0x0A {
-                    currentLine += 1
-                }
-                index += 1
-            }
-            document.openOptions = .init(cursorPositions: [CursorPosition(range: NSRange(location: index, length: 0))])
-        }
+        workspace.revealSourceLocation(url: url, line: result.line ?? 1)
     }
 }
 
