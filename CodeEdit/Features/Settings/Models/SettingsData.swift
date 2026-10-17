@@ -12,7 +12,7 @@ import Foundation
 ///
 /// The model structure of settings for `CodeEdit`
 ///
-/// A `JSON` representation is persisted in `~/Library/Application Support/CodeEdit/preference.json`.
+/// A `JSON` representation is persisted in `~/Library/Application Support/CodeEdit/settings.json`.
 /// - Attention: Don't use `UserDefaults` for persisting user accessible settings.
 ///  If a further setting is needed, extend the struct like ``GeneralSettings``,
 ///  ``ThemeSettings``,  or ``TerminalSettings`` does.
