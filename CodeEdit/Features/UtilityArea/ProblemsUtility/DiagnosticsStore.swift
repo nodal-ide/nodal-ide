@@ -17,6 +17,8 @@ struct EditorProblem: Identifiable {
     let column: Int?
     let severity: EditorDiagnosticSeverity
     let message: String
+    /// A stable rule id (e.g. `php.complexity`) when the source is rule-based.
+    let ruleID: String?
 
     init(
         fileURL: URL,
@@ -24,7 +26,8 @@ struct EditorProblem: Identifiable {
         line: Int?,
         column: Int? = nil,
         severity: EditorDiagnosticSeverity,
-        message: String
+        message: String,
+        ruleID: String? = nil
     ) {
         self.fileURL = fileURL
         self.range = range
@@ -32,6 +35,7 @@ struct EditorProblem: Identifiable {
         self.column = column
         self.severity = severity
         self.message = message
+        self.ruleID = ruleID
     }
 }
 
@@ -53,30 +57,25 @@ final class DiagnosticsStore: ObservableObject {
     var warningCount: Int { problems.count { $0.severity == .warning } }
 
     func update(file: URL, diagnostics: [EditorDiagnostic]) {
-        byFile[file] = diagnostics.map { diagnostic in
-            EditorProblem(
-                fileURL: file,
-                range: diagnostic.range,
-                line: diagnostic.line,
-                severity: diagnostic.severity,
-                message: diagnostic.message
-            )
-        }
+        byFile[file] = diagnostics.map { problem(from: $0, file: file) }
         rebuild()
+    }
+
+    private func problem(from diagnostic: EditorDiagnostic, file: URL) -> EditorProblem {
+        EditorProblem(
+            fileURL: file,
+            range: diagnostic.range,
+            line: diagnostic.line,
+            severity: diagnostic.severity,
+            message: diagnostic.message,
+            ruleID: diagnostic.ruleID
+        )
     }
 
     /// Replaces the diagnostics for several files at once (one rebuild).
     func update(files: [URL: [EditorDiagnostic]]) {
         for (file, diagnostics) in files {
-            byFile[file] = diagnostics.map { diagnostic in
-                EditorProblem(
-                    fileURL: file,
-                    range: diagnostic.range,
-                    line: diagnostic.line,
-                    severity: diagnostic.severity,
-                    message: diagnostic.message
-                )
-            }
+            byFile[file] = diagnostics.map { problem(from: $0, file: file) }
         }
         rebuild()
     }

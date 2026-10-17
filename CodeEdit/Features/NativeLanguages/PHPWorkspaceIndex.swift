@@ -128,6 +128,22 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
         return provider
     }
 
+    /// Re-scans the whole workspace (re-parses + re-diagnoses every file). Used by the Problems panel.
+    func rescan(root: URL) {
+        let key = root.path(percentEncoded: false)
+        lock.lock()
+        let indexer = indexers[key]
+        lock.unlock()
+        guard let indexer else {
+            _ = index(for: root)
+            return
+        }
+        Task.detached(priority: .utility) {
+            indexer.reprocessAll()
+            await indexer.buildIndex(at: root)
+        }
+    }
+
     /// Re-indexes a single file (call after saving).
     func refresh(file: URL) {
         let path = file.path(percentEncoded: false)
