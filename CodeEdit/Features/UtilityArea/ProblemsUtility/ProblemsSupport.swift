@@ -84,17 +84,22 @@ struct ProblemRow: View {
             Image(systemName: problem.severity.problemIcon)
                 .foregroundStyle(problem.severity.problemColor)
                 .font(.system(size: 12))
+                .padding(.top, 1)
             VStack(alignment: .leading, spacing: 1) {
                 Text(problem.message)
                     .font(.system(size: 12))
-                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(subtitle)
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
             Spacer(minLength: 0)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 3)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var subtitle: String {

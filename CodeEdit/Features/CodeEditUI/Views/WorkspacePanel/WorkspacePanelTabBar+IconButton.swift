@@ -64,7 +64,7 @@ extension WorkspacePanelTabBar {
                 } else {
                     .capsuleIcon(
                         isActive: tab == selection,
-                        height: 28
+                        height: 26
                     )
                 }
             } else {
@@ -76,7 +76,7 @@ extension WorkspacePanelTabBar {
             .icon(
                 isActive: tab == selection,
                 size: CGSize(
-                    width: position == .side ? 24 : 42,
+                    width: position == .side ? 24 : 34,
                     height: position == .side ? 40 : size.height
                 )
             )

@@ -54,9 +54,9 @@ struct WorkspacePanelTabBar<Tab: WorkspacePanelTab>: View {
         }
         .clipped()
         .if(.tahoe) {
-            $0.frame(maxWidth: .infinity, idealHeight: 28).padding(.horizontal, 8)
+            $0.frame(maxWidth: .infinity, idealHeight: 26).padding(.horizontal, 4)
         } else: {
-            $0.frame(maxWidth: .infinity, idealHeight: 27)
+            $0.frame(maxWidth: .infinity, idealHeight: 24)
         }
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -65,7 +65,7 @@ struct WorkspacePanelTabBar<Tab: WorkspacePanelTab>: View {
         GeometryReader { proxy in
             iconsView(size: proxy.size)
                 .if(!.tahoe) {
-                    $0.padding(.vertical, 5).frame(maxWidth: .infinity, maxHeight: .infinity)
+                    $0.padding(.vertical, 2).frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .animation(.default, value: items)
         }

@@ -325,8 +325,8 @@ struct ProblemsNavigatorToolbarBottom: View {
             .buttonStyle(.plain)
             .help("Rescan project")
         }
-        .padding(.horizontal, 8)
-        .frame(height: 24)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
         .background(Color(nsColor: .controlBackgroundColor))
     }
 

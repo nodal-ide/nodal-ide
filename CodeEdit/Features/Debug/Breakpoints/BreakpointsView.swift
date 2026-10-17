@@ -156,7 +156,7 @@ private struct BreakpointRowView: View {
     @State private var hovering = false
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(alignment: .top, spacing: 6) {
             Button {
                 store.setEnabled(breakpoint.id, !breakpoint.enabled)
             } label: {
@@ -175,8 +175,8 @@ private struct BreakpointRowView: View {
             Text(lineText ?? "Line \(breakpoint.line)")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(lineText == nil ? .secondary : .primary)
-                .lineLimit(1)
-                .truncationMode(.tail)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 0)
 
@@ -285,8 +285,8 @@ private struct BreakpointsBottomBar: View {
             .disabled(store.breakpoints.isEmpty)
             .help("Remove all breakpoints")
         }
-        .padding(.horizontal, 8)
-        .frame(height: 24)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
         .background(Color(nsColor: .controlBackgroundColor))
     }
 }

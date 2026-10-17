@@ -68,7 +68,17 @@ struct RunConfiguration: Identifiable, Codable, Hashable {
     /// A dev-server command to launch (with Xdebug enabled) before listening (e.g. `php forge.php serve`).
     var serverCommand: String?
 
-    var isInvalid: Bool { name.isEmpty || command.isEmpty }
+    /// A configuration is usable when it has a name and something to run.
+    ///
+    /// Debug configurations may run a program, a command, or a dev-server command instead.
+    var isInvalid: Bool {
+        if name.isEmpty { return true }
+        guard kind == .debug else { return command.isEmpty }
+        let hasProgram = !(program ?? "").isEmpty
+        let hasCommand = !command.isEmpty
+        let hasServer = !(serverCommand ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+        return !(hasProgram || hasCommand || hasServer)
+    }
 
     /// The path mappings as a dictionary.
     var pathMappingDictionary: [String: String] {

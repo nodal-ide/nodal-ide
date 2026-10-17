@@ -28,7 +28,7 @@ enum NavigatorTab: WorkspacePanelTab {
         case .problems:
             return "exclamationmark.triangle"
         case .breakpoints:
-            return "circle.fill"
+            return "smallcircle.filled.circle"
         case .uiExtension(_, let data):
             return data.icon ?? "e.square"
         }
