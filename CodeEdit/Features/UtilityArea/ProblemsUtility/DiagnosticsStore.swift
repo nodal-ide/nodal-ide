@@ -65,6 +65,22 @@ final class DiagnosticsStore: ObservableObject {
         rebuild()
     }
 
+    /// Replaces the diagnostics for several files at once (one rebuild).
+    func update(files: [URL: [EditorDiagnostic]]) {
+        for (file, diagnostics) in files {
+            byFile[file] = diagnostics.map { diagnostic in
+                EditorProblem(
+                    fileURL: file,
+                    range: diagnostic.range,
+                    line: diagnostic.line,
+                    severity: diagnostic.severity,
+                    message: diagnostic.message
+                )
+            }
+        }
+        rebuild()
+    }
+
     func clear(file: URL) {
         byFile[file] = nil
         rebuild()

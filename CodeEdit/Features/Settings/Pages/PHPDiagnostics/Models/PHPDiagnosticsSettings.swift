@@ -43,8 +43,8 @@ extension SettingsData {
         var reportTodos: Bool = true
         /// Report PSR naming-convention violations (noisy; off by default).
         var reportNaming: Bool = false
-        /// Rule ids that are disabled.
-        var disabledRules: [String] = []
+        /// Rule ids that are disabled. `unusedParameter` is opt-in (noisy on interfaces/DI constructors).
+        var disabledRules: [String] = ["php.deadCode.unusedParameter"]
         /// Path substrings to skip entirely (e.g. `/vendor/`).
         var skipPatterns: [String] = ["/vendor/", ".generated."]
 
@@ -61,7 +61,8 @@ extension SettingsData {
             self.requireStrictTypes = try container.decodeIfPresent(Bool.self, forKey: .requireStrictTypes) ?? true
             self.reportTodos = try container.decodeIfPresent(Bool.self, forKey: .reportTodos) ?? true
             self.reportNaming = try container.decodeIfPresent(Bool.self, forKey: .reportNaming) ?? false
-            self.disabledRules = try container.decodeIfPresent([String].self, forKey: .disabledRules) ?? []
+            self.disabledRules = try container.decodeIfPresent([String].self, forKey: .disabledRules)
+                ?? ["php.deadCode.unusedParameter"]
             self.skipPatterns = try container.decodeIfPresent([String].self, forKey: .skipPatterns)
                 ?? ["/vendor/", ".generated."]
         }

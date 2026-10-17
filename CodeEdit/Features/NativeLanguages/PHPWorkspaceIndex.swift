@@ -22,6 +22,8 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
     private var indexes: [String: SymbolIndex] = [:]
     private var indexers: [String: PHPProjectIndexer] = [:]
     private var providers: [URL: PHPProvider] = [:]
+    private var pendingDiagnostics: [URL: [PHPDiagnostic]] = [:]
+    private var flushScheduled = false
 
     /// All workspace roots that currently have an index (used when reloading extensions globally).
     var allRoots: [URL] {
@@ -41,6 +43,11 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
         }
         let symbolIndex = SymbolIndex()
         let indexer = PHPProjectIndexer(index: symbolIndex)
+        // Deliver project-wide diagnostics to the Problems panel as files are indexed.
+        indexer.diagnosticsConfig = Self.currentDiagnosticsConfig()
+        indexer.onDiagnostics = { [weak self] url, issues in
+            self?.enqueueDiagnostics(url: url, issues: issues)
+        }
         indexes[key] = symbolIndex
         indexers[key] = indexer
         lock.unlock()
@@ -49,6 +56,57 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
             await indexer.buildIndex(at: root)
         }
         return symbolIndex
+    }
+
+    // MARK: - Project-wide diagnostics
+
+    private static func currentDiagnosticsConfig() -> PHPDiagnosticsConfig {
+        let settings = Settings.shared.preferences.phpDiagnostics
+        var config = PHPDiagnosticsConfig()
+        config.classLength = settings.classLength
+        config.methodLength = settings.methodLength
+        config.fileLength = settings.fileLength
+        config.parameterCount = settings.parameterCount
+        config.complexity = settings.complexity
+        config.lineLength = settings.lineLength
+        config.requireStrictTypes = settings.requireStrictTypes
+        config.reportTodos = settings.reportTodos
+        config.reportNaming = settings.reportNaming
+        config.disabledRules = Set(settings.disabledRules)
+        config.skipPatterns = settings.skipPatterns
+        return config
+    }
+
+    /// Queues a file's diagnostics; flushes to the store in debounced batches (one rebuild per batch).
+    private func enqueueDiagnostics(url: URL, issues: [PHPDiagnostic]) {
+        lock.lock()
+        pendingDiagnostics[url] = issues
+        let shouldSchedule = !flushScheduled
+        if shouldSchedule { flushScheduled = true }
+        lock.unlock()
+        guard shouldSchedule else { return }
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            self?.flushDiagnostics()
+        }
+    }
+
+    private func flushDiagnostics() {
+        lock.lock()
+        let batch = pendingDiagnostics
+        pendingDiagnostics.removeAll()
+        flushScheduled = false
+        lock.unlock()
+        guard !batch.isEmpty else { return }
+
+        let mapped = batch.mapValues { issues in
+            issues.map {
+                EditorDiagnostic(range: $0.range, severity: $0.severity, message: $0.message, line: $0.line)
+            }
+        }
+        Task { @MainActor in
+            DiagnosticsStore.shared.update(files: mapped)
+        }
     }
 
     /// Returns a cached PHP provider for a file, stable across SwiftUI view recreations.
