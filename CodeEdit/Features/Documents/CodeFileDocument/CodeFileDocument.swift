@@ -153,14 +153,26 @@ final class CodeFileDocument: NSDocument, ObservableObject {
         for saveOperation: NSDocument.SaveOperationType,
         completionHandler: @escaping (Error?) -> Void
     ) {
+        let finish: (Error?) -> Void = { [weak self] error in
+            if error == nil {
+                self?.reindexAfterSave(url)
+            }
+            completionHandler(error)
+        }
         guard Settings.shared.preferences.textEditing.formatOnSave else {
-            super.save(to: url, ofType: typeName, for: saveOperation, completionHandler: completionHandler)
+            super.save(to: url, ofType: typeName, for: saveOperation, completionHandler: finish)
             return
         }
         Task { @MainActor in
             await LSPEditorActions.formatForSave(document: self, url: url)
-            super.save(to: url, ofType: typeName, for: saveOperation, completionHandler: completionHandler)
+            super.save(to: url, ofType: typeName, for: saveOperation, completionHandler: finish)
         }
+    }
+
+    /// Re-indexes and re-diagnoses a single file after it's saved (only that file is re-run).
+    private func reindexAfterSave(_ url: URL) {
+        guard url.pathExtension.lowercased() == "php" else { return }
+        PHPWorkspaceIndex.shared.refresh(file: url)
     }
 
     // MARK: - Read
