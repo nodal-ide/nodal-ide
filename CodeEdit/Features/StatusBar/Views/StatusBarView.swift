@@ -63,7 +63,9 @@ struct StatusBarView: View {
             StatusBarDivider()
             Spacer()
             StatusBarFileInfoView()
+                .allowsHitTesting(false)
             StatusBarCursorPositionLabel()
+                .allowsHitTesting(false)
             StatusBarDivider()
             StatusBarToggleUtilityAreaButton()
         }
@@ -100,5 +102,6 @@ struct StatusBarDivider: View {
     var body: some View {
         Divider()
             .frame(maxHeight: 12)
+            .allowsHitTesting(false)
     }
 }
