@@ -17,7 +17,7 @@ import Combine
 /// CodeFileView is just a wrapper of the `CodeEditor` dependency
 struct CodeFileView: View {
     @ObservedObject private var editorInstance: EditorInstance
-    @ObservedObject private var codeFile: CodeFileDocument
+    @ObservedObject var codeFile: CodeFileDocument
 
     @State private var treeSitterClient: TreeSitterClient = TreeSitterClient()
 
@@ -82,9 +82,9 @@ struct CodeFileView: View {
 
     @EnvironmentObject var undoRegistration: UndoManagerRegistration
 
-    @State private var breakpointRevision = 0
-    @State private var debugRevision = 0
-    @State private var breakpointObservers = Set<AnyCancellable>()
+    @State var breakpointRevision = 0
+    @State var debugRevision = 0
+    @State var breakpointObservers = Set<AnyCancellable>()
 
     @ObservedObject private var themeModel: ThemeModel = .shared
 
@@ -245,11 +245,18 @@ struct CodeFileView: View {
             foldRangeDelegate: languageDelegate,
             documentHighlightDelegate: languageDelegate,
             breakpointLines: currentBreakpointLines,
+            disabledBreakpointLines: currentDisabledBreakpointLines,
             onToggleBreakpoint: { line in
                 guard let store = codeFile.findWorkspace()?.breakpointStore, let url = codeFile.fileURL else {
                     return
                 }
-                store.toggle(url, line: line)
+                store.toggleOrAdd(url, line: line)
+            },
+            onBreakpointMenu: { line in
+                guard let store = codeFile.findWorkspace()?.breakpointStore, let url = codeFile.fileURL else {
+                    return nil
+                }
+                return BreakpointMenu.menu(for: url, line: line, store: store)
             },
             debugLine: currentDebugLine
         )
@@ -331,46 +338,6 @@ extension CodeFileView {
         config.disabledRules = Set(settings.disabledRules)
         config.skipPatterns = settings.skipPatterns
         return config
-    }
-
-    /// The gutter breakpoint markers for the current file, recomputed on every render.
-    private var currentBreakpointLines: Set<Int> {
-        _ = breakpointRevision
-        guard let store = codeFile.findWorkspace()?.breakpointStore, let url = codeFile.fileURL else {
-            return []
-        }
-        return store.lines(for: url)
-    }
-
-    /// The current debug stop line, when the stop is in this file.
-    private var currentDebugLine: Int? {
-        _ = debugRevision
-        guard let session = codeFile.findWorkspace()?.debugController?.session,
-              session.state.isStopped,
-              let frame = session.currentFrame,
-              let path = frame.source?.path,
-              path == codeFile.fileURL?.path(percentEncoded: false) else {
-            return nil
-        }
-        return frame.line
-    }
-
-    /// Re-derives the gutter markers when the breakpoint store or the debug session changes.
-    private func observeBreakpoints() {
-        breakpointObservers.removeAll()
-        if let store = codeFile.findWorkspace()?.breakpointStore {
-            store.$breakpoints
-                .dropFirst()
-                .receive(on: RunLoop.main)
-                .sink { _ in breakpointRevision &+= 1 }
-                .store(in: &breakpointObservers)
-        }
-        if let session = codeFile.findWorkspace()?.debugController?.session {
-            session.objectWillChange
-                .receive(on: RunLoop.main)
-                .sink { _ in debugRevision &+= 1 }
-                .store(in: &breakpointObservers)
-        }
     }
 
     private var currentTheme: Theme {

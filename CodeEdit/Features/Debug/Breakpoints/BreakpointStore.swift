@@ -33,6 +33,56 @@ final class BreakpointStore: ObservableObject {
         Set(breakpoints(for: url).filter(\.enabled).map(\.line))
     }
 
+    /// All breakpoint lines in a file (enabled and disabled).
+    func allLines(for url: URL) -> Set<Int> {
+        Set(breakpoints(for: url).map(\.line))
+    }
+
+    /// Disabled breakpoint lines in a file.
+    func disabledLines(for url: URL) -> Set<Int> {
+        Set(breakpoints(for: url).filter { !$0.enabled }.map(\.line))
+    }
+
+    /// The breakpoint at a line, if any.
+    func breakpoint(_ url: URL, line: Int) -> Breakpoint? {
+        let path = url.standardizedFileURL.path(percentEncoded: false)
+        return breakpoints.first { $0.filePath == path && $0.line == line }
+    }
+
+    /// Adds a breakpoint if none exists, otherwise toggles its enabled state (Xcode-style gutter click).
+    func toggleOrAdd(_ url: URL, line: Int) {
+        let path = url.standardizedFileURL.path(percentEncoded: false)
+        if let index = breakpoints.firstIndex(where: { $0.filePath == path && $0.line == line }) {
+            breakpoints[index].enabled.toggle()
+        } else {
+            breakpoints.append(Breakpoint(filePath: path, line: line))
+        }
+        save()
+    }
+
+    /// Adds an enabled breakpoint at a line if one doesn't already exist.
+    func add(_ url: URL, line: Int) {
+        let path = url.standardizedFileURL.path(percentEncoded: false)
+        guard !breakpoints.contains(where: { $0.filePath == path && $0.line == line }) else { return }
+        breakpoints.append(Breakpoint(filePath: path, line: line))
+        save()
+    }
+
+    /// Removes the breakpoint at a line.
+    func remove(_ url: URL, line: Int) {
+        let path = url.standardizedFileURL.path(percentEncoded: false)
+        breakpoints.removeAll { $0.filePath == path && $0.line == line }
+        save()
+    }
+
+    /// Enables/disables the breakpoint at a line.
+    func setEnabled(_ url: URL, line: Int, _ enabled: Bool) {
+        let path = url.standardizedFileURL.path(percentEncoded: false)
+        guard let index = breakpoints.firstIndex(where: { $0.filePath == path && $0.line == line }) else { return }
+        breakpoints[index].enabled = enabled
+        save()
+    }
+
     func hasBreakpoint(_ url: URL, line: Int) -> Bool {
         breakpoints(for: url).contains { $0.line == line }
     }
