@@ -96,13 +96,6 @@ final class CodeEditSplitViewController: NSSplitViewController {
         })
 
         addSplitViewItem(inspector)
-
-        // Layer-back the panes so the collapse/expand animation interpolates smoothly instead of
-        // stepping as the hosting views redraw.
-        splitView.wantsLayer = true
-        for item in splitViewItems {
-            item.viewController.view.wantsLayer = true
-        }
     }
 
     private func makeNavigator(view: some View) -> NSSplitViewItem {
