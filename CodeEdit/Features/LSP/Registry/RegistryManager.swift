@@ -86,13 +86,31 @@ final class RegistryManager: ObservableObject {
               let manager = method.packageManager(installPath: installPath) else {
             return nil
         }
+        let names = executableNames(for: package)
+
+        // npm installs bins into `<installPath>/<package>/node_modules/.bin/<bin>`, and the bin name often
+        // differs from the package name (e.g. package `css-lsp` -> bin `vscode-css-language-server`), so the
+        // package manager's default path isn't enough.
+        if method.packageManagerType == .npm {
+            let binDirectory = installPath
+                .appending(path: package.name)
+                .appending(path: "node_modules")
+                .appending(path: ".bin")
+            for name in names {
+                let candidate = binDirectory.appending(path: name).path
+                if FileManager.default.isExecutableFile(atPath: candidate) {
+                    return candidate
+                }
+            }
+        }
+
         let base = manager.getBinaryPath(for: package.name)
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: base, isDirectory: &isDirectory) else { return nil }
         if !isDirectory.boolValue {
             return base
         }
-        for name in executableNames(for: package) {
+        for name in names {
             let candidate = URL(filePath: base).appending(path: name).path
             if FileManager.default.isExecutableFile(atPath: candidate) {
                 return candidate
