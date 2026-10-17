@@ -198,7 +198,7 @@ struct WorkspaceView: View {
             .collapsed($utilityAreaViewModel.isCollapsed)
             .splitViewCanAnimate($utilityAreaViewModel.animateCollapse)
             .opacity(0)
-            .frame(idealHeight: 420)
+            .frame(idealHeight: utilityAreaViewModel.currentHeight > 0 ? utilityAreaViewModel.currentHeight : 420)
             .frame(minHeight: 100)
             .background {
                 GeometryReader { geo in
@@ -206,6 +206,11 @@ struct WorkspaceView: View {
                         .opacity(0)
                         .onChange(of: geo.size.height) { _, newHeight in
                             drawerHeight = newHeight
+                            if !utilityAreaViewModel.isCollapsed,
+                               !utilityAreaViewModel.isMaximized,
+                               newHeight > 1 {
+                                utilityAreaViewModel.currentHeight = newHeight
+                            }
                         }
                         .onAppear {
                             drawerHeight = geo.size.height
