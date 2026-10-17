@@ -53,6 +53,8 @@ class SplitViewItem: ObservableObject {
             if canAnimate {
                 NSAnimationContext.runAnimationGroup { context in
                     context.duration = CodeEditAnimations.panelCollapseDuration
+                context.timingFunction = CodeEditAnimations.panelCollapseTiming
+                context.allowsImplicitAnimation = true
                     self.item.animator().isCollapsed = collapsed
                 }
             } else {

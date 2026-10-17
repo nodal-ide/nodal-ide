@@ -21,6 +21,8 @@ extension CodeEditWindowController {
             // Standard animated toggle
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = CodeEditAnimations.panelCollapseDuration
+                context.timingFunction = CodeEditAnimations.panelCollapseTiming
+                context.allowsImplicitAnimation = true
                 firstSplitView.animator().isCollapsed.toggle()
             }
         } else {
@@ -45,6 +47,8 @@ extension CodeEditWindowController {
             // Standard animated toggle
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = CodeEditAnimations.panelCollapseDuration
+                context.timingFunction = CodeEditAnimations.panelCollapseTiming
+                context.allowsImplicitAnimation = true
                 lastSplitView.animator().isCollapsed.toggle()
             }
         } else {

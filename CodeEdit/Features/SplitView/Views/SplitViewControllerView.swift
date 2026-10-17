@@ -236,6 +236,8 @@ final class SplitViewController: NSSplitViewController {
         guard let item = items.first(where: { $0.id == id })?.item else { return }
         NSAnimationContext.runAnimationGroup { context in
             context.duration = CodeEditAnimations.panelCollapseDuration
+                context.timingFunction = CodeEditAnimations.panelCollapseTiming
+                context.allowsImplicitAnimation = true
             item.animator().isCollapsed = enabled
         }
     }
