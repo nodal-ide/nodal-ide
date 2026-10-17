@@ -9,7 +9,10 @@ import Foundation
 
 enum TestOutputParser {
     static func parse(_ output: String) -> [TestResult] {
-        let cleaned = strippingANSI(output)
+        let normalized = output
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+        let cleaned = strippingANSI(normalized)
         let trimmed = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.hasPrefix("<") {
             return parseJUnit(cleaned)
@@ -45,14 +48,14 @@ enum TestOutputParser {
         let lines = output.components(separatedBy: "\n")
         var index = 0
         while index < lines.count {
-            switch lines[index].trimmingCharacters(in: .whitespaces) {
-            case "Passed Tests:":
+            let line = lines[index].trimmingCharacters(in: .whitespacesAndNewlines)
+            if line.hasSuffix("Passed Tests:") {
                 index = parseForgeTable(lines, from: index + 1, into: &results)
-            case "Failures:":
+            } else if line.hasSuffix("Failures:") {
                 index = parseForgeBlocks(lines, from: index + 1, status: .failed, into: &results)
-            case "Skipped Tests:":
+            } else if line.hasSuffix("Skipped Tests:") {
                 index = parseForgeBlocks(lines, from: index + 1, status: .skipped, into: &results)
-            default:
+            } else {
                 index += 1
             }
         }
@@ -66,7 +69,7 @@ enum TestOutputParser {
     ) -> Int {
         var index = start
         while index < lines.count {
-            let line = lines[index].trimmingCharacters(in: .whitespaces)
+            let line = lines[index].trimmingCharacters(in: .whitespacesAndNewlines)
             if line.hasPrefix("|") {
                 let columns = line.split(separator: "|", omittingEmptySubsequences: false)
                     .map { $0.trimmingCharacters(in: .whitespaces) }
@@ -102,7 +105,7 @@ enum TestOutputParser {
     ) -> Int {
         var index = start
         while index < lines.count {
-            let line = lines[index].trimmingCharacters(in: .whitespaces)
+            let line = lines[index].trimmingCharacters(in: .whitespacesAndNewlines)
             guard let (suite, name) = forgeClassMethod(line) else {
                 if forgeHeaders.contains(line) { break }
                 index += 1
@@ -111,7 +114,7 @@ enum TestOutputParser {
             var block: [String] = []
             index += 1
             while index < lines.count {
-                let next = lines[index].trimmingCharacters(in: .whitespaces)
+                let next = lines[index].trimmingCharacters(in: .whitespacesAndNewlines)
                 if forgeHeaders.contains(next) || forgeClassMethod(next) != nil { break }
                 block.append(next)
                 index += 1
