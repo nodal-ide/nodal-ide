@@ -76,17 +76,16 @@ struct StatusBarView: View {
             Divider()
                 .overlay(Color(nsColor: colorScheme == .dark ? .black : .clear))
         }
-        // A dedicated resize handle at the top edge (so the cursor only hints resize there, not over
-        // the status items). The whole bar still responds to the drag for convenience.
+        // The utility-area divider lives on the top edge of the status bar (the panel's border). Only
+        // this strip resizes the panel — the status items/buttons below are not draggable.
         .overlay(alignment: .top) {
             Rectangle()
                 .fill(.clear)
-                .frame(height: 7)
+                .frame(height: 8)
                 .contentShape(Rectangle())
                 .cursor(.resizeUpDown)
                 .gesture(dragGesture)
         }
-        .gesture(dragGesture)
         .disabled(controlActive == .inactive)
     }
 
