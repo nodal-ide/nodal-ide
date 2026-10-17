@@ -74,10 +74,13 @@ extension RegistryManager {
     ]
 
     private func executableNames(for package: RegistryItem) -> [String] {
-        var names = package.bin.map { Array($0.keys) } ?? []
+        // Prefer a bin whose name matches the package (e.g. `elixir-ls` over `elixir-ls-debugger`), since the
+        // `bin` dictionary has no deterministic order.
+        var names: [String] = []
         if let last = package.name.components(separatedBy: "/").last {
             names.append(last)
         }
+        names += package.bin.map { Array($0.keys) } ?? []
         return names
     }
 
