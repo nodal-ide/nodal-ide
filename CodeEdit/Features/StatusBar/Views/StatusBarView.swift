@@ -69,22 +69,20 @@ struct StatusBarView: View {
         }
         .padding(.horizontal, 10)
         .padding(.trailing, trailingPadding)
+        .cursor(.resizeUpDown)
         .frame(height: Self.height - 1.0)
+        // A full-bar drag target behind the items: the empty surface resizes the panel, while the
+        // buttons/menus in front keep their own clicks.
+        .background {
+            Color.clear
+                .contentShape(Rectangle())
+                .gesture(dragGesture)
+        }
         .background(.bar)
         .padding(.top, 1)
         .overlay(alignment: .top) {
             Divider()
                 .overlay(Color(nsColor: colorScheme == .dark ? .black : .clear))
-        }
-        // The utility-area divider lives on the top edge of the status bar (the panel's border). Only
-        // this strip resizes the panel — the status items/buttons below are not draggable.
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(.clear)
-                .frame(height: 8)
-                .contentShape(Rectangle())
-                .cursor(.resizeUpDown)
-                .gesture(dragGesture)
         }
         .disabled(controlActive == .inactive)
     }
