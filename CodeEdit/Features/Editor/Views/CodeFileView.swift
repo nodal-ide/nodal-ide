@@ -256,6 +256,9 @@ struct CodeFileView: View {
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))
         .onAppear(perform: setUpBreakpoints)
+        // This view is reused across tab switches, so re-seed when the file changes (otherwise the
+        // breakpoint subscription stays bound to the first file's URL).
+        .onChange(of: codeFile.fileURL) { _, _ in setUpBreakpoints() }
         .background {
             if colorScheme == .dark {
                 EffectView(.underPageBackground)
@@ -334,6 +337,7 @@ extension CodeFileView {
 
     /// Seeds the gutter breakpoint markers and debug line, keeping them in sync with the workspace.
     private func setUpBreakpoints() {
+        breakpointCancellables.removeAll()
         guard let workspace = codeFile.findWorkspace() else { return }
         if let store = workspace.breakpointStore, let url = codeFile.fileURL {
             breakpointLines = store.lines(for: url)

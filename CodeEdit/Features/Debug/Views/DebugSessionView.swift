@@ -12,7 +12,7 @@ struct DebugSessionView: View {
 
     var body: some View {
         if let controller = workspace.debugController {
-            DebugSessionContent(session: controller.session)
+            DebugSessionContent(session: controller.session, onStop: controller.stop)
         } else {
             DebugEmptyState(
                 systemImage: "ladybug",
@@ -25,10 +25,11 @@ struct DebugSessionView: View {
 
 private struct DebugSessionContent: View {
     @ObservedObject var session: DebugSession
+    var onStop: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            DebugSessionHeader(session: session)
+            DebugSessionHeader(session: session, onStop: onStop)
             Divider()
             HSplitView {
                 DebugCallStackView(session: session)
@@ -49,10 +50,14 @@ private struct DebugSessionContent: View {
 
 private struct DebugSessionHeader: View {
     @ObservedObject var session: DebugSession
+    var onStop: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
             DebugStateBadge(state: session.state)
+            if session.state.isActive {
+                DebugControls(session: session, onStop: onStop)
+            }
             Spacer(minLength: 4)
             if let hint = hint {
                 Text(hint)
@@ -62,7 +67,7 @@ private struct DebugSessionHeader: View {
             }
         }
         .padding(.horizontal, 10)
-        .frame(height: 30)
+        .frame(height: 34)
         .background(.bar)
     }
 

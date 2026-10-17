@@ -101,3 +101,42 @@ struct DebugStateBadge: View {
         }
     }
 }
+
+/// Execution controls (continue/pause/step/stop), shared by the floating toolbar and the Debug header.
+struct DebugControls: View {
+    @ObservedObject var session: DebugSession
+    var onStop: () -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            button("play.fill", "Continue", enabled: session.state.isStopped) { session.continueExecution() }
+            button("pause.fill", "Pause", enabled: session.state == .running) { session.pause() }
+
+            Divider().frame(height: 14)
+
+            button("arrow.turn.down.right", "Step Over", enabled: session.state.isStopped) { session.stepOver() }
+            button("arrow.down.right", "Step Into", enabled: session.state.isStopped) { session.stepInto() }
+            button("arrow.up.right", "Step Out", enabled: session.state.isStopped) { session.stepOut() }
+
+            Divider().frame(height: 14)
+
+            button("stop.fill", "Stop") { onStop() }
+        }
+    }
+
+    private func button(
+        _ systemImage: String,
+        _ help: String,
+        enabled: Bool = true,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .frame(width: 22, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .help(help)
+    }
+}

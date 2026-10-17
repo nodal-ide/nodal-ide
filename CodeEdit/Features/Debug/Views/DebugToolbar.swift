@@ -23,44 +23,18 @@ private struct DebugToolbarContent: View {
 
     var body: some View {
         if session.state.isActive {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 DebugStateBadge(state: session.state)
 
                 Divider().frame(height: 16)
 
-                control("play.fill", "Continue", enabled: session.state.isStopped) { session.continueExecution() }
-                control("pause.fill", "Pause", enabled: session.state == .running) { session.pause() }
-
-                Divider().frame(height: 16)
-
-                control("arrow.turn.down.right", "Step Over", enabled: session.state.isStopped) { session.stepOver() }
-                control("arrow.down.right", "Step Into", enabled: session.state.isStopped) { session.stepInto() }
-                control("arrow.up.right", "Step Out", enabled: session.state.isStopped) { session.stepOut() }
-
-                Divider().frame(height: 16)
-
-                control("stop.fill", "Stop") { onStop() }
+                DebugControls(session: session, onStop: onStop)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
             .background(.regularMaterial, in: Capsule())
             .overlay(Capsule().strokeBorder(Color.secondary.opacity(0.3)))
             .shadow(radius: 4, y: 1)
         }
-    }
-
-    private func control(
-        _ systemImage: String,
-        _ help: String,
-        enabled: Bool = true,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .frame(width: 22, height: 20)
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-        .help(help)
     }
 }
