@@ -46,21 +46,23 @@ class SplitViewItem: ObservableObject {
     /// - Parameter child: the view corresponding to the SplitViewItem.
     func update(child: _VariadicView.Children.Element) {
         self.item.canCollapse = child[SplitViewItemCanCollapseViewTraitKey.self]
+        self.item.holdingPriority = child[SplitViewHoldingPriorityTraitKey.self]
         let canAnimate = child[SplitViewItemCanAnimateViewTraitKey.self]
+        let collapsed = child[SplitViewItemCollapsedViewTraitKey.self].wrappedValue
+        // Only touch `isCollapsed` when it actually changes. Re-applying it on every SwiftUI update
+        // (with implicit animation) thrashed layout.
+        guard self.item.isCollapsed != collapsed else { return }
         DispatchQueue.main.async {
             self.observers = []
-            let collapsed = child[SplitViewItemCollapsedViewTraitKey.self].wrappedValue
             if canAnimate {
                 NSAnimationContext.runAnimationGroup { context in
                     context.duration = CodeEditAnimations.panelCollapseDuration
-                context.timingFunction = CodeEditAnimations.panelCollapseTiming
-                context.allowsImplicitAnimation = true
+                    context.timingFunction = CodeEditAnimations.panelCollapseTiming
                     self.item.animator().isCollapsed = collapsed
                 }
             } else {
                 self.item.isCollapsed = collapsed
             }
-            self.item.holdingPriority = child[SplitViewHoldingPriorityTraitKey.self]
             self.observers = self.createObservers()
         }
     }
