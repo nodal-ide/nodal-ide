@@ -69,17 +69,23 @@ final class RunController: ObservableObject {
         let adapters = Settings.shared.preferences.developerSettings.debugAdapters
         if let adapterID = configuration.adapter, adapterID.isEmpty == false,
            let path = adapters[adapterID], !path.isEmpty {
-            var launch: [String: JSONValue] = [
-                "program": .string(program),
-                "args": .array(args.map { .string($0) }),
-                "env": .object(configuration.environmentDictionary.mapValues { .string($0) })
-            ]
-            if !configuration.workingDirectory.isEmpty {
-                launch["cwd"] = .string(configuration.workingDirectory)
+            // With no program this is a "listen" session (the adapter waits for Xdebug to connect);
+            // `vscode-php-debug` has no `attach` request, so it's always a `launch`.
+            var launch: [String: JSONValue] = [:]
+            if !program.isEmpty {
+                launch["program"] = .string(program)
+                launch["args"] = .array(args.map { .string($0) })
+                if !configuration.environmentDictionary.isEmpty {
+                    launch["env"] = .object(configuration.environmentDictionary.mapValues { .string($0) })
+                }
+                if !configuration.workingDirectory.isEmpty {
+                    launch["cwd"] = .string(configuration.workingDirectory)
+                }
             }
             DebuggerAutoWiring.apply(
                 launch: &launch,
-                clientPort: configuration.clientPort,
+                clientPort: configuration.clientPort
+                    ?? Settings.shared.preferences.developerSettings.phpDebugClientPort,
                 pathMappings: configuration.pathMappingDictionary
             )
 

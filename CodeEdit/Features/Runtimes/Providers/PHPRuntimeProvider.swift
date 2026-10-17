@@ -105,7 +105,7 @@ final class PHPRuntimeProvider: RuntimeProvider {
         // Enable step debugging per session without touching the user's `php.ini`.
         let port = Settings.shared.preferences.developerSettings.phpDebugClientPort
         environment["XDEBUG_MODE"] = "debug"
-        environment["XDEBUG_CONFIG"] = "client_port=\(port)"
+        environment["XDEBUG_CONFIG"] = "client_port=\(port) start_with_request=yes"
         return RuntimeDebugger(
             kind: .php,
             adapterID: "php",

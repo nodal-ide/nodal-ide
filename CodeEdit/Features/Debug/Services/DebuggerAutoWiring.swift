@@ -62,11 +62,12 @@ enum DebuggerAutoWiring {
         }
     }
 
-    /// Builds a **listening** (attach) session for the project's PHP/Xdebug runtime. The adapter waits
-    /// for Xdebug to connect (start a request with `XDEBUG_MODE=debug`), so no program is launched.
+    /// Builds a **listening** session for the project's PHP/Xdebug runtime. The adapter waits for
+    /// Xdebug to connect (start a request with `XDEBUG_MODE=debug`), so no program is launched.
+    ///
+    /// `vscode-php-debug` has no `attach` request: "listen" is a `launch` with **no `program`**.
     static func listenOptions(
         workspace: WorkspaceDocument,
-        host: String = "127.0.0.1",
         port: Int? = nil
     ) async -> DebugSession.LaunchOptions? {
         guard let provider = RuntimeManager.shared.provider(for: .php),
@@ -80,8 +81,8 @@ enum DebuggerAutoWiring {
             workspace: workspace,
             debugger: debugger,
             adapter: adapter,
-            request: "attach",
-            launchArguments: debugger.attachArguments(host: host, port: port)
+            request: "launch",
+            launchArguments: debugger.listenArguments(port: port)
         )
     }
 
