@@ -323,8 +323,10 @@ extension CodeFileView {
         config.fileLength = settings.fileLength
         config.parameterCount = settings.parameterCount
         config.complexity = settings.complexity
+        config.lineLength = settings.lineLength
         config.requireStrictTypes = settings.requireStrictTypes
         config.reportTodos = settings.reportTodos
+        config.reportNaming = settings.reportNaming
         config.disabledRules = Set(settings.disabledRules)
         config.skipPatterns = settings.skipPatterns
         return config

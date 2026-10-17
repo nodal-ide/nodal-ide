@@ -35,10 +35,14 @@ extension SettingsData {
         var parameterCount: Int = 5
         /// Max cyclomatic complexity for a function/method.
         var complexity: Int = 10
+        /// Max characters per line.
+        var lineLength: Int = 120
         /// Report missing `declare(strict_types=1);`.
         var requireStrictTypes: Bool = true
         /// Report `TODO`/`FIXME` comments as hints.
         var reportTodos: Bool = true
+        /// Report PSR naming-convention violations (noisy; off by default).
+        var reportNaming: Bool = false
         /// Rule ids that are disabled.
         var disabledRules: [String] = []
         /// Path substrings to skip entirely (e.g. `/vendor/`).
@@ -53,8 +57,10 @@ extension SettingsData {
             self.fileLength = try container.decodeIfPresent(Int.self, forKey: .fileLength) ?? 500
             self.parameterCount = try container.decodeIfPresent(Int.self, forKey: .parameterCount) ?? 5
             self.complexity = try container.decodeIfPresent(Int.self, forKey: .complexity) ?? 10
+            self.lineLength = try container.decodeIfPresent(Int.self, forKey: .lineLength) ?? 120
             self.requireStrictTypes = try container.decodeIfPresent(Bool.self, forKey: .requireStrictTypes) ?? true
             self.reportTodos = try container.decodeIfPresent(Bool.self, forKey: .reportTodos) ?? true
+            self.reportNaming = try container.decodeIfPresent(Bool.self, forKey: .reportNaming) ?? false
             self.disabledRules = try container.decodeIfPresent([String].self, forKey: .disabledRules) ?? []
             self.skipPatterns = try container.decodeIfPresent([String].self, forKey: .skipPatterns)
                 ?? ["/vendor/", ".generated."]
