@@ -10,6 +10,7 @@ import LanguageServerProtocol
 
 extension LanguageServer {
     func requestCompletion(for documentURI: String, position: Position) async throws -> CompletionResponse {
+        guard serverCapabilities.completionProvider != nil else { return nil }
         do {
             let cacheKey = CacheKey(
                 uri: documentURI,

@@ -15,6 +15,7 @@ extension LanguageServer {
         _ position: Position,
         _ includeDeclaration: Bool = false
     ) async throws -> ReferenceResponse {
+        guard serverCapabilities.referencesProvider != nil else { return nil }
         do {
             let params = ReferenceParams(
                 textDocument: TextDocumentIdentifier(uri: documentURI),

@@ -10,6 +10,7 @@ import LanguageServerProtocol
 extension LanguageServer {
     /// Setup and test the validity of a rename operation at a given location
     func requestPrepareRename(for documentURI: String, _ position: Position) async throws -> PrepareRenameResponse {
+        guard serverCapabilities.renameProvider != nil else { return nil }
         do {
             let params = TextDocumentPositionParams(
                 textDocument: TextDocumentIdentifier(uri: documentURI),

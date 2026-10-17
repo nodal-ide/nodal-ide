@@ -12,6 +12,7 @@ extension LanguageServer {
     /// The hover request is sent from the client to the server to request hover
     /// information at a given text document position.
     func requestHover(for documentURI: String, _ position: Position) async throws -> HoverResponse {
+        guard serverCapabilities.hoverProvider != nil else { return nil }
         do {
             let params = TextDocumentPositionParams(
                 textDocument: TextDocumentIdentifier(uri: documentURI),

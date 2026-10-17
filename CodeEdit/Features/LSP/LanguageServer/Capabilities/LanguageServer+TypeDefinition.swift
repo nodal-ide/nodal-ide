@@ -11,6 +11,7 @@ import LanguageServerProtocol
 extension LanguageServer {
     /// Resolve the type definition location of a symbol at a given text document position
     func requestTypeDefinition(for documentURI: String, _ position: Position) async throws -> TypeDefinitionResponse {
+        guard serverCapabilities.typeDefinitionProvider != nil else { return nil }
         do {
             let params = TextDocumentPositionParams(
                 textDocument: TextDocumentIdentifier(uri: documentURI),

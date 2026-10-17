@@ -77,81 +77,6 @@ final class RegistryManager: ObservableObject {
         ServiceContainer.resolve(.singleton, LSPService.self)?.reloadConfigurationsAndRestart()
     }
 
-    /// Resolves the absolute path to a package's language-server executable.
-    ///
-    /// Uses the package manager's binary path (a file for npm/pip, a `bin` directory for cargo/go/github) and,
-    /// when it's a directory, picks a matching executable name from the registry's `bin` map.
-    func resolveExecutable(for package: RegistryItem) -> String? {
-        guard let method = package.installMethod,
-              let manager = method.packageManager(installPath: installPath) else {
-            return nil
-        }
-        let names = executableNames(for: package)
-
-        // npm installs bins into `<installPath>/<package>/node_modules/.bin/<bin>`, and the bin name often
-        // differs from the package name (e.g. package `css-lsp` -> bin `vscode-css-language-server`), so the
-        // package manager's default path isn't enough.
-        if method.packageManagerType == .npm {
-            let binDirectory = installPath
-                .appending(path: package.name)
-                .appending(path: "node_modules")
-                .appending(path: ".bin")
-            for name in names {
-                let candidate = binDirectory.appending(path: name).path
-                if FileManager.default.isExecutableFile(atPath: candidate) {
-                    return candidate
-                }
-            }
-        }
-
-        let base = manager.getBinaryPath(for: package.name)
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: base, isDirectory: &isDirectory) else { return nil }
-        if !isDirectory.boolValue {
-            return base
-        }
-        for name in names {
-            let candidate = URL(filePath: base).appending(path: name).path
-            if FileManager.default.isExecutableFile(atPath: candidate) {
-                return candidate
-            }
-        }
-        // Fall back to the first executable in the directory.
-        let entries = (try? FileManager.default.contentsOfDirectory(atPath: base)) ?? []
-        return entries.sorted()
-            .map { URL(filePath: base).appending(path: $0).path }
-            .first { FileManager.default.isExecutableFile(atPath: $0) }
-    }
-
-    private func executableNames(for package: RegistryItem) -> [String] {
-        var names = package.bin.map { Array($0.keys) } ?? []
-        if let last = package.name.components(separatedBy: "/").last {
-            names.append(last)
-        }
-        return names
-    }
-
-    /// Fills in missing languages/executable paths for servers installed before these fields existed.
-    @MainActor
-    func backfillInstalledServers() {
-        var changed = false
-        for (name, server) in installedLanguageServers where server.executablePath.isEmpty || server.languages.isEmpty {
-            guard let item = registryItems.first(where: { $0.name == name }) else { continue }
-            var updated = server
-            if updated.languages.isEmpty {
-                updated.languages = item.languages
-            }
-            if updated.executablePath.isEmpty {
-                updated.executablePath = resolveExecutable(for: item) ?? ""
-            }
-            installedLanguageServers[name] = updated
-            changed = true
-        }
-        if changed {
-            reloadLanguageServerConfigs()
-        }
-    }
-
     // MARK: - Uninstall
 
     @MainActor
@@ -245,7 +170,8 @@ final class RegistryManager: ObservableObject {
                 isEnabled: true,
                 version: method.version ?? "",
                 languages: package.languages,
-                executablePath: self?.resolveExecutable(for: package) ?? ""
+                executablePath: self?.resolveExecutable(for: package) ?? "",
+                arguments: self?.launchArguments(for: package)
             )
             self?.reloadLanguageServerConfigs()
             self?.updateActivityViewer(package.name, activityTitle, fail: false)

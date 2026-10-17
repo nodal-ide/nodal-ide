@@ -10,6 +10,7 @@ import LanguageServerProtocol
 
 extension LanguageServer {
     func requestGoToDeclaration(for documentURI: String, position: Position) async throws -> DeclarationResponse {
+        guard serverCapabilities.declarationProvider != nil else { return nil }
         do {
             let params = TextDocumentPositionParams(
                 textDocument: TextDocumentIdentifier(uri: documentURI),

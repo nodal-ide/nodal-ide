@@ -10,6 +10,7 @@ import LanguageServerProtocol
 
 extension LanguageServer {
     func requestFoldingRange(for documentURI: String) async throws -> FoldingRangeResponse {
+        guard serverCapabilities.foldingRangeProvider != nil else { return nil }
         do {
             let params = FoldingRangeParams(textDocument: TextDocumentIdentifier(uri: documentURI))
             return try await lspInstance.foldingRange(params)

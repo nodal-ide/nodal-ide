@@ -11,6 +11,7 @@ import LanguageServerProtocol
 extension LanguageServer {
     /// Resolve the implementation location of a symbol at a given text document position
     func requestImplementation(for documentURI: String, _ position: Position) async throws -> ImplementationResponse {
+        guard serverCapabilities.implementationProvider != nil else { return nil }
         do {
             let params = TextDocumentPositionParams(
                 textDocument: TextDocumentIdentifier(uri: documentURI),

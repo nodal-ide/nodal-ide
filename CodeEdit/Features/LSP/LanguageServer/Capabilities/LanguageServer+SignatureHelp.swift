@@ -11,6 +11,7 @@ import LanguageServerProtocol
 extension LanguageServer {
     /// Request signature information at a given cursor position
     func requestSignatureHelp(for documentURI: String, _ position: Position) async throws -> SignatureHelpResponse {
+        guard serverCapabilities.signatureHelpProvider != nil else { return nil }
         do {
             let params = TextDocumentPositionParams(
                 textDocument: TextDocumentIdentifier(uri: documentURI),

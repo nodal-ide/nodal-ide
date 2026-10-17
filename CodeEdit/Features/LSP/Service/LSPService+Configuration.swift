@@ -23,20 +23,20 @@ extension LSPService {
 
         var configs: [LanguageIdentifier: LanguageServerBinary] = [:]
         for server in installedServers.values where server.isEnabled && !server.executablePath.isEmpty {
-            let args = Self.launchArguments(for: server.packageName)
+            // Arguments are resolved at install time from the registry item's source type (see `RegistryManager`).
+            let args = server.arguments ?? ["--stdio"]
             for language in server.languages {
                 guard let id = Self.languageIdentifier(from: language) else { continue }
                 configs[id] = LanguageServerBinary(execPath: server.executablePath, args: args, env: environment)
             }
         }
         for binary in lspBinaries {
-            if let language = LanguageIdentifier(rawValue: binary.key) {
-                configs[language] = LanguageServerBinary(
-                    execPath: binary.value,
-                    args: Self.launchArguments(for: binary.key),
-                    env: environment
-                )
-            }
+            guard let language = LanguageIdentifier(rawValue: binary.key) else { continue }
+            configs[language] = LanguageServerBinary(
+                execPath: binary.value,
+                args: Self.manualLaunchArguments(for: binary.key),
+                env: environment
+            )
         }
 
         // A TypeScript/JavaScript server also handles the JSX/TSX variants.
@@ -50,31 +50,12 @@ extension LSPService {
         languageConfigs = configs
     }
 
-    /// Default launch arguments for well-known language servers (most expect `--stdio`).
-    private static let defaultServerArguments: [String: [String]] = [
-        "typescript-language-server": ["--stdio"],
-        "vscode-html-language-server": ["--stdio"],
-        "vscode-css-language-server": ["--stdio"],
-        "vscode-json-language-server": ["--stdio"],
-        "vscode-eslint-language-server": ["--stdio"],
-        "yaml-language-server": ["--stdio"],
-        "pyright": ["--stdio"],
-        "docker-langserver": ["--stdio"],
-        "bash-language-server": ["start"],
-        "lua-language-server": [],
-        "gopls": [],
-        "rust-analyzer": [],
-        "clangd": [],
-        "pylsp": []
-    ]
-
-    /// The launch arguments for a server, honoring the user override then known defaults (else `--stdio`).
-    private static func launchArguments(for key: String) -> [String] {
-        let override = Settings.shared.preferences.developerSettings.lspServerArguments[key]
-        if let override, !override.isEmpty {
+    /// Launch arguments for a manually-configured binary, honoring the user override then known defaults.
+    private static func manualLaunchArguments(for key: String) -> [String] {
+        if let override = Settings.shared.preferences.developerSettings.lspServerArguments[key], !override.isEmpty {
             return override.split(separator: " ").map(String.init)
         }
-        return defaultServerArguments[key] ?? ["--stdio"]
+        return RegistryManager.knownServerArguments[key] ?? ["--stdio"]
     }
 
     /// Maps a registry language name (often capitalized, e.g. `TypeScript`) to an LSP language identifier.

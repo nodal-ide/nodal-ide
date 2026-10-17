@@ -10,6 +10,7 @@ import LanguageServerProtocol
 
 extension LanguageServer {
     func requestGoToDefinition(for documentURI: String, position: Position) async throws -> DefinitionResponse {
+        guard serverCapabilities.definitionProvider != nil else { return nil }
         do {
             let cacheKey = CacheKey(
                 uri: documentURI,

@@ -12,6 +12,7 @@ extension LanguageServer {
     func requestPrepareCallHierarchy(
         for documentURI: String, position: Position
     ) async throws -> CallHierarchyPrepareResponse {
+        guard serverCapabilities.callHierarchyProvider != nil else { return nil }
         do {
             let prepareParams = CallHierarchyPrepareParams(
                 textDocument: TextDocumentIdentifier(uri: documentURI),

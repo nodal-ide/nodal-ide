@@ -13,6 +13,7 @@ extension LanguageServer {
         range: LSPRange,
         context: CodeActionContext
     ) async throws -> CodeActionResponse {
+        guard serverCapabilities.codeActionProvider != nil else { return nil }
         do {
             let params = CodeActionParams(
                 textDocument: TextDocumentIdentifier(uri: documentURI),

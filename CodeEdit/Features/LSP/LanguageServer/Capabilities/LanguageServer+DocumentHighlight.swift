@@ -15,6 +15,7 @@ extension LanguageServer {
         for documentURI: String,
         position: Position
     ) async throws -> DocumentHighlightResponse {
+        guard serverCapabilities.documentHighlightProvider != nil else { return nil }
         do {
             let params = DocumentHighlightParams(
                 textDocument: TextDocumentIdentifier(uri: documentURI),

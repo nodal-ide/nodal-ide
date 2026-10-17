@@ -50,19 +50,23 @@ extension SettingsData {
         var languages: [String]
         /// The absolute path to the server's executable.
         var executablePath: String
+        /// Launch arguments for the server. `nil` means "not resolved yet" (see `RegistryManager`).
+        var arguments: [String]?
 
         init(
             packageName: String,
             isEnabled: Bool,
             version: String,
             languages: [String] = [],
-            executablePath: String = ""
+            executablePath: String = "",
+            arguments: [String]? = nil
         ) {
             self.packageName = packageName
             self.isEnabled = isEnabled
             self.version = version
             self.languages = languages
             self.executablePath = executablePath
+            self.arguments = arguments
         }
 
         init(from decoder: Decoder) throws {
@@ -72,6 +76,7 @@ extension SettingsData {
             self.version = try container.decodeIfPresent(String.self, forKey: .version) ?? ""
             self.languages = try container.decodeIfPresent([String].self, forKey: .languages) ?? []
             self.executablePath = try container.decodeIfPresent(String.self, forKey: .executablePath) ?? ""
+            self.arguments = try container.decodeIfPresent([String].self, forKey: .arguments)
         }
     }
 }
