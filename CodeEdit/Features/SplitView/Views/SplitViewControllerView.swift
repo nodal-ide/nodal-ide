@@ -103,14 +103,57 @@ final class SplitViewController: NSSplitViewController {
             super.resetCursorRects()
             guard subviews.count > 1 else { return }
             let cursor: NSCursor = isVertical ? .resizeLeftRight : .resizeUpDown
+            for index in 0..<(subviews.count - 1) where !subviews[index].frame.isEmpty {
+                addCursorRect(grabRect(forDivider: index), cursor: cursor)
+            }
+        }
+
+        /// Double-clicking a divider resets the panes to equal sizes.
+        override func mouseDown(with event: NSEvent) {
+            let point = convert(event.locationInWindow, from: nil)
+            if event.clickCount == 2, dividerIndex(at: point) != nil {
+                resetToEqualSizes()
+                return
+            }
+            super.mouseDown(with: event)
+        }
+
+        /// The (widened) draggable rect for a divider, computed from the adjacent panes so it is correct
+        /// regardless of the split view's flipped state.
+        private func grabRect(forDivider index: Int) -> NSRect {
             let grab: CGFloat = 5
-            for index in 0..<(subviews.count - 1) {
-                let leading = subviews[index].frame
-                guard !leading.isEmpty else { continue }
-                let rect: NSRect = isVertical
-                    ? NSRect(x: leading.maxX, y: 0, width: dividerThickness, height: bounds.height)
-                    : NSRect(x: 0, y: leading.maxY, width: bounds.width, height: dividerThickness)
-                addCursorRect(rect.insetBy(dx: isVertical ? -grab : 0, dy: isVertical ? 0 : -grab), cursor: cursor)
+            let rect = dividerRect(at: index)
+            return isVertical
+                ? rect.insetBy(dx: -grab, dy: 0)
+                : rect.insetBy(dx: 0, dy: -grab)
+        }
+
+        private func dividerRect(at index: Int) -> NSRect {
+            let leading = subviews[index].frame
+            let trailing = subviews[index + 1].frame
+            if isVertical {
+                let low = min(leading.maxX, trailing.maxX)
+                let high = max(leading.minX, trailing.minX)
+                return NSRect(x: low, y: 0, width: max(dividerThickness, high - low), height: bounds.height)
+            }
+            let low = min(leading.maxY, trailing.maxY)
+            let high = max(leading.minY, trailing.minY)
+            return NSRect(x: 0, y: low, width: bounds.width, height: max(dividerThickness, high - low))
+        }
+
+        private func dividerIndex(at point: NSPoint) -> Int? {
+            for index in 0..<(subviews.count - 1) where grabRect(forDivider: index).contains(point) {
+                return index
+            }
+            return nil
+        }
+
+        /// Distributes all panes equally (mirrors the initial layout in `updateItems`).
+        private func resetToEqualSizes() {
+            guard subviews.count > 1 else { return }
+            let total = isVertical ? bounds.width : bounds.height
+            for index in 0..<(subviews.count - 1) where !subviews[index + 1].isHidden {
+                setPosition(CGFloat(index + 1) * total / CGFloat(subviews.count), ofDividerAt: index)
             }
         }
 
