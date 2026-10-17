@@ -36,6 +36,8 @@ struct RuntimeDebugger {
             if let interpreterPath {
                 launch["runtimeExecutable"] = .string(interpreterPath)
             }
+            // Ensure the launched script starts a debug session (XDEBUG_CONFIG can't set this).
+            launch["runtimeArgs"] = .array([.string("-dxdebug.start_with_request=yes")])
             launch["port"] = .number(Double(Settings.shared.preferences.developerSettings.phpDebugClientPort))
             launch["xdebugSettings"] = .object([
                 "max_children": .number(128),

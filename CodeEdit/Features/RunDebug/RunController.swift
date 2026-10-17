@@ -187,7 +187,16 @@ final class RunController: ObservableObject {
 
             var environment = configuration.environmentDictionary
             environment["XDEBUG_MODE"] = "debug"
-            environment["XDEBUG_CONFIG"] = "client_port=\(port) start_with_request=yes"
+            environment["XDEBUG_CONFIG"] = "client_port=\(port)"
+            // `XDEBUG_CONFIG` ignores `start_with_request`, so provide it through a real ini + scan dir.
+            if let iniDirectory = PHPDebugEnvironment.prepare(clientPort: port) {
+                let iniPath = iniDirectory.path(percentEncoded: false)
+                let phpPath = (try? await RuntimeResolver.resolve(kind: .php, workspace: workspace))?
+                    .executableDirectory.appending(path: "php").path(percentEncoded: false)
+                if let scanDirectory = PHPDebugEnvironment.defaultScanDirectory(phpExecutable: phpPath) {
+                    environment["PHP_INI_SCAN_DIR"] = "\(scanDirectory):\(iniPath)"
+                }
+            }
             let task = CETask(
                 name: configuration.name,
                 target: "",

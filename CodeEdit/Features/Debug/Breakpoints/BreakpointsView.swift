@@ -199,6 +199,7 @@ private struct BreakpointRowView: View {
         .background(hovering ? Color.secondary.opacity(0.08) : .clear)
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
+        .onTapGesture { BreakpointActions.reveal(breakpoint) }
         .contextMenu {
             Button("Reveal in Editor") { BreakpointActions.reveal(breakpoint) }
             Button("Edit Condition…") { BreakpointActions.editCondition(store: store, breakpoint: breakpoint) }
