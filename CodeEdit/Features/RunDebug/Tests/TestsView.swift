@@ -58,11 +58,22 @@ private struct TestsContentView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if !runner.rawOutput.isEmpty {
-            DebugEmptyState(
-                systemImage: "questionmark.circle",
-                title: "No Parsed Results",
-                message: "Tests ran, but the output wasn't in a recognized format (TAP/JUnit)."
-            )
+            VStack(spacing: 0) {
+                Text("Unrecognized output")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                Divider()
+                ScrollView {
+                    Text(runner.rawOutput)
+                        .font(.system(size: 10, design: .monospaced))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(8)
+                }
+            }
         } else if runner.configurations.isEmpty {
             DebugEmptyState(
                 systemImage: "checkmark.diamond",

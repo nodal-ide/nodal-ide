@@ -32,31 +32,38 @@ struct TaskOutputPane: View {
     @Namespace var bottomID
 
     var body: some View {
-        if let taskID = taskManager.taskShowingOutput, let activeTask = taskManager.activeTasks[taskID] {
-            GeometryReader { geometry in
-                let totalFontHeight = fontTotalHeight(nsFont: font).rounded(.up)
-                let constrainedHeight = geometry.size.height
-                    - geometry.size.height.truncatingRemainder(dividingBy: totalFontHeight)
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0).frame(minHeight: 0)
-                    TaskOutputView(activeTask: activeTask)
-                        .frame(height: max(0, constrainedHeight - 1))
-                        .id(activeTask.task.id)
-                        .padding(.horizontal, 10)
+        Group {
+            if let taskID = taskManager.taskShowingOutput, let activeTask = taskManager.activeTasks[taskID] {
+                GeometryReader { geometry in
+                    let totalFontHeight = fontTotalHeight(nsFont: font).rounded(.up)
+                    let constrainedHeight = geometry.size.height
+                        - geometry.size.height.truncatingRemainder(dividingBy: totalFontHeight)
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0).frame(minHeight: 0)
+                        TaskOutputView(activeTask: activeTask)
+                            .frame(height: max(0, constrainedHeight - 1))
+                            .id(activeTask.task.id)
+                            .padding(.horizontal, 10)
+                    }
                 }
+                .paneToolbar {
+                    taskPicker
+                    TaskOutputActionsView(
+                        activeTask: activeTask,
+                        taskManager: taskManager,
+                        scrollProxy: $scrollProxy,
+                        bottomID: _bottomID
+                    )
+                }
+                .background(background)
+            } else {
+                CEContentUnavailableView("No Task Output")
             }
-            .paneToolbar {
-                taskPicker
-                TaskOutputActionsView(
-                    activeTask: activeTask,
-                    taskManager: taskManager,
-                    scrollProxy: $scrollProxy,
-                    bottomID: _bottomID
-                )
+        }
+        .onReceive(taskManager.$activeTasks) { tasks in
+            if taskManager.taskShowingOutput == nil {
+                taskManager.taskShowingOutput = tasks.keys.first
             }
-            .background(background)
-        } else {
-            CEContentUnavailableView("No Task Output")
         }
     }
 

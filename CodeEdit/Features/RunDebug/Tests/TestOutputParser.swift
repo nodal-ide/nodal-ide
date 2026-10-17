@@ -9,14 +9,24 @@ import Foundation
 
 enum TestOutputParser {
     static func parse(_ output: String) -> [TestResult] {
-        let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleaned = strippingANSI(output)
+        let trimmed = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.hasPrefix("<") {
-            return parseJUnit(output)
+            return parseJUnit(cleaned)
         }
         if isForgeOutput(trimmed) {
-            return parseForge(output)
+            return parseForge(cleaned)
         }
-        return parseTAP(output)
+        return parseTAP(cleaned)
+    }
+
+    /// Removes ANSI CSI escape sequences (e.g. `\u{001B}[0;34m`) that colour terminal output.
+    static func strippingANSI(_ text: String) -> String {
+        text.replacingOccurrences(
+            of: "\u{001B}\\[[0-9;]*[A-Za-z]",
+            with: "",
+            options: .regularExpression
+        )
     }
 
     // MARK: - Forge (php forge.php test)

@@ -55,6 +55,7 @@ final class TestRunner: ObservableObject {
         task.onFinish = { [weak self] in
             self?.finish()
         }
+        taskManager.taskShowingOutput = task.id
         Task { await taskManager.runTask(task: task) }
     }
 
