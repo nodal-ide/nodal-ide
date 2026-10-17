@@ -16,7 +16,7 @@ import Combine
 
 /// CodeFileView is just a wrapper of the `CodeEditor` dependency
 struct CodeFileView: View {
-    @ObservedObject private var editorInstance: EditorInstance
+    let editorInstance: EditorInstance
     @ObservedObject var codeFile: CodeFileDocument
 
     @State private var treeSitterClient: TreeSitterClient = TreeSitterClient()
@@ -84,6 +84,7 @@ struct CodeFileView: View {
 
     @State var breakpointRevision = 0
     @State var debugRevision = 0
+    @State var findRevision = 0
     @State var breakpointObservers = Set<AnyCancellable>()
 
     @ObservedObject private var themeModel: ThemeModel = .shared
@@ -116,7 +117,7 @@ struct CodeFileView: View {
         isEditable: Bool = true,
         isPreview: Bool = false
     ) {
-        self._editorInstance = .init(wrappedValue: editorInstance)
+        self.editorInstance = editorInstance
         self._codeFile = .init(wrappedValue: codeFile)
 
         self.textViewCoordinators = textViewCoordinators
@@ -218,8 +219,8 @@ struct CodeFileView: View {
                     SourceEditorState(
                         cursorPositions: editorInstance.cursorPositions,
                         scrollPosition: editorInstance.scrollPosition,
-                        findText: editorInstance.findText,
-                        replaceText: editorInstance.replaceText
+                        findText: editorFindText,
+                        replaceText: editorReplaceText
                     )
                 },
                 set: { newState in
@@ -263,7 +264,7 @@ struct CodeFileView: View {
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))
         // Subscribe once; the values are recomputed from the current file each render.
-        .onAppear(perform: observeBreakpoints)
+        .onAppear(perform: observeEditorState)
         .background {
             if colorScheme == .dark {
                 EffectView(.underPageBackground)

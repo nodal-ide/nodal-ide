@@ -40,8 +40,19 @@ extension CodeFileView {
         return frame.line
     }
 
-    /// Re-derives the gutter markers when the breakpoint store or the debug session changes.
-    func observeBreakpoints() {
+    /// Find/replace text, which does need to re-render the editor when the find navigator changes it.
+    var editorFindText: String? {
+        _ = findRevision
+        return editorInstance.findText
+    }
+
+    var editorReplaceText: String? {
+        _ = findRevision
+        return editorInstance.replaceText
+    }
+
+    /// Re-derives the gutter/find state when the breakpoint store, debug session or find text changes.
+    func observeEditorState() {
         breakpointObservers.removeAll()
         if let store = codeFile.findWorkspace()?.breakpointStore {
             store.$breakpoints
@@ -56,5 +67,17 @@ extension CodeFileView {
                 .sink { _ in debugRevision &+= 1 }
                 .store(in: &breakpointObservers)
         }
+        // Cursor positions are intentionally NOT observed (they change on every keystroke); only find
+        // text needs to re-render the editor.
+        editorInstance.$findText
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { _ in findRevision &+= 1 }
+            .store(in: &breakpointObservers)
+        editorInstance.$replaceText
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { _ in findRevision &+= 1 }
+            .store(in: &breakpointObservers)
     }
 }

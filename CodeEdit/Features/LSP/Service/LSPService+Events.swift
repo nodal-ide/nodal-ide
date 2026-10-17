@@ -102,14 +102,21 @@ extension LSPService {
     /// Handles push diagnostics (`textDocument/publishDiagnostics`), which servers like
     /// `typescript-language-server` use instead of pull diagnostics.
     private func handlePublishDiagnostics(_ params: PublishDiagnosticsParams) {
+        let signpost = PerformanceSignposts.begin("lsp.publishDiagnostics")
+        defer { PerformanceSignposts.end("lsp.publishDiagnostics", id: signpost) }
+
         // Feed the editor (inline diagnostics) and the Problems panel.
         LSPDiagnosticsCache.shared.update(uri: params.uri, diagnostics: params.diagnostics)
         NotificationCenter.default.post(name: Notification.Name("LSPDiagnosticsUpdated"), object: nil)
         guard let url = URL(string: params.uri) else { return }
         let content = (NSDocumentController.shared.document(for: url) as? CodeFileDocument)?.content?.string
+        // Compute the line-start table once and reuse for every diagnostic (was O(diags × document)).
+        let lineStarts = content.map { Self.lineStartOffsets(in: $0) }
+        let contentLength = (content as NSString?)?.length ?? 0
         let diagnostics = params.diagnostics.map { diagnostic -> EditorDiagnostic in
-            let range = content.flatMap { Self.nsRange(for: diagnostic.range, in: $0) }
-                ?? NSRange(location: 0, length: 0)
+            let range = lineStarts.flatMap {
+                Self.nsRange(for: diagnostic.range, lineStarts: $0, contentLength: contentLength)
+            } ?? NSRange(location: 0, length: 0)
             return EditorDiagnostic(
                 range: range,
                 severity: Self.severity(diagnostic.severity),
@@ -130,14 +137,12 @@ extension LSPService {
         }
     }
 
-    /// Converts an LSP range to an `NSRange` using the document's current text.
-    private static func nsRange(for range: LSPRange, in content: String) -> NSRange? {
-        let lineStarts = lineStartOffsets(in: content)
+    /// Converts an LSP range to an `NSRange` using a precomputed line-start table.
+    private static func nsRange(for range: LSPRange, lineStarts: [Int], contentLength: Int) -> NSRange? {
         guard let start = offset(for: range.start, lineStarts: lineStarts) else { return nil }
         let end = offset(for: range.end, lineStarts: lineStarts) ?? start
-        let nsString = content as NSString
-        let clampedStart = min(max(start, 0), nsString.length)
-        let clampedLength = min(max(end - start, 0), nsString.length - clampedStart)
+        let clampedStart = min(max(start, 0), contentLength)
+        let clampedLength = min(max(end - start, 0), contentLength - clampedStart)
         return NSRange(location: clampedStart, length: clampedLength)
     }
 

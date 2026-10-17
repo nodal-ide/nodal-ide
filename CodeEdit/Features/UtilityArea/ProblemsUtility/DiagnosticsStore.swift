@@ -51,16 +51,24 @@ final class DiagnosticsStore: ObservableObject {
 
     /// Language diagnostics, per file.
     private var byFile: [URL: [EditorProblem]] = [:]
+    /// A cheap content signature per file so identical re-publishes don't trigger a rebuild.
+    private var byFileSignature: [URL: Int] = [:]
     /// Task-output problems (from problem matchers), grouped by owner then file.
     private var byOwner: [String: [URL: [EditorProblem]]] = [:]
 
+    private var cachedErrorCount = 0
+    private var cachedWarningCount = 0
+
     private init() {}
 
-    var errorCount: Int { problems.count { $0.severity == .error } }
-    var warningCount: Int { problems.count { $0.severity == .warning } }
+    var errorCount: Int { cachedErrorCount }
+    var warningCount: Int { cachedWarningCount }
 
     func update(file: URL, diagnostics: [EditorDiagnostic]) {
-        byFile[file] = diagnostics.map { problem(from: $0, file: file) }
+        let signature = Self.signature(of: diagnostics)
+        guard byFileSignature[file] != signature else { return }
+        byFileSignature[file] = signature
+        byFile[file] = diagnostics.isEmpty ? nil : diagnostics.map { problem(from: $0, file: file) }
         rebuild()
     }
 
@@ -75,17 +83,38 @@ final class DiagnosticsStore: ObservableObject {
         )
     }
 
-    /// Replaces the diagnostics for several files at once (one rebuild).
+    /// Replaces the diagnostics for several files at once (one rebuild when anything changed).
     func update(files: [URL: [EditorDiagnostic]]) {
+        var changed = false
         for (file, diagnostics) in files {
-            byFile[file] = diagnostics.map { problem(from: $0, file: file) }
+            let signature = Self.signature(of: diagnostics)
+            guard byFileSignature[file] != signature else { continue }
+            byFileSignature[file] = signature
+            byFile[file] = diagnostics.isEmpty ? nil : diagnostics.map { problem(from: $0, file: file) }
+            changed = true
         }
-        rebuild()
+        if changed { rebuild() }
     }
 
     func clear(file: URL) {
+        guard byFile[file] != nil || byFileSignature[file] != nil else { return }
         byFile[file] = nil
+        byFileSignature[file] = nil
         rebuild()
+    }
+
+    /// A content hash for a file's diagnostics (ignores object identity) to detect no-op updates.
+    private static func signature(of diagnostics: [EditorDiagnostic]) -> Int {
+        var hasher = Hasher()
+        hasher.combine(diagnostics.count)
+        for diagnostic in diagnostics {
+            hasher.combine(diagnostic.range.location)
+            hasher.combine(diagnostic.range.length)
+            hasher.combine(diagnostic.line)
+            hasher.combine(diagnostic.message)
+            hasher.combine(diagnostic.severity.rawValue)
+        }
+        return hasher.finalize()
     }
 
     /// Replaces all problems contributed by `owner` (e.g. a task run / problem matcher).
@@ -116,6 +145,7 @@ final class DiagnosticsStore: ObservableObject {
         let removed = byFile.keys.filter { Self.isInside($0, rootPath: rootPath) }
         for key in removed {
             byFile[key] = nil
+            byFileSignature[key] = nil
         }
         for owner in byOwner.keys {
             byOwner[owner] = byOwner[owner]?.filter { !Self.isInside($0.key, rootPath: rootPath) }
@@ -137,10 +167,22 @@ final class DiagnosticsStore: ObservableObject {
     private func rebuild() {
         let language = byFile.values.flatMap { $0 }
         let tasks = byOwner.values.flatMap { $0.values.flatMap { $0 } }
-        problems = (language + tasks).sorted { lhs, rhs in
+        let merged = (language + tasks).sorted { lhs, rhs in
             if lhs.fileURL != rhs.fileURL { return lhs.fileURL.path < rhs.fileURL.path }
             return (lhs.line ?? 0) < (rhs.line ?? 0)
         }
+        var errors = 0
+        var warnings = 0
+        for problem in merged {
+            switch problem.severity {
+            case .error: errors += 1
+            case .warning: warnings += 1
+            default: break
+            }
+        }
+        problems = merged
+        cachedErrorCount = errors
+        cachedWarningCount = warnings
         revision &+= 1
     }
 }
