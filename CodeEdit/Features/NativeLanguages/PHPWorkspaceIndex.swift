@@ -24,8 +24,6 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
     private var providers: [URL: PHPProvider] = [:]
     private var pendingDiagnostics: [URL: [PHPDiagnostic]] = [:]
     private var flushScheduled = false
-    /// Activity-viewer task id per workspace root (used to update the scan progress task).
-    private var scanTaskIDs: [String: String] = [:]
 
     /// All workspace roots that currently have an index (used when reloading extensions globally).
     var allRoots: [URL] {
@@ -50,8 +48,10 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
         indexer.onDiagnostics = { [weak self] url, issues in
             self?.enqueueDiagnostics(url: url, issues: issues)
         }
-        indexer.onProgress = { [weak self] completed, total in
-            self?.reportScanProgress(root: root, completed: completed, total: total)
+        indexer.onProgress = { completed, total in
+            Task { @MainActor in
+                ProjectScanStatus.shared.update(root: root, completed: completed, total: total)
+            }
         }
         indexes[key] = symbolIndex
         indexers[key] = indexer
@@ -94,74 +94,6 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
             try? await Task.sleep(for: .milliseconds(400))
             self?.flushDiagnostics()
         }
-    }
-
-    /// Shows project-scan progress in the Activity Viewer (like search indexing): a task with a
-    /// title + percentage, then a completion that's auto-dismissed.
-    private func reportScanProgress(root: URL, completed: Int, total: Int) {
-        guard total > 0 else { return }
-        let key = root.path(percentEncoded: false)
-        Task { @MainActor in
-            guard let id = scanTaskIDs[key] else {
-                let newID = UUID().uuidString
-                scanTaskIDs[key] = newID
-                postScanTask(
-                    root: root,
-                    action: .createWithPriority,
-                    model: TaskNotificationModel(
-                        id: newID,
-                        title: "Scanning | Processing PHP files",
-                        message: "\(completed) / \(total) files",
-                        percentage: 0,
-                        isLoading: true
-                    )
-                )
-                return
-            }
-            if completed >= total {
-                finishScanTask(root: root, key: key, id: id, total: total)
-            } else {
-                postScanTask(
-                    root: root,
-                    action: .update,
-                    model: TaskNotificationModel(
-                        id: id,
-                        title: "Scanning | Processing PHP files",
-                        message: "\(completed) / \(total) files",
-                        percentage: Double(completed) / Double(total),
-                        isLoading: true
-                    )
-                )
-            }
-        }
-    }
-
-    /// Marks the scan task done and auto-dismisses it shortly after.
-    @MainActor
-    private func finishScanTask(root: URL, key: String, id: String, total: Int) {
-        scanTaskIDs[key] = nil
-        postScanTask(
-            root: root,
-            action: .update,
-            model: TaskNotificationModel(
-                id: id,
-                title: "Finished scanning",
-                message: "Scanned \(total) file\(total == 1 ? "" : "s")",
-                percentage: 1,
-                isLoading: false
-            )
-        )
-        NotificationCenter.default.post(
-            name: .taskNotification,
-            object: nil,
-            userInfo: ["id": id, "action": "deleteWithDelay", "delay": 4.0, "workspace": root]
-        )
-    }
-
-    /// Posts (or updates) the scan task notification in the Activity Viewer.
-    @MainActor
-    private func postScanTask(root: URL, action: TaskNotificationHandler.Action, model: TaskNotificationModel) {
-        TaskNotificationHandler.postTask(toWorkspace: root, action: action, model: model)
     }
 
     private func flushDiagnostics() {
