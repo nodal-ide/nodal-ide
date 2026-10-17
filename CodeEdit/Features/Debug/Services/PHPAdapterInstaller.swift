@@ -71,36 +71,42 @@ final class PHPAdapterInstaller: ObservableObject {
 
     // MARK: - Install
 
-    /// Installs `vscode-php-debug` via npm, writes a launcher wrapper, and registers it.
+    /// Downloads the PHP Debug extension (VSIX) from Open VSX, extracts the compiled adapter, writes a
+    /// launcher wrapper, and registers it.
+    ///
+    /// The extension isn't published to npm, so we fetch the built VSIX (which includes `out/` +
+    /// `node_modules`) rather than building from source.
     func install() async {
         status = .installing
+
+        guard let downloadURL = await Self.latestVSIXURL() else {
+            status = .failed("Couldn't reach the Open VSX registry.")
+            Self.report(success: false, message: "Couldn't reach Open VSX to download the PHP debug adapter.")
+            return
+        }
+
+        let vsix = FileManager.default.temporaryDirectory.appending(path: "xdebug-php-debug.vsix")
+        do {
+            let (data, _) = try await URLSession.shared.data(from: downloadURL)
+            try data.write(to: vsix)
+        } catch {
+            status = .failed(error.localizedDescription)
+            Self.report(success: false, message: "Download failed: \(error.localizedDescription)")
+            return
+        }
+
         let directory = Self.installDirectory
+        try? FileManager.default.removeItem(at: directory)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let path = directory.path(percentEncoded: false)
-
-        // Use the resolved Node runtime (global default -> newest installed), like the terminal, and
-        // fall back to discovered nvm/fnm/Homebrew so `npm` resolves.
-        var searchPath = ShellEnvironment.augmentedPath()
-        if let node = await RuntimeResolver.resolve(kind: .node, workspace: nil) {
-            searchPath = node.executableDirectory.path(percentEncoded: false) + ":" + searchPath
-        }
-        let result = await Self.run(
-            "export PATH=\"\(searchPath)\"; cd '\(path)' && npm install vscode-php-debug --no-fund --no-audit 2>&1"
-        )
-        guard result.status == 0 else {
-            let message = result.output.isEmpty ? "npm install failed." : result.output
-            status = .failed(message)
-            Self.report(
-                success: false,
-                message: "Couldn't install the PHP debug adapter. Is Node.js/npm installed?"
-            )
+        let vsixPath = vsix.path(percentEncoded: false)
+        let directoryPath = directory.path(percentEncoded: false)
+        let result = await Self.run("unzip -o '\(vsixPath)' -d '\(directoryPath)' >/dev/null 2>&1")
+        try? FileManager.default.removeItem(at: vsix)
+        guard result.status == 0, let entry = Self.findEntry(in: directory) else {
+            status = .failed("Couldn't extract the debug adapter from the package.")
             return
         }
 
-        guard let entry = Self.findEntry(in: directory) else {
-            status = .failed("Installed, but couldn't locate the adapter entry point.")
-            return
-        }
         let wrapperPath = Self.wrapperURL.path(percentEncoded: false)
         let runLine = entry.hasSuffix(".js")
             ? "exec node \"\(entry)\" \"$@\""
@@ -120,13 +126,34 @@ final class PHPAdapterInstaller: ObservableObject {
 
     // MARK: - Helpers
 
-    /// Finds the adapter's entry point within an install directory (npm bin, else the JS entry).
+    /// The latest PHP Debug `.vsix` download URL from Open VSX.
+    static func latestVSIXURL() async -> URL? {
+        guard let url = URL(string: "https://open-vsx.org/api/xdebug/php-debug") else { return nil }
+        guard let (data, _) = try? await URLSession.shared.data(from: url),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        if let files = object["files"] as? [String: Any],
+           let download = files["download"] as? String,
+           let downloadURL = URL(string: download) {
+            return downloadURL
+        }
+        if let version = object["version"] as? String {
+            return URL(
+                string: "https://open-vsx.org/api/xdebug/php-debug/\(version)/file/xdebug.php-debug-\(version).vsix"
+            )
+        }
+        return nil
+    }
+
+    /// Finds the adapter's entry point within an install directory (VSIX layout or npm layout).
     static func findEntry(in directory: URL) -> String? {
         let candidates = [
-            directory.appending(path: "node_modules/.bin/php-debug-adapter"),
-            directory.appending(path: "node_modules/.bin/phpDebug"),
+            directory.appending(path: "extension/out/phpDebug.js"),
+            directory.appending(path: "extension/phpDebug.js"),
+            directory.appending(path: "out/phpDebug.js"),
             directory.appending(path: "node_modules/vscode-php-debug/out/phpDebug.js"),
-            directory.appending(path: "node_modules/vscode-php-debug/phpDebug.js")
+            directory.appending(path: "node_modules/.bin/php-debug-adapter")
         ]
         return candidates
             .map { $0.path(percentEncoded: false) }
