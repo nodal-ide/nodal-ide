@@ -127,19 +127,12 @@ final class LSPLanguageProvider: LanguageProvider {
 
     @MainActor
     func diagnostics(for textView: TextViewController) async -> [EditorDiagnostic] {
-        guard let server = server else { return [] }
-
-        // Push-based servers: use the latest pushed diagnostics for this document.
-        if server.serverCapabilities.diagnosticProvider == nil {
-            return LSPDiagnosticsCache.shared.diagnostics(for: documentURI).compactMap {
-                editorDiagnostic(from: $0, in: textView)
-            }
+        // We don't declare pull-diagnostics support, and servers that push (TypeScript, CSS, …) may still
+        // advertise `diagnosticProvider` while not implementing `textDocument/diagnostic`. Use the latest
+        // pushed diagnostics for this document instead of pulling.
+        LSPDiagnosticsCache.shared.diagnostics(for: documentURI).compactMap {
+            editorDiagnostic(from: $0, in: textView)
         }
-
-        guard let report = try? await server.requestPullDiagnostics(document: documentURI) else {
-            return []
-        }
-        return (report.items ?? []).compactMap { editorDiagnostic(from: $0, in: textView) }
     }
 
     private func editorDiagnostic(from diagnostic: Diagnostic, in textView: TextViewController) -> EditorDiagnostic? {
@@ -160,9 +153,7 @@ final class LSPLanguageProvider: LanguageProvider {
               let lspRange = textView.textView.lspRangeFrom(nsRange: range) else {
             return []
         }
-        let diagnostics = server.serverCapabilities.diagnosticProvider != nil
-            ? (try? await server.requestPullDiagnostics(document: documentURI))?.items ?? []
-            : []
+        let diagnostics = LSPDiagnosticsCache.shared.diagnostics(for: documentURI)
         let context = CodeActionContext(diagnostics: diagnostics, only: nil)
         guard let response = try? await server.requestCodeActions(
             for: documentURI,

@@ -71,7 +71,9 @@ extension LSPLanguageProvider {
 
     @MainActor
     func inlayHints(forVisibleRange range: NSRange, textView: TextViewController) async -> [EditorInlayHint] {
+        // Skip when the server doesn't advertise inlay hints (avoids -32601 for servers like the CSS one).
         guard let server = server,
+              server.serverCapabilities.inlayHintProvider != nil,
               let lspRange = textView.textView.lspRangeFrom(nsRange: range) else {
             return []
         }

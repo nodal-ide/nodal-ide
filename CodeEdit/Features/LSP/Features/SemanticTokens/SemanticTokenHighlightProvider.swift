@@ -72,7 +72,8 @@ final class SemanticTokenHighlightProvider<
     /// If this object already has some tokens, it determines whether or not we can request a token delta and
     /// performs the request.
     func documentDidChange() async throws {
-        guard let languageServer, let textView else {
+        // The server doesn't provide semantic tokens; nothing to request or apply.
+        guard tokenMap != nil, let languageServer, let textView else {
             return
         }
 
@@ -165,6 +166,12 @@ final class SemanticTokenHighlightProvider<
     }
 
     func queryHighlightsFor(textView: TextView, range: NSRange, completion: @escaping HighlightCallback) {
+        // No semantic tokens for this server (e.g. the CSS language server) — return no highlights rather than failing.
+        guard tokenMap != nil else {
+            completion(.success([]))
+            return
+        }
+
         guard storage.hasReceivedData else {
             pendingHighlightCallbacks.append(completion)
             return
