@@ -43,4 +43,11 @@ enum Metrics {
         static let regular: CGFloat = 8
         static let loose: CGFloat = 12
     }
+
+    /// Thresholds for large-file code paths.
+    enum Performance {
+        /// Documents at/above this size skip expensive per-file extras (e.g. the minimap) and use
+        /// async parsing.
+        static let largeFileCharacterCount = 300_000
+    }
 }

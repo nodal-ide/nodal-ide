@@ -207,7 +207,7 @@ struct CodeFileView: View {
                 ),
                 peripherals: .init(
                     showGutter: showGutter,
-                    showMinimap: isPreview ? false : showMinimap,
+                    showMinimap: isPreview ? false : (showMinimap && isSmallDocument),
                     showReformattingGuide: showReformattingGuide,
                     showFoldingRibbon: showFoldingRibbon,
                     invisibleCharactersConfiguration: invisibleCharactersConfiguration.textViewOption(),

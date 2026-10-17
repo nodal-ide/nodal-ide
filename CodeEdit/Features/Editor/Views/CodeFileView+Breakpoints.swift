@@ -51,6 +51,11 @@ extension CodeFileView {
         return editorInstance.replaceText
     }
 
+    /// Whether the document is small enough for the minimap (it maintains a second layout manager).
+    var isSmallDocument: Bool {
+        (codeFile.content?.length ?? 0) < Metrics.Performance.largeFileCharacterCount
+    }
+
     /// Re-derives the gutter/find state when the breakpoint store, debug session or find text changes.
     func observeEditorState() {
         breakpointObservers.removeAll()
