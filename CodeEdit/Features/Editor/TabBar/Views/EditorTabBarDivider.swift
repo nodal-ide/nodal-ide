@@ -18,9 +18,6 @@ struct EditorTabDivider: View {
         Rectangle()
             .frame(width: width)
             .padding(.vertical, 8)
-            .foregroundColor(
-                Color(nsColor: colorScheme == .dark ? .white : .black)
-                    .opacity(0.12)
-            )
+            .foregroundColor(CodeEditDividerColor.forScheme(colorScheme))
     }
 }

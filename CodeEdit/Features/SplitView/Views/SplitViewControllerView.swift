@@ -97,6 +97,23 @@ final class SplitViewController: NSSplitViewController {
             customDividerStyle.customThickness ?? super.dividerThickness
         }
 
+        /// Shows the proper resize cursor over each divider (AppKit's default is inconsistent across
+        /// split views), covering the widened grab area.
+        override func resetCursorRects() {
+            super.resetCursorRects()
+            guard subviews.count > 1 else { return }
+            let cursor: NSCursor = isVertical ? .resizeLeftRight : .resizeUpDown
+            let grab: CGFloat = 5
+            for index in 0..<(subviews.count - 1) {
+                let leading = subviews[index].frame
+                guard !leading.isEmpty else { continue }
+                let rect: NSRect = isVertical
+                    ? NSRect(x: leading.maxX, y: 0, width: dividerThickness, height: bounds.height)
+                    : NSRect(x: 0, y: leading.maxY, width: bounds.width, height: dividerThickness)
+                addCursorRect(rect.insetBy(dx: isVertical ? -grab : 0, dy: isVertical ? 0 : -grab), cursor: cursor)
+            }
+        }
+
         override func drawDivider(in rect: NSRect) {
             let safeRect = NSRect(
                 x: rect.origin.x,

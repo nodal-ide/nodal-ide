@@ -69,13 +69,22 @@ struct StatusBarView: View {
         }
         .padding(.horizontal, 10)
         .padding(.trailing, trailingPadding)
-        .cursor(.resizeUpDown)
         .frame(height: Self.height - 1.0)
         .background(.bar)
         .padding(.top, 1)
         .overlay(alignment: .top) {
             Divider()
                 .overlay(Color(nsColor: colorScheme == .dark ? .black : .clear))
+        }
+        // A dedicated resize handle at the top edge (so the cursor only hints resize there, not over
+        // the status items). The whole bar still responds to the drag for convenience.
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(.clear)
+                .frame(height: 7)
+                .contentShape(Rectangle())
+                .cursor(.resizeUpDown)
+                .gesture(dragGesture)
         }
         .gesture(dragGesture)
         .disabled(controlActive == .inactive)

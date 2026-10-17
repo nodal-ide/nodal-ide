@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+/// The single divider tint used across panels, tab bars and split views so separators match.
+enum CodeEditDividerColor {
+    static func forScheme(_ scheme: ColorScheme) -> Color {
+        Color(nsColor: scheme == .dark ? .white : .black).opacity(0.12)
+    }
+}
+
 struct PanelDivider: View {
     @Environment(\.colorScheme)
     private var colorScheme
@@ -14,9 +21,6 @@ struct PanelDivider: View {
     var body: some View {
         Divider()
             .opacity(0)
-            .overlay(
-                Color(.black)
-                    .opacity(colorScheme == .dark ? 0.65 : 0.13)
-            )
+            .overlay(CodeEditDividerColor.forScheme(colorScheme))
     }
 }
