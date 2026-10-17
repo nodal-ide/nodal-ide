@@ -84,6 +84,7 @@ struct CodeFileView: View {
 
     @State private var breakpointRevision = 0
     @State private var debugRevision = 0
+    @State private var breakpointObservers = Set<AnyCancellable>()
 
     @ObservedObject private var themeModel: ThemeModel = .shared
 
@@ -254,10 +255,8 @@ struct CodeFileView: View {
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.
         .id(ObjectIdentifier(codeFile))
-        // Re-derive the gutter markers whenever the store or the session changes. The values are
-        // computed from the *current* file each render, so they can never go stale across tabs.
-        .onReceive(breakpointChanges) { _ in breakpointRevision &+= 1 }
-        .onReceive(debugChanges) { _ in debugRevision &+= 1 }
+        // Subscribe once; the values are recomputed from the current file each render.
+        .onAppear(perform: observeBreakpoints)
         .background {
             if colorScheme == .dark {
                 EffectView(.underPageBackground)
@@ -356,19 +355,22 @@ extension CodeFileView {
         return frame.line
     }
 
-    /// Propagates breakpoint-store changes so the gutter re-renders.
-    private var breakpointChanges: AnyPublisher<Void, Never> {
-        codeFile.findWorkspace()?.breakpointStore?.$breakpoints
-            .map { _ in () }
-            .eraseToAnyPublisher() ?? Empty<Void, Never>().eraseToAnyPublisher()
-    }
-
-    /// Propagates debug-session changes so the stop line re-renders.
-    private var debugChanges: AnyPublisher<Void, Never> {
-        codeFile.findWorkspace()?.debugController?.session.objectWillChange
-            .receive(on: RunLoop.main)
-            .map { _ in () }
-            .eraseToAnyPublisher() ?? Empty<Void, Never>().eraseToAnyPublisher()
+    /// Re-derives the gutter markers when the breakpoint store or the debug session changes.
+    private func observeBreakpoints() {
+        breakpointObservers.removeAll()
+        if let store = codeFile.findWorkspace()?.breakpointStore {
+            store.$breakpoints
+                .dropFirst()
+                .receive(on: RunLoop.main)
+                .sink { _ in breakpointRevision &+= 1 }
+                .store(in: &breakpointObservers)
+        }
+        if let session = codeFile.findWorkspace()?.debugController?.session {
+            session.objectWillChange
+                .receive(on: RunLoop.main)
+                .sink { _ in debugRevision &+= 1 }
+                .store(in: &breakpointObservers)
+        }
     }
 
     private var currentTheme: Theme {
