@@ -290,6 +290,7 @@ extension CodeFileView {
         }
 
         let phpProvider = providers.compactMap { $0 as? PHPProvider }.first
+        phpProvider?.diagnosticsConfig = Self.phpDiagnosticsConfig()
         phpProvider?.onDiagnostics = { url, diagnostics in
             DiagnosticsStore.shared.update(file: url, diagnostics: diagnostics)
         }
@@ -311,6 +312,22 @@ extension CodeFileView {
             return
         }
         lsp.openDocument(codeFile)
+    }
+
+    /// Maps the app's PHP diagnostics settings to the engine's configuration.
+    private static func phpDiagnosticsConfig() -> PHPDiagnosticsConfig {
+        let settings = Settings.shared.preferences.phpDiagnostics
+        var config = PHPDiagnosticsConfig()
+        config.classLength = settings.classLength
+        config.methodLength = settings.methodLength
+        config.fileLength = settings.fileLength
+        config.parameterCount = settings.parameterCount
+        config.complexity = settings.complexity
+        config.requireStrictTypes = settings.requireStrictTypes
+        config.reportTodos = settings.reportTodos
+        config.disabledRules = Set(settings.disabledRules)
+        config.skipPatterns = settings.skipPatterns
+        return config
     }
 
     /// Seeds the gutter breakpoint markers and debug line, keeping them in sync with the workspace.

@@ -59,6 +59,9 @@ struct SettingsData: Codable, Hashable {
     /// Language extension settings
     var extensions: ExtensionsSettings = .init()
 
+    /// Native PHP diagnostics (code-quality rules)
+    var phpDiagnostics: PHPDiagnosticsSettings = .init()
+
     /// Default initializer
     init() {}
 
@@ -87,10 +90,14 @@ struct SettingsData: Codable, Hashable {
             DeveloperSettings.self, forKey: .developerSettings
         ) ?? .init()
         self.extensions = try container.decodeIfPresent(
-            ExtensionsSettings.self, forKey: .extensions
+            ExtensionsSettings.self,
+            forKey: .extensions
+        ) ?? .init()
+        self.phpDiagnostics = try container.decodeIfPresent(
+            PHPDiagnosticsSettings.self,
+            forKey: .phpDiagnostics
         ) ?? .init()
     }
-
     // swiftlint:disable cyclomatic_complexity
     func propertiesOf(_ name: SettingsPage.Name) -> [SettingsPage] {
         var settings: [SettingsPage] = []
@@ -120,6 +127,8 @@ struct SettingsData: Codable, Hashable {
             }
         case .developer:
             developerSettings.searchKeys.forEach { settings.append(.init(name, isSetting: true, settingName: $0)) }
+        case .phpDiagnostics:
+            phpDiagnostics.searchKeys.forEach { settings.append(.init(name, isSetting: true, settingName: $0)) }
         case .behavior: return [.init(name, settingName: "Error")]
         case .components: return [.init(name, settingName: "Error")]
         case .keybindings: return [.init(name, settingName: "Error")]
