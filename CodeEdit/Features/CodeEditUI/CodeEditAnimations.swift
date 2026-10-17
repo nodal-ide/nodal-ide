@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 import QuartzCore
 
 enum CodeEditAnimations {
@@ -18,6 +19,17 @@ enum CodeEditAnimations {
     /// The matching AppKit timing function for panel show/hide.
     static var panelCollapseTiming: CAMediaTimingFunction {
         CAMediaTimingFunction(name: .easeInEaseOut)
+    }
+
+    /// Runs `changes` inside an animated `NSAnimationContext` using the shared panel-collapse timing.
+    @MainActor
+    static func animatePanelCollapse(_ changes: () -> Void) {
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = panelCollapseDuration
+            context.timingFunction = panelCollapseTiming
+            context.allowsImplicitAnimation = true
+            changes()
+        }
     }
 
     /// A quick animation for small, local UI changes (hover, inline reveals).

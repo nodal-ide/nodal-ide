@@ -44,12 +44,12 @@ struct ThemeSettingsView: View {
                         MenuWithButtonStyle(systemImage: "ellipsis", menu: {
                             Group {
                                 Button {
-                                    themeModel.importTheme()
+                                    ThemeFilePanels.importTheme(into: themeModel)
                                 } label: {
                                     Text("Import Theme...")
                                 }
                                 Button {
-                                    themeModel.exportAllCustomThemes()
+                                    ThemeFilePanels.exportAllCustomThemes(from: themeModel)
                                 } label: {
                                     Text("Export All Custom Themes...")
                                 }
@@ -86,7 +86,7 @@ struct ThemeSettingsView: View {
                     HStack {
                         Spacer()
                         Button("Import...") {
-                            themeModel.importTheme()
+                            ThemeFilePanels.importTheme(into: themeModel)
                         }
                     }
                     .padding(.top, 10)

@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UniformTypeIdentifiers
 
 extension ThemeModel {
     /// Loads a theme from a given url and appends it to ``themes``.
@@ -126,25 +125,6 @@ extension ThemeModel {
                             self.selectedTheme = self.selectedLightTheme
                         }
                     }
-                }
-            }
-        }
-    }
-
-    func importTheme() {
-        let openPanel = NSOpenPanel()
-        let allowedTypes = [UTType(filenameExtension: "cetheme")!]
-
-        openPanel.prompt = "Import"
-        openPanel.allowedContentTypes = allowedTypes
-        openPanel.canChooseFiles = true
-        openPanel.canChooseDirectories = false
-        openPanel.allowsMultipleSelection = false
-
-        openPanel.begin { result in
-            if result.rawValue == NSApplication.ModalResponse.OK.rawValue {
-                if let url = openPanel.urls.first {
-                    self.duplicate(url)
                 }
             }
         }

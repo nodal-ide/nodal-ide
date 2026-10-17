@@ -234,10 +234,7 @@ final class SplitViewController: NSSplitViewController {
 
     func collapse(for id: AnyHashable, enabled: Bool) {
         guard let item = items.first(where: { $0.id == id })?.item else { return }
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = CodeEditAnimations.panelCollapseDuration
-                context.timingFunction = CodeEditAnimations.panelCollapseTiming
-                context.allowsImplicitAnimation = true
+        CodeEditAnimations.animatePanelCollapse {
             item.animator().isCollapsed = enabled
         }
     }

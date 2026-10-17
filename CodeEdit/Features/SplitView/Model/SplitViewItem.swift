@@ -55,9 +55,7 @@ class SplitViewItem: ObservableObject {
         DispatchQueue.main.async {
             self.observers = []
             if canAnimate {
-                NSAnimationContext.runAnimationGroup { context in
-                    context.duration = CodeEditAnimations.panelCollapseDuration
-                    context.timingFunction = CodeEditAnimations.panelCollapseTiming
+                CodeEditAnimations.animatePanelCollapse {
                     self.item.animator().isCollapsed = collapsed
                 }
             } else {

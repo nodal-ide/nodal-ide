@@ -50,7 +50,7 @@ struct ThemeSettingsThemeRow: View {
                     }
                 }
                 Button("Export...") {
-                    themeModel.exportTheme(theme)
+                    ThemeFilePanels.export(theme, from: themeModel)
                 }
                 .disabled(theme.isBundled)
                 Divider()
