@@ -59,6 +59,8 @@ struct RuntimeDebugger {
                 "max_data": .number(2048),
                 "max_depth": .number(5)
             ])
+            // Allow several concurrent Xdebug connections (a dev-server wrapper plus each request).
+            args["maxConnections"] = .number(10)
         case .node, .typescript:
             break
         }

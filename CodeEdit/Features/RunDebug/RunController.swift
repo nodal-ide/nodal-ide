@@ -66,45 +66,22 @@ final class RunController: ObservableObject {
         let program = (configuration.program?.isEmpty == false ? configuration.program : configuration.command) ?? ""
         let args = (configuration.arguments ?? "").split(separator: " ").map(String.init)
 
+        // Web-server flow: start the listener, then launch the dev server with Xdebug enabled.
+        if let serverCommand = configuration.serverCommand,
+           !serverCommand.trimmingCharacters(in: .whitespaces).isEmpty {
+            startWebServerDebug(configuration, serverCommand: serverCommand)
+            return
+        }
+
         let adapters = Settings.shared.preferences.developerSettings.debugAdapters
         if let adapterID = configuration.adapter, adapterID.isEmpty == false,
            let path = adapters[adapterID], !path.isEmpty {
-            // With no program this is a "listen" session (the adapter waits for Xdebug to connect);
-            // `vscode-php-debug` has no `attach` request, so it's always a `launch`.
-            var launch: [String: JSONValue] = [:]
-            if !program.isEmpty {
-                launch["program"] = .string(program)
-                launch["args"] = .array(args.map { .string($0) })
-                if !configuration.environmentDictionary.isEmpty {
-                    launch["env"] = .object(configuration.environmentDictionary.mapValues { .string($0) })
-                }
-                if !configuration.workingDirectory.isEmpty {
-                    launch["cwd"] = .string(configuration.workingDirectory)
-                }
-            }
-            DebuggerAutoWiring.apply(
-                launch: &launch,
-                clientPort: configuration.clientPort
-                    ?? Settings.shared.preferences.developerSettings.phpDebugClientPort,
-                pathMappings: configuration.pathMappingDictionary
-            )
-
-            let adapterArguments = (
-                Settings.shared.preferences.developerSettings.debugAdapterArguments[adapterID] ?? ""
-            ).split(separator: " ").map(String.init)
-
-            workspace.utilityAreaModel?.open(tab: .debug)
-            runningConfigurationID = configuration.id
-            debugController.start(
-                DebugSession.LaunchOptions(
-                    adapterExecutable: URL(filePath: path),
-                    adapterArguments: adapterArguments,
-                    adapterID: adapterID,
-                    request: configuration.debugRequest == "attach" ? "attach" : "launch",
-                    launchArguments: launch,
-                    workingDirectory: workspace.fileURL,
-                    environment: RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)
-                )
+            startExplicitAdapterDebug(
+                configuration,
+                adapterID: adapterID,
+                path: path,
+                program: program,
+                args: args
             )
             return
         }
@@ -118,6 +95,90 @@ final class RunController: ObservableObject {
                 clientPort: configuration.clientPort,
                 pathMappings: configuration.pathMappingDictionary
             )
+        }
+    }
+
+    /// Starts a debug session using an explicitly configured adapter.
+    private func startExplicitAdapterDebug(
+        _ configuration: RunConfiguration,
+        adapterID: String,
+        path: String,
+        program: String,
+        args: [String]
+    ) {
+        guard let workspace, let debugController = workspace.debugController else { return }
+        // With no program this is a "listen" session (the adapter waits for Xdebug to connect);
+        // `vscode-php-debug` has no `attach` request, so it's always a `launch`.
+        var launch: [String: JSONValue] = [:]
+        if !program.isEmpty {
+            launch["program"] = .string(program)
+            launch["args"] = .array(args.map { .string($0) })
+            if !configuration.environmentDictionary.isEmpty {
+                launch["env"] = .object(configuration.environmentDictionary.mapValues { .string($0) })
+            }
+            if !configuration.workingDirectory.isEmpty {
+                launch["cwd"] = .string(configuration.workingDirectory)
+            }
+        }
+        DebuggerAutoWiring.apply(
+            launch: &launch,
+            clientPort: configuration.clientPort
+                ?? Settings.shared.preferences.developerSettings.phpDebugClientPort,
+            pathMappings: configuration.pathMappingDictionary
+        )
+
+        let adapterArguments = (
+            Settings.shared.preferences.developerSettings.debugAdapterArguments[adapterID] ?? ""
+        ).split(separator: " ").map(String.init)
+
+        workspace.utilityAreaModel?.open(tab: .debug)
+        runningConfigurationID = configuration.id
+        debugController.start(
+            DebugSession.LaunchOptions(
+                adapterExecutable: URL(filePath: path),
+                adapterArguments: adapterArguments,
+                adapterID: adapterID,
+                request: configuration.debugRequest == "attach" ? "attach" : "launch",
+                launchArguments: launch,
+                workingDirectory: workspace.fileURL,
+                environment: RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)
+            )
+        )
+    }
+
+    /// Starts a listener and launches the configuration's dev server with Xdebug enabled.
+    ///
+    /// This is the "run my web server and debug the requests" flow: the adapter waits on the client
+    /// port while the server command runs (in the task runner) with `XDEBUG_MODE=debug`, so web
+    /// requests stopped at breakpoints appear in the Debug tab.
+    private func startWebServerDebug(_ configuration: RunConfiguration, serverCommand: String) {
+        guard let workspace, let debugController = workspace.debugController else { return }
+        let port = configuration.clientPort
+            ?? Settings.shared.preferences.developerSettings.phpDebugClientPort
+
+        Task { [weak self] in
+            guard let self, let workspace = self.workspace else { return }
+            await RuntimeEnvironment.shared.refresh(workspace: workspace)
+            guard let options = await DebuggerAutoWiring.listenOptions(workspace: workspace, port: port) else {
+                DebuggerAutoWiring.reportUnavailable(kind: .php)
+                return
+            }
+            runningConfigurationID = configuration.id
+            debugController.start(options)
+
+            var environment = configuration.environmentDictionary
+            environment["XDEBUG_MODE"] = "debug"
+            environment["XDEBUG_CONFIG"] = "client_port=\(port) start_with_request=yes"
+            let task = CETask(
+                name: configuration.name,
+                target: "",
+                workingDirectory: configuration.workingDirectory,
+                command: serverCommand,
+                environmentVariables: environment.map { CETask.EnvironmentVariable(key: $0.key, value: $0.value) }
+            )
+            runningTaskID = task.id
+            workspace.utilityAreaModel?.open(tab: .debug)
+            Task { await workspace.taskManager?.runTask(task: task) }
         }
     }
 

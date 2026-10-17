@@ -84,6 +84,7 @@ struct RunConfigurationFormView: View {
 
                 Section {
                     TextField("Port", text: clientPortBinding, prompt: Text("9003"))
+                    TextField("Server Command", text: serverCommandBinding, prompt: Text("e.g. php forge.php serve"))
                     ForEach(pathMappingsBinding) { $mapping in
                         HStack {
                             TextField("Local Path", text: $mapping.key)
@@ -103,7 +104,8 @@ struct RunConfigurationFormView: View {
                 } footer: {
                     Text(
                         "Client port Xdebug connects to (default 9003). "
-                        + "Path mappings map local → remote (Docker/remote)."
+                        + "Path mappings map local → remote (Docker/remote). "
+                        + "A Server Command launches your dev server with Xdebug enabled, then listens."
                     )
                         .font(.caption)
                 }
@@ -176,6 +178,14 @@ struct RunConfigurationFormView: View {
             configuration.clientPort.map(String.init) ?? ""
         } set: { newValue in
             configuration.clientPort = Int(newValue.trimmingCharacters(in: .whitespaces))
+        }
+    }
+
+    private var serverCommandBinding: Binding<String> {
+        Binding {
+            configuration.serverCommand ?? ""
+        } set: { newValue in
+            configuration.serverCommand = newValue.isEmpty ? nil : newValue
         }
     }
 
