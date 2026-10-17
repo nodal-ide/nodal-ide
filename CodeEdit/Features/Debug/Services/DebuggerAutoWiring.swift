@@ -35,9 +35,52 @@ enum DebuggerAutoWiring {
             return nil
         }
 
+        let launch = debugger.launchArguments(
+            program: program,
+            arguments: arguments,
+            cwd: workspace.fileURL?.path(percentEncoded: false)
+        )
+        return makeOptions(
+            workspace: workspace,
+            debugger: debugger,
+            adapter: adapter,
+            request: request,
+            launchArguments: launch
+        )
+    }
+
+    /// Builds a **listening** (attach) session for the project's PHP/Xdebug runtime. The adapter waits
+    /// for Xdebug to connect (start a request with `XDEBUG_MODE=debug`), so no program is launched.
+    static func listenOptions(
+        workspace: WorkspaceDocument,
+        host: String = "127.0.0.1"
+    ) async -> DebugSession.LaunchOptions? {
+        guard let provider = RuntimeManager.shared.provider(for: .php),
+              let runtime = await RuntimeResolver.resolve(kind: .php, workspace: workspace),
+              let debugger = provider.debugger(for: runtime),
+              let adapter = adapterExecutable(for: debugger) else {
+            return nil
+        }
+        let port = Settings.shared.preferences.developerSettings.phpDebugClientPort
+        return makeOptions(
+            workspace: workspace,
+            debugger: debugger,
+            adapter: adapter,
+            request: "attach",
+            launchArguments: debugger.attachArguments(host: host, port: port)
+        )
+    }
+
+    /// Assembles launch options with the project's runtime environment (PATH) merged in.
+    private static func makeOptions(
+        workspace: WorkspaceDocument,
+        debugger: RuntimeDebugger,
+        adapter: URL,
+        request: String,
+        launchArguments: [String: JSONValue]
+    ) -> DebugSession.LaunchOptions {
         var environment = debugger.environment
         environment.merge(RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)) { _, new in new }
-
         let adapterArguments = (
             Settings.shared.preferences.developerSettings.debugAdapterArguments[debugger.adapterID] ?? ""
         ).split(separator: " ").map(String.init)
@@ -47,11 +90,7 @@ enum DebuggerAutoWiring {
             adapterArguments: adapterArguments,
             adapterID: debugger.adapterID,
             request: request,
-            launchArguments: debugger.launchArguments(
-                program: program,
-                arguments: arguments,
-                cwd: workspace.fileURL?.path(percentEncoded: false)
-            ),
+            launchArguments: launchArguments,
             workingDirectory: workspace.fileURL,
             environment: environment
         )
@@ -60,7 +99,8 @@ enum DebuggerAutoWiring {
     /// The configured adapter for a debugger, else the first known candidate on `PATH`.
     static func adapterExecutable(for debugger: RuntimeDebugger) -> URL? {
         let adapters = Settings.shared.preferences.developerSettings.debugAdapters
-        if let configured = adapters[debugger.adapterID], !configured.isEmpty {
+        if let configured = adapters[debugger.adapterID], !configured.isEmpty,
+           FileManager.default.isExecutableFile(atPath: configured) {
             return URL(filePath: configured)
         }
         for candidate in debugger.adapterCandidates {

@@ -32,6 +32,10 @@ struct RunCommands: Commands {
             }
             .keyboardShortcut("d", modifiers: [.control, .option])
 
+            Button("Listen for Xdebug", systemImage: "antenna.radiowaves.left.and.right") {
+                runController?.listenForXdebug()
+            }
+
             Divider()
 
             Menu("Run Configuration") {

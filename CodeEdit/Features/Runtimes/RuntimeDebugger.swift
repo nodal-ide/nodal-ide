@@ -47,4 +47,32 @@ struct RuntimeDebugger {
         }
         return launch
     }
+
+    /// Builds the DAP `attach` arguments (the adapter listens; the runtime connects to it).
+    func attachArguments(
+        host: String = "127.0.0.1",
+        port: Int,
+        pathMappings: [String: String] = [:]
+    ) -> [String: JSONValue] {
+        var args: [String: JSONValue] = [
+            "host": .string(host),
+            "port": .number(Double(port))
+        ]
+        if !pathMappings.isEmpty {
+            args["pathMappings"] = .object(pathMappings.mapValues { .string($0) })
+        }
+        switch kind {
+        case .node:
+            args["type"] = .string("node")
+        case .php:
+            args["xdebugSettings"] = .object([
+                "max_children": .number(128),
+                "max_data": .number(2048),
+                "max_depth": .number(5)
+            ])
+        case .typescript:
+            break
+        }
+        return args
+    }
 }

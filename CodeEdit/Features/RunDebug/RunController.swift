@@ -112,6 +112,21 @@ final class RunController: ObservableObject {
         }
     }
 
+    /// Listens for an incoming Xdebug connection (attach) using the project's PHP runtime.
+    func listenForXdebug() {
+        guard let workspace, workspace.debugController != nil else { return }
+        Task { [weak self] in
+            guard let self, let workspace = self.workspace else { return }
+            await RuntimeEnvironment.shared.refresh(workspace: workspace)
+            guard let options = await DebuggerAutoWiring.listenOptions(workspace: workspace) else {
+                DebuggerAutoWiring.reportUnavailable(kind: .php)
+                return
+            }
+            workspace.utilityAreaModel?.open(tab: .debug)
+            workspace.debugController?.start(options)
+        }
+    }
+
     /// Starts a debug session using the runtime's debugger configuration.
     private func startAutoDebug(program: String, arguments: [String] = []) async {
         guard let workspace, let debugController = workspace.debugController else { return }

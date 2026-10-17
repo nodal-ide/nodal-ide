@@ -92,8 +92,10 @@ enum RuntimeShell {
     }
 
     /// Resolves all executables named `name` on the PATH.
+    ///
+    /// `which`'s "name not found" message goes to stdout, so only keep absolute paths.
     static func whichAll(_ name: String) -> [String] {
-        lines("which -a \(name) 2>/dev/null")
+        lines("which -a \(name) 2>/dev/null").filter { $0.hasPrefix("/") }
     }
 }
 
