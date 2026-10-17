@@ -13,6 +13,7 @@ final class TestRunner: ObservableObject {
     private weak var workspace: WorkspaceDocument?
 
     @Published private(set) var results: [TestResult] = []
+    @Published private(set) var rawOutput = ""
     @Published private(set) var isRunning = false
 
     private var outputBuffer = ""
@@ -33,8 +34,8 @@ final class TestRunner: ObservableObject {
 
     func run(_ configuration: RunConfiguration) {
         guard let taskManager = workspace?.taskManager else { return }
-        workspace?.utilityAreaModel?.open(tab: .tests)
         results = []
+        rawOutput = ""
         outputBuffer = ""
         isRunning = true
         DiagnosticsStore.shared.clear(owner: owner)
@@ -64,6 +65,7 @@ final class TestRunner: ObservableObject {
 
     @MainActor
     private func finish() {
+        rawOutput = outputBuffer
         results = TestOutputParser.parse(outputBuffer)
         isRunning = false
 

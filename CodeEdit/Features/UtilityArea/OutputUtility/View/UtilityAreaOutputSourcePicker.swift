@@ -25,12 +25,17 @@ struct UtilityAreaOutputSourcePicker: View {
 
     var body: some View {
         Picker("Output Source", selection: $selectedSource) {
+            Text(Sources.tasks.title)
+                .tag(Sources.tasks)
+
             if selectedSource == nil {
                 Text("No Selected Output Source")
                     .italic()
                     .tag(Sources?.none)
                 Divider()
             }
+
+            Divider()
 
             if languageServerClients.isEmpty {
                 Text("No Language Servers")

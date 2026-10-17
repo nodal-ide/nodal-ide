@@ -11,21 +11,15 @@ enum UtilityAreaTab: WorkspacePanelTab, CaseIterable {
     var id: Self { self }
 
     case terminal
-    case debugConsole
-    case output
-    case tests
+    case console
     case debug
 
     var title: String {
         switch self {
         case .terminal:
             return "Terminal"
-        case .debugConsole:
-            return "Debug Console"
-        case .output:
-            return "Output"
-        case .tests:
-            return "Tests"
+        case .console:
+            return "Console"
         case .debug:
             return "Debug"
         }
@@ -35,12 +29,8 @@ enum UtilityAreaTab: WorkspacePanelTab, CaseIterable {
         switch self {
         case .terminal:
             return "terminal"
-        case .debugConsole:
-            return "ladybug"
-        case .output:
-            return "list.bullet.indent"
-        case .tests:
-            return "checkmark.diamond"
+        case .console:
+            return "list.bullet.rectangle"
         case .debug:
             return "ladybug.fill"
         }
@@ -50,12 +40,8 @@ enum UtilityAreaTab: WorkspacePanelTab, CaseIterable {
         switch self {
         case .terminal:
             UtilityAreaTerminalView()
-        case .debugConsole:
-            UtilityAreaDebugView()
-        case .output:
+        case .console:
             UtilityAreaOutputView()
-        case .tests:
-            TestsView()
         case .debug:
             DebugSessionView()
         }

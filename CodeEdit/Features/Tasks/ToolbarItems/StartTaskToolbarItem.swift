@@ -31,7 +31,7 @@ final class StartTaskToolbarItem: NSToolbarItem {
         guard let taskManager = workspace?.taskManager else { return }
 
         taskManager.executeActiveTask()
-        workspace?.utilityAreaModel?.open(tab: .debugConsole)
+        workspace?.utilityAreaModel?.open(tab: .console)
         taskManager.taskShowingOutput = taskManager.selectedTaskID
     }
 }

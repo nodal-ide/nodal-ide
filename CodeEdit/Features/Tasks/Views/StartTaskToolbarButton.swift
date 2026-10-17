@@ -17,7 +17,7 @@ struct StartTaskToolbarButton: View {
     var body: some View {
         Button {
             taskManager.executeActiveTask()
-            workspace.utilityAreaModel?.open(tab: .debugConsole)
+            workspace.utilityAreaModel?.open(tab: .console)
             taskManager.taskShowingOutput = taskManager.selectedTaskID
         } label: {
             Label("Start", systemImage: "play.fill")

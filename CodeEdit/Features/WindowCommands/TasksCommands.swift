@@ -96,7 +96,7 @@ struct TasksCommands: Commands {
         guard let utilityAreaModel = windowController?.workspace?.utilityAreaModel else {
             return
         }
-        utilityAreaModel.open(tab: .debugConsole) // Expand to the correct tab
+        utilityAreaModel.open(tab: .console) // Expand to the correct tab
         taskManager?.taskShowingOutput = taskManager?.selectedTaskID // Switch to the selected task
     }
 

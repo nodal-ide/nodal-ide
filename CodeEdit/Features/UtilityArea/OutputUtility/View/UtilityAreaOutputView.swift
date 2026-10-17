@@ -10,12 +10,15 @@ import LogStream
 
 struct UtilityAreaOutputView: View {
     enum Sources: Hashable {
+        case tasks
         case extensions(ExtensionUtilityAreaOutputSource)
         case languageServer(LanguageServerLogContainer)
         case devOutput
 
         var title: String {
             switch self {
+            case .tasks:
+                "Tasks"
             case .extensions(let source):
                 "Extension - \(source.extensionInfo.name)"
             case .languageServer(let source):
@@ -27,6 +30,8 @@ struct UtilityAreaOutputView: View {
 
         public static func == (_ lhs: Sources, _ rhs: Sources) -> Bool {
             switch (lhs, rhs) {
+            case (.tasks, .tasks):
+                return true
             case let (.extensions(lhs), .extensions(rhs)):
                 return lhs.id == rhs.id
             case let (.languageServer(lhs), .languageServer(rhs)):
@@ -40,6 +45,8 @@ struct UtilityAreaOutputView: View {
 
         func hash(into hasher: inout Hasher) {
             switch self {
+            case .tasks:
+                hasher.combine(3)
             case .extensions(let source):
                 hasher.combine(0)
                 hasher.combine(source.id)
@@ -55,13 +62,15 @@ struct UtilityAreaOutputView: View {
     @EnvironmentObject private var utilityAreaViewModel: UtilityAreaViewModel
 
     @State private var filterText: String = ""
-    @State private var selectedSource: Sources?
+    @State private var selectedSource: Sources? = .tasks
 
     var body: some View {
         UtilityAreaTabView(model: utilityAreaViewModel.tabViewModel) { _ in
             Group {
                 if let selectedSource {
                     switch selectedSource {
+                    case .tasks:
+                        TaskOutputPane()
                     case .extensions(let source):
                         UtilityAreaOutputLogList(source: source, filterText: $filterText) {
                             UtilityAreaOutputSourcePicker(selectedSource: $selectedSource)

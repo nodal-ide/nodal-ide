@@ -57,7 +57,7 @@ final class RunController: ObservableObject {
             return
         }
         guard let taskManager = workspace?.taskManager else { return }
-        workspace?.utilityAreaModel?.open(tab: .debugConsole)
+        workspace?.utilityAreaModel?.open(tab: .console)
         let task = Self.task(from: configuration)
         runningTaskID = task.id
         runningConfigurationID = configuration.id

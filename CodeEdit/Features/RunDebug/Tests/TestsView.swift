@@ -2,29 +2,26 @@
 //  TestsView.swift
 //  CodeEdit
 //
-//  Minimal test runner view (Utility Area "Tests" tab).
+//  The Tests navigator: run test configurations and inspect results.
 //
 
 import SwiftUI
-import CodeEditSourceEditor
 
 struct TestsView: View {
     @EnvironmentObject private var workspace: WorkspaceDocument
 
     var body: some View {
         if let runner = workspace.testRunner {
-            TestsContentView(runner: runner)
+            TestsContentView(runner: runner, workspace: workspace)
         } else {
-            Text("No tests")
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            DebugEmptyState(systemImage: "checkmark.diamond", title: "No Tests", message: nil)
         }
     }
 }
 
 private struct TestsContentView: View {
     @ObservedObject var runner: TestRunner
-    @EnvironmentObject private var workspace: WorkspaceDocument
+    let workspace: WorkspaceDocument
 
     private var groups: [(suite: String, results: [TestResult])] {
         Dictionary(grouping: runner.results, by: \.suite)
@@ -33,13 +30,9 @@ private struct TestsContentView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            toolbar
-            Divider()
+        Group {
             if runner.results.isEmpty {
-                Text(runner.isRunning ? "Running tests…" : "No test results")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                emptyState
             } else {
                 List {
                     ForEach(groups, id: \.suite) { group in
@@ -57,36 +50,32 @@ private struct TestsContentView: View {
         }
     }
 
-    private var toolbar: some View {
-        HStack(spacing: 8) {
-            Button {
-                runner.runFirst()
-            } label: {
-                Image(systemName: "play.fill")
-            }
-            .help("Run the first test configuration")
-            .disabled(runner.isRunning || runner.configurations.isEmpty)
-
-            if runner.isRunning {
+    @ViewBuilder private var emptyState: some View {
+        if runner.isRunning {
+            VStack(spacing: 8) {
                 ProgressView().controlSize(.small)
+                Text("Running tests…").foregroundStyle(.secondary)
             }
-            Spacer()
-            if !runner.results.isEmpty {
-                Text("\(runner.passed) passed")
-                    .foregroundStyle(.green)
-                Text("\(runner.failed) failed")
-                    .foregroundStyle(runner.failed > 0 ? .red : .secondary)
-                Text("\(runner.skipped) skipped")
-                    .foregroundStyle(.secondary)
-            }
-            if runner.configurations.isEmpty {
-                Text("Add a Test run configuration")
-                    .foregroundStyle(.secondary)
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if !runner.rawOutput.isEmpty {
+            DebugEmptyState(
+                systemImage: "questionmark.circle",
+                title: "No Parsed Results",
+                message: "Tests ran, but the output wasn't in a recognized format (TAP/JUnit)."
+            )
+        } else if runner.configurations.isEmpty {
+            DebugEmptyState(
+                systemImage: "checkmark.diamond",
+                title: "No Test Configuration",
+                message: "Add a run configuration with kind “Test” (e.g. php forge.php test)."
+            )
+        } else {
+            DebugEmptyState(
+                systemImage: "checkmark.diamond",
+                title: "No Results",
+                message: "Press Run to execute your tests."
+            )
         }
-        .font(.system(size: 11))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
     }
 
     private func open(_ result: TestResult) {
@@ -130,5 +119,50 @@ private struct TestResultRow: View {
         case .failed, .error: return .red
         case .skipped: return .secondary
         }
+    }
+}
+
+// MARK: - Navigator bottom bar
+
+struct TestsNavigatorToolbarBottom: View {
+    @EnvironmentObject private var workspace: WorkspaceDocument
+
+    var body: some View {
+        if let runner = workspace.testRunner {
+            TestsBottomBar(runner: runner)
+        }
+    }
+}
+
+private struct TestsBottomBar: View {
+    @ObservedObject var runner: TestRunner
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(summary)
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 4)
+            if runner.isRunning {
+                ProgressView().controlSize(.small)
+            }
+            Button {
+                runner.runFirst()
+            } label: {
+                Image(systemName: "play.fill")
+            }
+            .buttonStyle(.plain)
+            .disabled(runner.isRunning || runner.configurations.isEmpty)
+            .help("Run tests")
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(Color(nsColor: .controlBackgroundColor))
+    }
+
+    private var summary: String {
+        if runner.isRunning { return "Running…" }
+        if runner.results.isEmpty { return "No Results" }
+        return "\(runner.passed) passed · \(runner.failed) failed"
     }
 }

@@ -15,6 +15,7 @@ enum NavigatorTab: WorkspacePanelTab {
     case search
     case problems
     case breakpoints
+    case tests
     case uiExtension(endpoint: AppExtensionIdentity, data: ResolvedSidebar.SidebarStore)
 
     var systemImage: String {
@@ -29,6 +30,8 @@ enum NavigatorTab: WorkspacePanelTab {
             return "exclamationmark.triangle"
         case .breakpoints:
             return "smallcircle.filled.circle"
+        case .tests:
+            return "checkmark.diamond"
         case .uiExtension(_, let data):
             return data.icon ?? "e.square"
         }
@@ -53,6 +56,8 @@ enum NavigatorTab: WorkspacePanelTab {
             return "Problems"
         case .breakpoints:
             return "Breakpoints"
+        case .tests:
+            return "Tests"
         case .uiExtension(_, let data):
             return data.help ?? data.sceneID
         }
@@ -70,6 +75,8 @@ enum NavigatorTab: WorkspacePanelTab {
             ProblemsView()
         case .breakpoints:
             BreakpointsView()
+        case .tests:
+            TestsView()
         case let .uiExtension(endpoint, data):
             ExtensionSceneView(with: endpoint, sceneID: data.sceneID)
         }
@@ -91,6 +98,8 @@ enum NavigatorTab: WorkspacePanelTab {
             ProblemsNavigatorToolbarBottom()
         case .breakpoints:
             BreakpointsNavigatorToolbarBottom()
+        case .tests:
+            TestsNavigatorToolbarBottom()
         case .uiExtension:
             EmptyView()
         }
