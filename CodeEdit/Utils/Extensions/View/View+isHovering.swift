@@ -22,4 +22,15 @@ extension View {
             NSCursor.pop()
         }
     }
+
+    /// Pushes `cursor` while the view is hovered and pops it on exit.
+    func cursor(_ cursor: NSCursor) -> some View {
+        onHover { hovering in
+            if hovering {
+                cursor.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
+    }
 }

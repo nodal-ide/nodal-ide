@@ -19,7 +19,10 @@ extension CodeEditWindowController {
 
         if shouldAnimate {
             // Standard animated toggle
-            firstSplitView.animator().isCollapsed.toggle()
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = CodeEditAnimations.panelCollapseDuration
+                firstSplitView.animator().isCollapsed.toggle()
+            }
         } else {
             // Instant toggle (no animation)
             firstSplitView.isCollapsed.toggle()
@@ -40,7 +43,8 @@ extension CodeEditWindowController {
 
         if shouldAnimate {
             // Standard animated toggle
-            NSAnimationContext.runAnimationGroup { _ in
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = CodeEditAnimations.panelCollapseDuration
                 lastSplitView.animator().isCollapsed.toggle()
             }
         } else {

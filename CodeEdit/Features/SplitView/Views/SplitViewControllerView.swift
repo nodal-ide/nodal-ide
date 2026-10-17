@@ -190,6 +190,10 @@ final class SplitViewController: NSSplitViewController {
     }
 
     func collapse(for id: AnyHashable, enabled: Bool) {
-        items.first { $0.id == id }?.item.animator().isCollapsed = enabled
+        guard let item = items.first(where: { $0.id == id })?.item else { return }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = CodeEditAnimations.panelCollapseDuration
+            item.animator().isCollapsed = enabled
+        }
     }
 }

@@ -103,18 +103,5 @@ struct StatusBarDivider: View {
     var body: some View {
         Divider()
             .frame(maxHeight: 12)
-//            .padding(.horizontal, 7)
-    }
-}
-
-extension View {
-    func cursor(_ cursor: NSCursor) -> some View {
-        onHover {
-            if $0 {
-                cursor.push()
-            } else {
-                cursor.pop()
-            }
-        }
     }
 }

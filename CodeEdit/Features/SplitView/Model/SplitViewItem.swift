@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import AppKit
 
 class SplitViewItem: ObservableObject {
 
@@ -50,7 +51,10 @@ class SplitViewItem: ObservableObject {
             self.observers = []
             let collapsed = child[SplitViewItemCollapsedViewTraitKey.self].wrappedValue
             if canAnimate {
-                self.item.animator().isCollapsed = collapsed
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = CodeEditAnimations.panelCollapseDuration
+                    self.item.animator().isCollapsed = collapsed
+                }
             } else {
                 self.item.isCollapsed = collapsed
             }
