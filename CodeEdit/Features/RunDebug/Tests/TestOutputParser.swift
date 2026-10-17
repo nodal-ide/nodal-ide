@@ -18,9 +18,19 @@ enum TestOutputParser {
             return parseJUnit(cleaned)
         }
         if isForgeOutput(trimmed) {
-            return parseForge(cleaned)
+            return parseForge(splitForgeHeaders(cleaned))
         }
         return parseTAP(cleaned)
+    }
+
+    /// Forge prints some section headers without a trailing newline (e.g. `Failures:Class::method`),
+    /// so force each known header onto its own line before parsing.
+    private static func splitForgeHeaders(_ text: String) -> String {
+        var result = text
+        for header in ["Passed Tests:", "Failures:", "Skipped Tests:", "Incomplete Tests:", "Test Results:"] {
+            result = result.replacingOccurrences(of: header, with: "\n\(header)\n")
+        }
+        return result
     }
 
     /// Removes ANSI CSI escape sequences (e.g. `\u{001B}[0;34m`) that colour terminal output.
@@ -150,10 +160,12 @@ enum TestOutputParser {
         var messageLines = block
         var fileURL: URL?
         var lineNumber: Int?
-        if status == .failed, let last = block.last, let (url, number) = forgeFileLine(last) {
+        if status == .failed,
+           let lastIndex = block.lastIndex(where: { !$0.isEmpty }),
+           let (url, number) = forgeFileLine(block[lastIndex]) {
             fileURL = url
             lineNumber = number
-            messageLines = Array(block.dropLast())
+            messageLines.remove(at: lastIndex)
         }
         let message = messageLines
             .filter { !$0.isEmpty }
