@@ -139,13 +139,28 @@ struct ProblemsView: View {
                         row(problem, showFile: false)
                     }
                 } header: {
-                    HStack(spacing: 6) {
+                    HStack(alignment: .top, spacing: 6) {
                         Image(systemName: "doc.text")
-                        Text(relativePath(group.file)).lineLimit(1).truncationMode(.middle)
+                            .font(.system(size: 10))
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(group.file.lastPathComponent)
+                                .font(.system(size: 11, weight: .medium))
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if !relativeDirectory(group.file).isEmpty {
+                                Text(relativeDirectory(group.file))
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
+                                    .truncationMode(.middle)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
                         Spacer(minLength: 4)
-                        Text("\(group.problems.count)").foregroundStyle(.tertiary)
+                        Text("\(group.problems.count)")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.tertiary)
                     }
-                    .font(.system(size: 11))
                 }
             }
         }
@@ -226,6 +241,9 @@ struct ProblemsView: View {
         total = output.total
     }
 
+}
+
+private extension ProblemsView {
     private func relativePath(_ url: URL) -> String {
         let path = url.path(percentEncoded: false)
         if let root = workspace.fileURL?.path(percentEncoded: false), path.hasPrefix(root) {
@@ -235,10 +253,15 @@ struct ProblemsView: View {
         return url.lastPathComponent
     }
 
-    // MARK: - Actions
+    /// The directory portion of the relative path, for a group header's second line.
+    private func relativeDirectory(_ url: URL) -> String {
+        let relative = relativePath(url)
+        guard let slash = relative.lastIndex(of: "/") else { return "" }
+        return String(relative[..<slash])
+    }
 
     /// Inserts a `// @codeedit-ignore-next-line <rule>` comment above the problem.
-    private func ignoreRule(_ problem: EditorProblem) {
+    func ignoreRule(_ problem: EditorProblem) {
         guard let ruleID = problem.ruleID else { return }
         CodeEditDocumentController.shared.openDocument(
             withContentsOf: problem.fileURL,
@@ -280,9 +303,7 @@ struct ProblemsView: View {
         }
         return text.substring(with: NSRange(location: offset, length: index - offset))
     }
-}
 
-private extension ProblemsView {
     /// Opens the problem's file and moves the cursor to its location.
     func open(_ problem: EditorProblem) {
         CodeEditDocumentController.shared.openDocument(

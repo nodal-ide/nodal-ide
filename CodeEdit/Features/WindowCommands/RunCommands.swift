@@ -22,15 +22,23 @@ struct RunCommands: Commands {
             .keyboardShortcut("r", modifiers: [.control, .option])
             .disabled(runController?.selectedConfiguration == nil)
 
+            Button("Debug", systemImage: "ladybug.fill") {
+                runController?.debugSelectedOrFirst()
+            }
+            .keyboardShortcut("d", modifiers: [.control, .option])
+            .disabled(runController?.selectedConfiguration == nil)
+
             Button("Stop", systemImage: "stop.fill") {
                 runController?.stop()
             }
             .disabled(!(runController?.isRunning ?? false))
 
+            Divider()
+
             Button("Debug Current File", systemImage: "ladybug") {
                 runController?.debugCurrentFile()
             }
-            .keyboardShortcut("d", modifiers: [.control, .option])
+            .disabled(runController?.hasActiveEditorFile != true)
 
             Button("Listen for Xdebug", systemImage: "antenna.radiowaves.left.and.right") {
                 runController?.listenForXdebug()

@@ -33,6 +33,11 @@ final class RunController: ObservableObject {
 
     var isRunning: Bool { runningConfigurationID != nil }
 
+    /// Whether there's an editor file to debug.
+    var hasActiveEditorFile: Bool {
+        workspace?.editorManager?.activeEditor.selectedTab?.file.url != nil
+    }
+
     func runSelectedOrFirst() {
         guard let configuration = selectedConfiguration else { return }
         run(configuration)
@@ -63,18 +68,20 @@ final class RunController: ObservableObject {
     /// falling back to the project runtime's debugger when no adapter is configured.
     private func startDebug(_ configuration: RunConfiguration) {
         guard let workspace, let debugController = workspace.debugController else { return }
-        let program = (configuration.program?.isEmpty == false ? configuration.program : configuration.command) ?? ""
+        let program = configuration.program ?? ""
+        let command = configuration.command.trimmingCharacters(in: .whitespaces)
         let args = (configuration.arguments ?? "").split(separator: " ").map(String.init)
 
-        // Web-server flow: start the listener, then launch the dev server with Xdebug enabled.
-        if let serverCommand = configuration.serverCommand,
-           !serverCommand.trimmingCharacters(in: .whitespaces).isEmpty {
-            startWebServerDebug(configuration, serverCommand: serverCommand)
+        // No program: run the command as the app/server and listen for Xdebug (one-click web debugging).
+        if program.isEmpty, !command.isEmpty {
+            startWebServerDebug(configuration)
             return
         }
 
+        // Resolve the adapter: the configured one, else the first installed (preferring PHP).
         let adapters = Settings.shared.preferences.developerSettings.debugAdapters
-        if let adapterID = configuration.adapter, adapterID.isEmpty == false,
+        let configuredID = configuration.adapter.flatMap { $0.isEmpty ? nil : $0 }
+        if let adapterID = configuredID ?? DebuggerAutoWiring.defaultAdapterID(),
            let path = adapters[adapterID], !path.isEmpty {
             startExplicitAdapterDebug(
                 configuration,
@@ -86,7 +93,7 @@ final class RunController: ObservableObject {
             return
         }
 
-        // No explicit adapter: auto-wire from the project's runtime.
+        // No adapter at all: auto-wire from the project's runtime.
         runningConfigurationID = configuration.id
         Task { [weak self] in
             await self?.startAutoDebug(
@@ -96,6 +103,18 @@ final class RunController: ObservableObject {
                 pathMappings: configuration.pathMappingDictionary
             )
         }
+    }
+
+    /// Runs a configuration as a debug session (even if its kind isn't `.debug`).
+    func debug(_ configuration: RunConfiguration) {
+        runningConfigurationID = configuration.id
+        startDebug(configuration)
+    }
+
+    /// Runs the selected (or first) configuration as a debug session.
+    func debugSelectedOrFirst() {
+        guard let configuration = selectedConfiguration else { return }
+        debug(configuration)
     }
 
     /// Starts a debug session using an explicitly configured adapter.
@@ -146,12 +165,12 @@ final class RunController: ObservableObject {
         )
     }
 
-    /// Starts a listener and launches the configuration's dev server with Xdebug enabled.
+    /// Starts a listener and launches the configuration's command with Xdebug enabled.
     ///
-    /// This is the "run my web server and debug the requests" flow: the adapter waits on the client
-    /// port while the server command runs (in the task runner) with `XDEBUG_MODE=debug`, so web
-    /// requests stopped at breakpoints appear in the Debug tab.
-    private func startWebServerDebug(_ configuration: RunConfiguration, serverCommand: String) {
+    /// This is the "run my app and debug the requests" flow: the adapter waits on the client port
+    /// while the command runs (in the task runner) with `XDEBUG_MODE=debug`, so requests stopped at
+    /// breakpoints appear in the Debug tab — no manual terminal or listen step.
+    private func startWebServerDebug(_ configuration: RunConfiguration) {
         guard let workspace, let debugController = workspace.debugController else { return }
         let port = configuration.clientPort
             ?? Settings.shared.preferences.developerSettings.phpDebugClientPort
@@ -173,7 +192,7 @@ final class RunController: ObservableObject {
                 name: configuration.name,
                 target: "",
                 workingDirectory: configuration.workingDirectory,
-                command: serverCommand,
+                command: configuration.command,
                 environmentVariables: environment.map { CETask.EnvironmentVariable(key: $0.key, value: $0.value) }
             )
             runningTaskID = task.id
@@ -182,13 +201,12 @@ final class RunController: ObservableObject {
         }
     }
 
-    /// Starts a debug session for the active file, auto-wired from the project's runtime.
+    /// Starts listening for Xdebug so breakpoints in the open files hit when you use the app.
+    ///
+    /// This is the one-click flow: click Debug Current File, then exercise the app (browse) and your
+    /// breakpoints are hit — no manual "Listen for Xdebug" step required.
     func debugCurrentFile() {
-        guard let workspace,
-              let url = workspace.editorManager?.activeEditor.selectedTab?.file.url else { return }
-        Task { [weak self] in
-            await self?.startAutoDebug(program: url.path(percentEncoded: false))
-        }
+        listenForXdebug()
     }
 
     /// Listens for an incoming Xdebug connection (attach) using the project's PHP runtime.

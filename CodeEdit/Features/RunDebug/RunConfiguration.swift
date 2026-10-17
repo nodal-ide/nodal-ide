@@ -65,19 +65,14 @@ struct RunConfiguration: Identifiable, Codable, Hashable {
     var clientPort: Int?
     /// Local→remote path mappings, for remote/Docker debugging.
     var pathMappings: [EnvironmentVariable]?
-    /// A dev-server command to launch (with Xdebug enabled) before listening (e.g. `php forge.php serve`).
-    var serverCommand: String?
 
     /// A configuration is usable when it has a name and something to run.
     ///
-    /// Debug configurations may run a program, a command, or a dev-server command instead.
+    /// Debug configurations may launch a program or run a command (with Xdebug injected).
     var isInvalid: Bool {
         if name.isEmpty { return true }
         guard kind == .debug else { return command.isEmpty }
-        let hasProgram = !(program ?? "").isEmpty
-        let hasCommand = !command.isEmpty
-        let hasServer = !(serverCommand ?? "").trimmingCharacters(in: .whitespaces).isEmpty
-        return !(hasProgram || hasCommand || hasServer)
+        return (program ?? "").isEmpty && command.isEmpty
     }
 
     /// The path mappings as a dictionary.

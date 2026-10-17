@@ -12,6 +12,8 @@ struct RunConfigurationFormView: View {
     /// Names of workspace tasks, offered as pre-launch tasks.
     var taskNames: [String] = []
 
+    @State private var showAdvanced = false
+
     private static let matcherNames = ["$gcc", "$tsc"]
 
     var body: some View {
@@ -26,122 +28,156 @@ struct RunConfigurationFormView: View {
                 }
             }
 
-            Section {
-                TextField("Command", text: $configuration.command)
-                    .accessibilityLabel("Run Command")
-                TextField("Working Directory", text: $configuration.workingDirectory)
-                    .accessibilityLabel("Working Directory")
-            } footer: {
-                Text(
-
-                    "Working directory is relative to the workspace (or absolute). "
-
-                    + "Leave empty for the workspace root."
-
-                )
-                    .font(.caption)
-            }
-
-            Section {
-                ForEach($configuration.environment) { $variable in
-                    HStack {
-                        TextField("Key", text: $variable.key)
-                        TextField("Value", text: $variable.value)
-                    }
-                }
-                .onDelete { offsets in
-                    configuration.environment.remove(atOffsets: offsets)
-                }
-                Button {
-                    configuration.environment.append(RunConfiguration.EnvironmentVariable())
-                } label: {
-                    Label("Add Variable", systemImage: "plus")
-                }
-            } header: {
-                Text("Environment Variables")
-            }
+            commandSection
 
             if configuration.kind == .debug {
-                Section {
-                    Picker("Adapter", selection: adapterBinding) {
-                        Text("None").tag("")
-                        ForEach(adapterNames, id: \.self) { name in
-                            Text(name).tag(name)
-                        }
-                    }
-                    Picker("Request", selection: requestBinding) {
-                        Text("Launch").tag("launch")
-                        Text("Attach").tag("attach")
-                    }
-                    TextField("Program", text: programBinding, prompt: Text("Path to the program to debug"))
-                    TextField("Arguments", text: argumentsBinding, prompt: Text("--flag value"))
-                } header: {
-                    Text("Debug")
-                } footer: {
-                    Text("Configure debug adapters in Settings ▸ Developer ▸ Debug Adapters.")
-                        .font(.caption)
-                }
-
-                Section {
-                    TextField("Port", text: clientPortBinding, prompt: Text("9003"))
-                    TextField("Server Command", text: serverCommandBinding, prompt: Text("e.g. php forge.php serve"))
-                    ForEach(pathMappingsBinding) { $mapping in
-                        HStack {
-                            TextField("Local Path", text: $mapping.key)
-                            TextField("Remote Path", text: $mapping.value)
-                        }
-                    }
-                    .onDelete { configuration.pathMappings?.remove(atOffsets: $0) }
-                    Button {
-                        var mappings = configuration.pathMappings ?? []
-                        mappings.append(RunConfiguration.EnvironmentVariable())
-                        configuration.pathMappings = mappings
-                    } label: {
-                        Label("Add Path Mapping", systemImage: "plus")
-                    }
-                } header: {
-                    Text("PHP / Xdebug")
-                } footer: {
-                    Text(
-                        "Client port Xdebug connects to (default 9003). "
-                        + "Path mappings map local → remote (Docker/remote). "
-                        + "A Server Command launches your dev server with Xdebug enabled, then listens."
-                    )
-                        .font(.caption)
-                }
+                programSection
             }
 
             Section {
-                Picker("Problem Matcher", selection: $configuration.problemMatcher) {
-                    Text("None").tag(String?.none)
-                    ForEach(Self.matcherNames, id: \.self) { name in
-                        Text(name).tag(String?.some(name))
-                    }
-                }
+                Toggle("Advanced Options", isOn: $showAdvanced)
+            }
 
-                if taskNames.isEmpty {
-                    TextField("Pre-launch Task", text: preLaunchTaskBinding, prompt: Text("Task name"))
-                } else {
-                    Picker("Pre-launch Task", selection: preLaunchTaskBinding) {
-                        Text("None").tag("")
-                        ForEach(taskNames, id: \.self) { name in
-                            Text(name).tag(name)
-                        }
-                    }
-                }
-            } header: {
-                Text("Advanced")
+            if showAdvanced {
+                advancedSections
             }
         }
         .formStyle(.grouped)
+        .onAppear(perform: configureDefaults)
     }
 
-    /// `preLaunchTask` is optional; the picker/text field use an empty string for "none".
-    private var preLaunchTaskBinding: Binding<String> {
-        Binding {
-            configuration.preLaunchTask ?? ""
-        } set: { newValue in
-            configuration.preLaunchTask = newValue.isEmpty ? nil : newValue
+    // MARK: - Sections
+
+    private var commandSection: some View {
+        Section {
+            TextField("Command", text: $configuration.command, prompt: Text("php forge.php serve"))
+                .accessibilityLabel("Run Command")
+            TextField("Working Directory", text: $configuration.workingDirectory, prompt: Text("Workspace root"))
+                .accessibilityLabel("Working Directory")
+        } header: {
+            Text(configuration.kind == .debug ? "Run Command" : "Command")
+        } footer: {
+            if configuration.kind == .debug {
+                Text(
+                    "The command that starts your app. Debug runs it with Xdebug enabled and listens "
+                    + "for connections — no manual server or listener needed."
+                )
+                .font(.caption)
+            } else {
+                Text(
+                    "Working directory is relative to the workspace (or absolute). "
+                    + "Leave empty for the workspace root."
+                )
+                    .font(.caption)
+            }
+        }
+    }
+
+    private var programSection: some View {
+        Section {
+            TextField("Program", text: programBinding, prompt: Text("Script to debug (optional)"))
+        } header: {
+            Text("Program")
+        } footer: {
+            Text(
+                "Leave empty to run the Command above and listen. Set a script to launch it directly "
+                + "(CLI debugging)."
+            )
+            .font(.caption)
+        }
+    }
+
+    @ViewBuilder private var advancedSections: some View {
+        if configuration.kind == .debug {
+            Section {
+                Picker("Adapter", selection: adapterBinding) {
+                    Text("Automatic").tag("")
+                    ForEach(adapterNames, id: \.self) { name in
+                        Text(name).tag(name)
+                    }
+                }
+                Picker("Request", selection: requestBinding) {
+                    Text("Launch").tag("launch")
+                    Text("Attach").tag("attach")
+                }
+                TextField("Arguments", text: argumentsBinding, prompt: Text("--flag value"))
+                TextField("Client Port", text: clientPortBinding, prompt: Text("9003"))
+                pathMappingRows
+            } header: {
+                Text("Debug Adapter")
+            } footer: {
+                Text("Automatic uses the first installed adapter. Client port defaults to the Developer setting.")
+                    .font(.caption)
+            }
+        }
+
+        Section {
+            ForEach($configuration.environment) { $variable in
+                HStack {
+                    TextField("Key", text: $variable.key)
+                    TextField("Value", text: $variable.value)
+                }
+            }
+            .onDelete { configuration.environment.remove(atOffsets: $0) }
+            Button {
+                configuration.environment.append(RunConfiguration.EnvironmentVariable())
+            } label: {
+                Label("Add Variable", systemImage: "plus")
+            }
+        } header: {
+            Text("Environment Variables")
+        }
+
+        Section {
+            Picker("Problem Matcher", selection: $configuration.problemMatcher) {
+                Text("None").tag(String?.none)
+                ForEach(Self.matcherNames, id: \.self) { name in
+                    Text(name).tag(String?.some(name))
+                }
+            }
+            if taskNames.isEmpty {
+                TextField("Pre-launch Task", text: preLaunchTaskBinding, prompt: Text("Task name"))
+            } else {
+                Picker("Pre-launch Task", selection: preLaunchTaskBinding) {
+                    Text("None").tag("")
+                    ForEach(taskNames, id: \.self) { name in
+                        Text(name).tag(name)
+                    }
+                }
+            }
+        } header: {
+            Text("Tasks")
+        }
+    }
+
+    private var pathMappingRows: some View {
+        Group {
+            ForEach(pathMappingsBinding) { $mapping in
+                HStack {
+                    TextField("Local Path", text: $mapping.key)
+                    TextField("Remote Path", text: $mapping.value)
+                }
+            }
+            .onDelete { configuration.pathMappings?.remove(atOffsets: $0) }
+            Button {
+                var mappings = configuration.pathMappings ?? []
+                mappings.append(RunConfiguration.EnvironmentVariable())
+                configuration.pathMappings = mappings
+            } label: {
+                Label("Add Path Mapping", systemImage: "plus")
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    /// Expands the advanced section when the configuration already uses advanced settings.
+    private func configureDefaults() {
+        if configuration.kind == .debug {
+            showAdvanced = configuration.adapter != nil
+                || configuration.clientPort != nil
+                || configuration.arguments != nil
+                || !(configuration.pathMappings ?? []).isEmpty
         }
     }
 
@@ -181,19 +217,20 @@ struct RunConfigurationFormView: View {
         }
     }
 
-    private var serverCommandBinding: Binding<String> {
-        Binding {
-            configuration.serverCommand ?? ""
-        } set: { newValue in
-            configuration.serverCommand = newValue.isEmpty ? nil : newValue
-        }
-    }
-
     private var pathMappingsBinding: Binding<[RunConfiguration.EnvironmentVariable]> {
         Binding {
             configuration.pathMappings ?? []
         } set: { newValue in
             configuration.pathMappings = newValue
+        }
+    }
+
+    /// `preLaunchTask` is optional; the picker/text field use an empty string for "none".
+    private var preLaunchTaskBinding: Binding<String> {
+        Binding {
+            configuration.preLaunchTask ?? ""
+        } set: { newValue in
+            configuration.preLaunchTask = newValue.isEmpty ? nil : newValue
         }
     }
 }

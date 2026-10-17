@@ -111,6 +111,13 @@ enum DebuggerAutoWiring {
         )
     }
 
+    /// The first installed debug adapter to use when none is configured, preferring PHP.
+    static func defaultAdapterID() -> String? {
+        let adapters = Settings.shared.preferences.developerSettings.debugAdapters
+        if adapters["php"] != nil { return "php" }
+        return adapters.keys.sorted().first
+    }
+
     /// The configured adapter for a debugger, else the first known candidate on `PATH`.
     static func adapterExecutable(for debugger: RuntimeDebugger) -> URL? {
         let adapters = Settings.shared.preferences.developerSettings.debugAdapters
