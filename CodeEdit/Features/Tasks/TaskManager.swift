@@ -29,22 +29,17 @@ class TaskManager: ObservableObject {
             .sink { [weak self] _ in
                 self?.updateSelectedTaskID()
             }
+
+        updateSelectedTaskID()
     }
 
+    /// The task currently selected in the workspace, if any.
+    ///
+    /// Pure getter — it never mutates state. Selecting a default task is handled by
+    /// ``updateSelectedTaskID()`` at init and whenever the workspace tasks change.
     var selectedTask: CETask? {
-        if let selectedTaskID {
-            return availableTasks.first { $0.id == selectedTaskID }
-        } else {
-            if let newSelectedTask = availableTasks.first {
-                Task {
-                    await MainActor.run {
-                        self.selectedTaskID = newSelectedTask.id
-                    }
-                }
-                return newSelectedTask
-            }
-        }
-        return nil
+        guard let selectedTaskID else { return nil }
+        return availableTasks.first { $0.id == selectedTaskID }
     }
 
     var availableTasks: [CETask] {
