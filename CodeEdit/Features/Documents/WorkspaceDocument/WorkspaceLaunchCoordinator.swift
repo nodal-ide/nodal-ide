@@ -20,7 +20,7 @@ struct WorkspaceLaunchCoordinator {
         guard language.isEmpty || language == "php" else { return }
         Task {
             try? await Task.sleep(for: .seconds(1.5))
-            _ = PHPWorkspaceIndex.shared.index(for: root)
+            _ = AppServices.phpWorkspaceIndex.index(for: root)
         }
     }
 }

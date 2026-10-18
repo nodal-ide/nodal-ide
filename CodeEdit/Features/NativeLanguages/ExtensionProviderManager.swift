@@ -31,7 +31,7 @@ final class ExtensionProviderManager {
     ) -> [any LanguageProvider] {
         var result: [any LanguageProvider] = []
 
-        for ext in LanguageExtensionStore.shared.extensions(forWorkspace: root) {
+        for ext in AppServices.languageExtensionStore.extensions(forWorkspace: root) {
             guard let contribution = ext.manifest.contributes?.provider else { continue }
             let languages = contribution.languages ?? ext.manifest.languages ?? []
             guard languages.contains(languageID),

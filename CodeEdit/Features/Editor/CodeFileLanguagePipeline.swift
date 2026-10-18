@@ -25,7 +25,7 @@ enum CodeFileLanguagePipeline {
     ) -> Result {
         var providers: [any LanguageProvider] = []
         if let workspaceRoot = codeFile.findWorkspace()?.fileURL, let fileURL = codeFile.fileURL {
-            providers = LanguageProviderRegistry.shared.providers(
+            providers = AppServices.languageProviderRegistry.providers(
                 for: fileURL,
                 root: workspaceRoot,
                 languageID: codeFile.getLanguage().id.rawValue,
@@ -36,7 +36,7 @@ enum CodeFileLanguagePipeline {
         let phpProvider = providers.compactMap { $0 as? PHPProvider }.first
         phpProvider?.diagnosticsConfig = diagnosticsConfig()
         phpProvider?.onDiagnostics = { url, diagnostics in
-            DiagnosticsStore.shared.update(file: url, diagnostics: diagnostics)
+            AppServices.diagnosticsStore.update(file: url, diagnostics: diagnostics)
         }
 
         let delegate: (any LanguageDelegate)?

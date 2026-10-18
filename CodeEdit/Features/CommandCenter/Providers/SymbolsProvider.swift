@@ -29,7 +29,7 @@ final class SymbolsProvider: CommandCenterProvider {
 
         // Native PHP workspace index.
         if let root = workspace.fileURL {
-            let index = PHPWorkspaceIndex.shared.index(for: root)
+            let index = AppServices.phpWorkspaceIndex.index(for: root)
             items += index.symbols(prefix: trimmed, limit: 100).map { symbol in
                 CommandCenterItem(
                     id: "sym:\(symbol.fullyQualifiedName):\(symbol.fileURL.path):\(symbol.nameRange.location)",

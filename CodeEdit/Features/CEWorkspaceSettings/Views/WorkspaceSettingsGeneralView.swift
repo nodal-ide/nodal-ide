@@ -72,6 +72,6 @@ struct WorkspaceSettingsGeneralView: View {
     /// Re-evaluates language extensions for this workspace after the project language/frameworks change.
     private func reloadExtensions() {
         guard let root = workspace.fileURL else { return }
-        LanguageProviderRegistry.shared.reloadExtensions(for: root)
+        AppServices.languageProviderRegistry.reloadExtensions(for: root)
     }
 }

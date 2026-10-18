@@ -20,28 +20,28 @@ final class LanguageExtensionManager: ObservableObject {
 
     /// Re-reads the installed packs from disk.
     func reload() {
-        extensions = LanguageExtensionStore.shared.globalExtensions()
+        extensions = AppServices.languageExtensionStore.globalExtensions()
     }
 
     /// Reloads packs and re-applies them to all open workspaces.
     func reloadAll() {
-        LanguageExtensionStore.shared.reload()
-        LanguageProviderRegistry.shared.reloadAllExtensions()
+        AppServices.languageExtensionStore.reload()
+        AppServices.languageProviderRegistry.reloadAllExtensions()
         reload()
     }
 
     func install(fromFolder folder: URL) throws {
-        try LanguageExtensionStore.shared.install(fromFolder: folder)
+        try AppServices.languageExtensionStore.install(fromFolder: folder)
         reloadAll()
     }
 
     func install(fromZip zipURL: URL) throws {
-        try LanguageExtensionStore.shared.install(fromZip: zipURL)
+        try AppServices.languageExtensionStore.install(fromZip: zipURL)
         reloadAll()
     }
 
     func remove(_ ext: InstalledLanguageExtension) throws {
-        try LanguageExtensionStore.shared.remove(ext)
+        try AppServices.languageExtensionStore.remove(ext)
         AppServices.settings.preferences.extensions.disabledExtensions.removeAll { $0 == ext.id }
         reloadAll()
     }

@@ -33,7 +33,7 @@ final class LanguageProviderRegistry {
         var providers: [any LanguageProvider] = []
 
         // Programmatic providers contributed by extensions (out-of-process).
-        providers.append(contentsOf: ExtensionProviderManager.shared.providers(
+        providers.append(contentsOf: AppServices.extensionProviderManager.providers(
             for: file,
             root: root,
             languageID: languageID,
@@ -52,9 +52,9 @@ final class LanguageProviderRegistry {
         // Declarative packs are folded into the workspace index and served by the built-in engine.
         if languageID == "php",
            InternalLanguage.isEnabled(.php, in: AppServices.settings.preferences.developerSettings) {
-            let index = PHPWorkspaceIndex.shared.index(for: root)
-            WorkspaceLanguageExtensions.shared.inject(into: index, root: root, language: "php")
-            providers.append(PHPWorkspaceIndex.shared.provider(for: file, root: root, openLink: openLink))
+            let index = AppServices.phpWorkspaceIndex.index(for: root)
+            AppServices.workspaceLanguageExtensions.inject(into: index, root: root, language: "php")
+            providers.append(AppServices.phpWorkspaceIndex.provider(for: file, root: root, openLink: openLink))
         }
 
         return providers
@@ -87,33 +87,33 @@ final class LanguageProviderRegistry {
     /// Re-evaluates language extensions for a workspace after project settings change: removes the
     /// previously injected pack symbols from the index and re-injects with the new activation.
     func reloadExtensions(for root: URL) {
-        LanguageExtensionStore.shared.reload()
-        ExtensionProviderManager.shared.shutdownAll()
-        let index = PHPWorkspaceIndex.shared.index(for: root)
-        for url in WorkspaceLanguageExtensions.shared.takeInjectedStubURLs(for: root) {
+        AppServices.languageExtensionStore.reload()
+        AppServices.extensionProviderManager.shutdownAll()
+        let index = AppServices.phpWorkspaceIndex.index(for: root)
+        for url in AppServices.workspaceLanguageExtensions.takeInjectedStubURLs(for: root) {
             index.removeFile(url)
         }
-        WorkspaceLanguageExtensions.shared.reload()
-        WorkspaceLanguageExtensions.shared.inject(into: index, root: root, language: "php")
+        AppServices.workspaceLanguageExtensions.reload()
+        AppServices.workspaceLanguageExtensions.inject(into: index, root: root, language: "php")
     }
 
     /// Re-evaluates language extensions for all workspaces (after installing, removing, enabling or
     /// disabling a pack from settings).
     func reloadAllExtensions() {
-        LanguageExtensionStore.shared.reload()
-        ExtensionProviderManager.shared.shutdownAll()
+        AppServices.languageExtensionStore.reload()
+        AppServices.extensionProviderManager.shutdownAll()
 
-        let roots = PHPWorkspaceIndex.shared.allRoots
+        let roots = AppServices.phpWorkspaceIndex.allRoots
         for root in roots {
-            let index = PHPWorkspaceIndex.shared.index(for: root)
-            for url in WorkspaceLanguageExtensions.shared.takeInjectedStubURLs(for: root) {
+            let index = AppServices.phpWorkspaceIndex.index(for: root)
+            for url in AppServices.workspaceLanguageExtensions.takeInjectedStubURLs(for: root) {
                 index.removeFile(url)
             }
         }
-        WorkspaceLanguageExtensions.shared.reload()
+        AppServices.workspaceLanguageExtensions.reload()
         for root in roots {
-            let index = PHPWorkspaceIndex.shared.index(for: root)
-            WorkspaceLanguageExtensions.shared.inject(into: index, root: root, language: "php")
+            let index = AppServices.phpWorkspaceIndex.index(for: root)
+            AppServices.workspaceLanguageExtensions.inject(into: index, root: root, language: "php")
         }
     }
 }

@@ -64,7 +64,7 @@ final class KnowledgeRegistry {
     private func extensionSources() -> [KnowledgeSource] {
         var result: [KnowledgeSource] = []
 
-        for ext in LanguageExtensionStore.shared.globalExtensions() {
+        for ext in AppServices.languageExtensionStore.globalExtensions() {
             guard let contributions = ext.manifest.contributes?.knowledge else { continue }
             for contribution in contributions {
                 let root = ext.root.appending(path: contribution.root ?? ".")

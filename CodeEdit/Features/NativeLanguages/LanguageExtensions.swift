@@ -319,7 +319,7 @@ final class WorkspaceLanguageExtensions {
     private func build(root: URL, language: String) -> [SymbolInfo] {
         var result: [SymbolInfo] = []
 
-        for ext in LanguageExtensionStore.shared.extensions(forWorkspace: root) {
+        for ext in AppServices.languageExtensionStore.extensions(forWorkspace: root) {
             guard LanguageExtensionActivation.isEnabled(ext),
                   ext.manifest.languages?.contains(language) == true,
                   LanguageExtensionActivation.isActivated(ext, in: root),

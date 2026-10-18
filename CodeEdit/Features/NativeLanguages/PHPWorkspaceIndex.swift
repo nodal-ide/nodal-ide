@@ -50,7 +50,7 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
         }
         indexer.onProgress = { completed, total in
             Task { @MainActor in
-                ProjectScanStatus.shared.update(root: root, completed: completed, total: total)
+                AppServices.projectScanStatus.update(root: root, completed: completed, total: total)
             }
         }
         indexes[key] = symbolIndex
@@ -110,7 +110,7 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
             }
         }
         Task { @MainActor in
-            DiagnosticsStore.shared.update(files: mapped)
+            AppServices.diagnosticsStore.update(files: mapped)
         }
     }
 

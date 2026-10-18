@@ -85,7 +85,7 @@ class CEActiveTask: ObservableObject, Identifiable, Hashable {
               let workingDirectory = workspaceURL else {
             return
         }
-        DiagnosticsStore.shared.clear(owner: matcherOwner)
+        AppServices.diagnosticsStore.clear(owner: matcherOwner)
         matcherProblems = []
         outputLineBuffer = ""
         matcherParser = ProblemMatcherParser(matcher: matcher, workingDirectory: workingDirectory)
@@ -104,7 +104,7 @@ class CEActiveTask: ObservableObject, Identifiable, Hashable {
             let found = matcherParser?.consume(line) ?? []
             guard !found.isEmpty else { continue }
             matcherProblems.append(contentsOf: found)
-            DiagnosticsStore.shared.replaceProblems(
+            AppServices.diagnosticsStore.replaceProblems(
                 owner: matcherOwner,
                 problems: matcherProblems.map(Self.editorProblem)
             )

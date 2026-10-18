@@ -124,7 +124,7 @@ extension LSPService {
                 line: diagnostic.range.start.line + 1
             )
         }
-        DiagnosticsStore.shared.update(file: url, diagnostics: diagnostics)
+        AppServices.diagnosticsStore.update(file: url, diagnostics: diagnostics)
     }
 
     private static func severity(_ severity: DiagnosticSeverity?) -> EditorDiagnosticSeverity {

@@ -172,7 +172,7 @@ final class CodeFileDocument: NSDocument, ObservableObject {
     /// Re-indexes and re-diagnoses a single file after it's saved (only that file is re-run).
     private func reindexAfterSave(_ url: URL) {
         guard url.pathExtension.lowercased() == "php" else { return }
-        PHPWorkspaceIndex.shared.refresh(file: url)
+        AppServices.phpWorkspaceIndex.refresh(file: url)
     }
 
     // MARK: - Read

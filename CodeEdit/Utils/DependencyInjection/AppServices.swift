@@ -40,6 +40,29 @@ enum AppServices {
 
     /// The app-wide resolved runtime environment.
     @MainActor static var runtimeEnvironment: RuntimeEnvironment = .shared
+
+    // MARK: Native language services
+
+    /// The app-wide PHP workspace symbol index.
+    static var phpWorkspaceIndex: PHPWorkspaceIndex = .shared
+
+    /// The app-wide problems/diagnostics store.
+    @MainActor static var diagnosticsStore: DiagnosticsStore = .shared
+
+    /// The app-wide store of installed language extensions.
+    static var languageExtensionStore: LanguageExtensionStore = .shared
+
+    /// The app-wide per-workspace language-extension injection registry.
+    static var workspaceLanguageExtensions: WorkspaceLanguageExtensions = .shared
+
+    /// The app-wide native language provider registry.
+    static var languageProviderRegistry: LanguageProviderRegistry = .shared
+
+    /// The app-wide out-of-process extension provider manager.
+    static var extensionProviderManager: ExtensionProviderManager = .shared
+
+    /// The app-wide project-scan progress tracker.
+    @MainActor static var projectScanStatus: ProjectScanStatus = .shared
 }
 
 // MARK: - Environment injection

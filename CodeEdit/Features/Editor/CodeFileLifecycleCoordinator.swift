@@ -36,7 +36,7 @@ final class CodeFileLifecycleCoordinator: ObservableObject {
                 .debounce(for: .milliseconds(800), scheduler: RunLoop.main)
                 .sink { [weak codeFile] _ in
                     guard let source = codeFile?.content?.string else { return }
-                    PHPWorkspaceIndex.shared.refreshFromSource(file: fileURL, source: source)
+                    AppServices.phpWorkspaceIndex.refreshFromSource(file: fileURL, source: source)
                 }
                 .store(in: &cancellables)
         }

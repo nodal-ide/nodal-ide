@@ -10,7 +10,7 @@ import SwiftUI
 import CodeEditSourceEditor
 
 struct ProblemsView: View {
-    @ObservedObject private var store = DiagnosticsStore.shared
+    @ObservedObject private var store = AppServices.diagnosticsStore
     @EnvironmentObject private var workspace: WorkspaceDocument
 
     @State private var searchText = ""
@@ -294,7 +294,7 @@ private extension ProblemsView {
 // MARK: - Navigator bottom bar
 
 struct ProblemsNavigatorToolbarBottom: View {
-    @ObservedObject private var store = DiagnosticsStore.shared
+    @ObservedObject private var store = AppServices.diagnosticsStore
     @EnvironmentObject private var workspace: WorkspaceDocument
 
     var body: some View {
@@ -318,6 +318,6 @@ struct ProblemsNavigatorToolbarBottom: View {
 
     private func rescan() {
         guard let root = workspace.fileURL else { return }
-        PHPWorkspaceIndex.shared.rescan(root: root)
+        AppServices.phpWorkspaceIndex.rescan(root: root)
     }
 }

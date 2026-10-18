@@ -38,7 +38,7 @@ final class TestRunner: ObservableObject {
         rawOutput = ""
         outputBuffer = ""
         isRunning = true
-        DiagnosticsStore.shared.clear(owner: owner)
+        AppServices.diagnosticsStore.clear(owner: owner)
 
         let task = CETask(
             name: configuration.name,
@@ -71,7 +71,7 @@ final class TestRunner: ObservableObject {
         isRunning = false
 
         let failures = results.filter { $0.status == .failed || $0.status == .error }
-        DiagnosticsStore.shared.replaceProblems(
+        AppServices.diagnosticsStore.replaceProblems(
             owner: owner,
             problems: failures.compactMap { result in
                 guard let url = result.fileURL else { return nil }
