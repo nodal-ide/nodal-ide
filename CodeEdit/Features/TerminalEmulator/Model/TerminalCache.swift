@@ -13,6 +13,9 @@ import SwiftTerm
 final class TerminalCache {
     static let shared: TerminalCache = TerminalCache()
 
+    /// Guards `terminals`; the cache is accessed from the main actor as well as terminal I/O callbacks.
+    private let lock = NSLock()
+
     /// The cache of terminal views.
     private var terminals: [UUID: CELocalShellTerminalView]
 
@@ -24,7 +27,9 @@ final class TerminalCache {
     /// - Parameter id: The ID of the terminal.
     /// - Returns: The existing terminal, if it exists.
     func getTerminalView(_ id: UUID) -> CELocalShellTerminalView? {
-        terminals[id]
+        lock.lock()
+        defer { lock.unlock() }
+        return terminals[id]
     }
 
     /// Store a terminal view for reuse.
@@ -32,12 +37,16 @@ final class TerminalCache {
     ///   - id: The ID of the terminal.
     ///   - view: The view representing the terminal's contents.
     func cacheTerminalView(for id: UUID, view: CELocalShellTerminalView) {
+        lock.lock()
+        defer { lock.unlock() }
         terminals[id] = view
     }
 
     /// Remove any view associated with the terminal id.
     /// - Parameter id: The ID of the terminal.
     func removeCachedView(_ id: UUID) {
+        lock.lock()
+        defer { lock.unlock() }
         terminals[id] = nil
     }
 }

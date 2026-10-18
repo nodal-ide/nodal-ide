@@ -97,7 +97,7 @@ class UtilityAreaViewModel: ObservableObject {
     func removeTerminals(_ ids: Set<UUID>) {
         for (idx, terminal) in terminals.enumerated().reversed()
         where ids.contains(terminal.id) {
-            TerminalCache.shared.removeCachedView(terminal.id)
+            AppServices.terminalCache.removeCachedView(terminal.id)
             terminals.remove(at: idx)
         }
 
@@ -249,7 +249,7 @@ class UtilityAreaViewModel: ObservableObject {
         let id = UUID()
         let url = terminals[index].cwd ?? terminals[index].url
         let shell = terminals[index].shell
-        if let shellPid = TerminalCache.shared.getTerminalView(replacing)?.process.shellPid {
+        if let shellPid = AppServices.terminalCache.getTerminalView(replacing)?.process.shellPid {
             kill(shellPid, SIGKILL)
         }
 
@@ -259,7 +259,7 @@ class UtilityAreaViewModel: ObservableObject {
             title: shell?.rawValue ?? "terminal",
             shell: shell
         )
-        TerminalCache.shared.removeCachedView(replacing)
+        AppServices.terminalCache.removeCachedView(replacing)
 
         if splitTerminalID == replacing {
             splitTerminalID = id

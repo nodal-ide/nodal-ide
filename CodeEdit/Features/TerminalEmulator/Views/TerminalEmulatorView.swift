@@ -182,8 +182,8 @@ struct TerminalEmulatorView: NSViewRepresentable {
 
         switch mode {
         case .shell(let shellType):
-            let isCached = TerminalCache.shared.getTerminalView(terminalID) != nil
-            view = TerminalCache.shared.getTerminalView(terminalID) ?? CELocalShellTerminalView(frame: .zero)
+            let isCached = AppServices.terminalCache.getTerminalView(terminalID) != nil
+            view = AppServices.terminalCache.getTerminalView(terminalID) ?? CELocalShellTerminalView(frame: .zero)
             if !isCached {
                 view.startProcess(
                     workspaceURL: url,
@@ -208,7 +208,7 @@ struct TerminalEmulatorView: NSViewRepresentable {
 
         view.processDelegate = context.coordinator
 
-        TerminalCache.shared.cacheTerminalView(for: terminalID, view: view)
+        AppServices.terminalCache.cacheTerminalView(for: terminalID, view: view)
         return view
     }
 

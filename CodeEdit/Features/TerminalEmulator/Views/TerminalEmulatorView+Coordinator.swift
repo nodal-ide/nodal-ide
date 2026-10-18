@@ -95,7 +95,7 @@ extension TerminalEmulatorView {
             if case .shell = mode {
                 source.feed(text: "Exit code: \(exitCode)\n\r\n")
                 source.feed(text: "To open a new session, create a new terminal tab.")
-                TerminalCache.shared.removeCachedView(terminalID)
+                AppServices.terminalCache.removeCachedView(terminalID)
             }
         }
     }

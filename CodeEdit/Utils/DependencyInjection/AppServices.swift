@@ -128,6 +128,9 @@ enum AppServices {
 
     /// The app-wide editor state restoration store.
     static var editorStateRestoration: EditorStateRestoration? = .shared
+
+    /// The app-wide cache of terminal views (kept alive while off-screen).
+    static var terminalCache: TerminalCache = .shared
 }
 
 // MARK: - Environment injection
