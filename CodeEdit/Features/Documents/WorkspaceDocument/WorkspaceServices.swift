@@ -23,6 +23,13 @@ final class WorkspaceServices {
     let sourceControlManager: SourceControlManager?
     let workspaceFileManager: CEWorkspaceFileManager?
 
+    // MARK: Search / quick actions / settings
+
+    let workspaceSettingsManager: CEWorkspaceSettings?
+    let searchState: WorkspaceSearchService?
+    let openQuicklyViewModel: OpenQuicklyViewModel?
+    let commandsPaletteState: QuickActionsViewModel?
+
     // MARK: Run / debug / tasks
 
     let taskManager: TaskManager?
@@ -32,7 +39,13 @@ final class WorkspaceServices {
     let breakpointStore: BreakpointStore?
     let debugController: DebugController?
 
-    init(workspace: WorkspaceDocument, url: URL, settingsManager: CEWorkspaceSettings?) {
+    init(workspace: WorkspaceDocument, url: URL) {
+        let settingsManager = CEWorkspaceSettings(workspaceURL: url)
+        workspaceSettingsManager = settingsManager
+        searchState = WorkspaceSearchService(workspace)
+        openQuicklyViewModel = OpenQuicklyViewModel(fileURL: url)
+        commandsPaletteState = QuickActionsViewModel()
+
         let sourceControlManager = SourceControlManager(workspaceURL: url, editorManager: editorManager)
         let workspaceFileManager = CEWorkspaceFileManager(
             folderUrl: url,
@@ -43,11 +56,7 @@ final class WorkspaceServices {
         self.sourceControlManager = sourceControlManager
         self.workspaceFileManager = workspaceFileManager
 
-        if let settingsManager {
-            taskManager = TaskManager(workspaceSettings: settingsManager.settings, workspaceURL: url)
-        } else {
-            taskManager = nil
-        }
+        taskManager = TaskManager(workspaceSettings: settingsManager.settings, workspaceURL: url)
         runConfigurationStore = RunConfigurationStore(workspaceURL: url)
         runController = RunController(workspace: workspace)
         testRunner = TestRunner(workspace: workspace)

@@ -47,9 +47,9 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     var utilityAreaModel: UtilityAreaViewModel? { services?.utilityAreaModel }
     var sourceControlManager: SourceControlManager? { services?.sourceControlManager }
 
-    var searchState: WorkspaceSearchService?
-    var openQuicklyViewModel: OpenQuicklyViewModel?
-    var commandsPaletteState: QuickActionsViewModel?
+    var searchState: WorkspaceSearchService? { services?.searchState }
+    var openQuicklyViewModel: OpenQuicklyViewModel? { services?.openQuicklyViewModel }
+    var commandsPaletteState: QuickActionsViewModel? { services?.commandsPaletteState }
     var listenerModel: WorkspaceNotificationModel = .init()
 
     var taskManager: TaskManager? { services?.taskManager }
@@ -58,7 +58,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     var testRunner: TestRunner? { services?.testRunner }
     var breakpointStore: BreakpointStore? { services?.breakpointStore }
     var debugController: DebugController? { services?.debugController }
-    var workspaceSettingsManager: CEWorkspaceSettings?
+    var workspaceSettingsManager: CEWorkspaceSettings? { services?.workspaceSettingsManager }
     var taskNotificationHandler: TaskNotificationHandler = TaskNotificationHandler()
 
     private var runtimeCoordinator: WorkspaceRuntimeCoordinator?
@@ -163,15 +163,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         self.fileURL = url
         self.displayName = url.lastPathComponent
 
-        self.workspaceSettingsManager = CEWorkspaceSettings(workspaceURL: url)
-        self.services = WorkspaceServices(
-            workspace: self,
-            url: url,
-            settingsManager: workspaceSettingsManager
-        )
-        self.searchState = .init(self)
-        self.openQuicklyViewModel = .init(fileURL: url)
-        self.commandsPaletteState = .init()
+        self.services = WorkspaceServices(workspace: self, url: url)
         self.taskNotificationHandler.workspaceURL = url
 
         workspaceFileManager?.addObserver(undoRegistration)
@@ -209,12 +201,8 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
 
         cancellables.forEach({ $0.cancel() })
         runtimeCoordinator = nil
-        searchState = nil
-        openQuicklyViewModel = nil
-        commandsPaletteState = nil
         workspaceFileManager?.cleanUp()
         workspaceSettingsManager?.cleanUp()
-        workspaceSettingsManager = nil
         services = nil
     }
 
