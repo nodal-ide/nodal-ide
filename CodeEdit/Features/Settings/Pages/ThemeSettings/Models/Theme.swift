@@ -7,8 +7,11 @@
 
 import SwiftUI
 import CodeEditSourceEditor
+import os
 
 // swiftlint:disable file_length
+
+private let themeLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "Theme")
 
 /// # Theme
 ///
@@ -258,7 +261,9 @@ extension Theme {
                 case "strings": return self.strings
                 case "characters": return self.characters
                 case "comments": return self.comments
-                default: fatalError("Invalid key")
+                default:
+                    themeLogger.error("Theme: unknown editor color key \"\(key, privacy: .public)\"; using 'text'")
+                    return self.text
                 }
             }
             set {
@@ -279,7 +284,8 @@ extension Theme {
                 case "strings": self.strings = newValue
                 case "characters": self.characters = newValue
                 case "comments": self.comments = newValue
-                default: fatalError("Invalid key")
+                default:
+                    themeLogger.error("Theme: unknown editor color key \"\(key, privacy: .public)\"; ignoring value")
                 }
             }
         }
@@ -400,7 +406,9 @@ extension Theme {
                 case "brightMagenta": return self.brightMagenta
                 case "brightCyan": return self.brightCyan
                 case "brightWhite": return self.brightWhite
-                default: fatalError("Invalid key")
+                default:
+                    themeLogger.error("Theme: unknown terminal color key \"\(key, privacy: .public)\"; using 'text'")
+                    return self.text
                 }
             }
             set {
@@ -426,7 +434,8 @@ extension Theme {
                 case "brightMagenta": self.brightMagenta = newValue
                 case "brightCyan": self.brightCyan = newValue
                 case "brightWhite": self.brightWhite = newValue
-                default: fatalError("Invalid key")
+                default:
+                    themeLogger.error("Theme: unknown terminal color key \"\(key, privacy: .public)\"; ignoring value")
                 }
             }
         }

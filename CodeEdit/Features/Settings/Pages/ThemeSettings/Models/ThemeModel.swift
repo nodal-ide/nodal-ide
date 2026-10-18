@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import os
 
 /// The Theme View Model. Accessible via the singleton "``ThemeModel/shared``".
 ///
@@ -16,6 +17,8 @@ import SwiftUI
 /// ```
 final class ThemeModel: ObservableObject {
     static let shared: ThemeModel = .init()
+
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "ThemeModel")
 
     @AppSettings(\.theme)
     var settings
@@ -156,16 +159,30 @@ final class ThemeModel: ObservableObject {
 
     /// Copies a single custom theme to `destinationURL`. Panel presentation lives in the UI layer.
     func export(_ theme: Theme, to destinationURL: URL) {
-        guard let sourceURL = theme.fileURL else { return }
-        try? FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+        guard let sourceURL = theme.fileURL else {
+            logger.error("Cannot export theme \"\(theme.displayName, privacy: .public)\": no source file")
+            return
+        }
+        do {
+            try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+        } catch {
+            logger.error("Failed to export theme: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     /// Copies every custom theme into `directory`. Panel presentation lives in the UI layer.
     func exportAllCustomThemes(to directory: URL) {
         for theme in themes where !theme.isBundled {
-            guard let sourceURL = theme.fileURL else { continue }
+            guard let sourceURL = theme.fileURL else {
+                logger.error("Cannot export theme \"\(theme.displayName, privacy: .public)\": no source file")
+                continue
+            }
             let destinationURL = directory.appending(path: "\(theme.displayName).cetheme")
-            try? FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+            do {
+                try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+            } catch {
+                logger.error("Failed to export theme: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 }
