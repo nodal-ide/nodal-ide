@@ -33,7 +33,7 @@ enum AppServices {
     static var keybindingManager: KeybindingManager = .shared
 
     /// The app-wide command-center provider registry.
-    static var commandCenterRegistry: CommandCenterRegistry = .shared
+    @MainActor static var commandCenterRegistry: CommandCenterRegistry = .shared
 
     /// The app-wide runtime manager.
     @MainActor static var runtimeManager: RuntimeManager = .shared
@@ -56,7 +56,7 @@ enum AppServices {
     static var workspaceLanguageExtensions: WorkspaceLanguageExtensions = .shared
 
     /// The app-wide native language provider registry.
-    static var languageProviderRegistry: LanguageProviderRegistry = .shared
+    @MainActor static var languageProviderRegistry: LanguageProviderRegistry = .shared
 
     /// The app-wide out-of-process extension provider manager.
     static var extensionProviderManager: ExtensionProviderManager = .shared
@@ -104,7 +104,7 @@ enum AppServices {
     static var extensionDiscovery: ExtensionDiscovery = .shared
 
     /// The app-wide language-extension manager.
-    static var languageExtensionManager: LanguageExtensionManager = .shared
+    @MainActor static var languageExtensionManager: LanguageExtensionManager = .shared
 
     // MARK: Misc
 

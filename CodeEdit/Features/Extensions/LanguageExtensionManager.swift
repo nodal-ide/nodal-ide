@@ -8,6 +8,7 @@
 import SwiftUI
 
 /// Manages the installed language extensions shown in the Extensions window and settings.
+@MainActor
 final class LanguageExtensionManager: ObservableObject {
     static let shared = LanguageExtensionManager()
 

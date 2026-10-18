@@ -18,6 +18,7 @@ typealias LanguageDelegate = CodeSuggestionDelegate & JumpToDefinitionDelegate &
 /// Resolves the ordered list of ``LanguageProvider``s for an open file.
 ///
 /// Order: extension providers (highest) → built-in engine.
+@MainActor
 final class LanguageProviderRegistry {
     static let shared = LanguageProviderRegistry()
 
@@ -67,21 +68,19 @@ final class LanguageProviderRegistry {
         languageID: String,
         openLink: @escaping (JumpToDefinitionLink) -> Void
     ) -> [any LanguageProvider] {
-        MainActor.assumeIsolated { () -> [any LanguageProvider] in
-            let lsp = AppServices.lspService
-            guard let language = LanguageIdentifier(rawValue: languageID),
-                  !lsp.usesInternalLanguage(language),
-                  lsp.hasServer(for: language) else {
-                return []
-            }
-            let provider: any LanguageProvider = LSPLanguageProvider(
-                languageID: languageID,
-                fileURL: file,
-                workspacePath: root.absolutePath,
-                openLink: openLink
-            )
-            return [provider]
+        let lsp = AppServices.lspService
+        guard let language = LanguageIdentifier(rawValue: languageID),
+              !lsp.usesInternalLanguage(language),
+              lsp.hasServer(for: language) else {
+            return []
         }
+        let provider: any LanguageProvider = LSPLanguageProvider(
+            languageID: languageID,
+            fileURL: file,
+            workspacePath: root.absolutePath,
+            openLink: openLink
+        )
+        return [provider]
     }
 
     /// Re-evaluates language extensions for a workspace after project settings change: removes the

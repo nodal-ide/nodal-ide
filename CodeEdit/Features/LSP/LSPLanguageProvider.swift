@@ -30,6 +30,7 @@ struct LSPCompletionEntry: CodeSuggestionEntry {
 }
 
 /// A language provider backed by an LSP server.
+@MainActor
 final class LSPLanguageProvider: LanguageProvider {
     let languageID: String
     let priority: LanguageProviderPriority = .lsp
@@ -41,12 +42,10 @@ final class LSPLanguageProvider: LanguageProvider {
     /// The running server for this file's language, resolved lazily (it may still be starting when the
     /// file is opened).
     var server: LanguageServer<CodeFileDocument>? {
-        MainActor.assumeIsolated {
-            guard let language = LanguageIdentifier(rawValue: languageID) else {
-                return nil
-            }
-            return AppServices.lspService.languageClient(for: language, workspacePath: workspacePath)
+        guard let language = LanguageIdentifier(rawValue: languageID) else {
+            return nil
         }
+        return AppServices.lspService.languageClient(for: language, workspacePath: workspacePath)
     }
 
     /// The last completion request: the LSP position and the items it returned.
@@ -55,7 +54,7 @@ final class LSPLanguageProvider: LanguageProvider {
 
     var documentURI: String { fileURL.lspURI }
 
-    nonisolated init(
+    init(
         languageID: String,
         fileURL: URL,
         workspacePath: String,
