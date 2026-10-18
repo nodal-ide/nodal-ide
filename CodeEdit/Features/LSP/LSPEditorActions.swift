@@ -165,7 +165,7 @@ enum LSPEditorActions {
     }
 
     private static func formattingOptions() -> FormattingOptions {
-        let textEditing = Settings.shared.preferences.textEditing
+        let textEditing = AppServices.settings.preferences.textEditing
         let tabSize = max(1, textEditing.defaultTabWidth)
         return FormattingOptions(tabSize: tabSize, insertSpaces: textEditing.indentOption.indentType == .spaces)
     }

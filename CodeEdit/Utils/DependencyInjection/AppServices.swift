@@ -10,10 +10,15 @@ import SwiftUI
 /// This is the app-scope counterpart to ``WorkspaceServices``: only services that are genuinely global to
 /// the running application belong here. It replaces the previous type-erased `ServiceContainer` registry,
 /// which existed only to hold the single app-wide ``LSPService``.
-@MainActor
 enum AppServices {
     /// The single, app-wide language server service.
-    static let lspService = LSPService()
+    @MainActor static let lspService = LSPService()
+
+    /// The app-wide settings store.
+    ///
+    /// This is the single injection point for preferences: everything (views via ``AppSettings``, and
+    /// non-view code) reads and writes through it, so tests/previews can substitute their own store.
+    static var settings: any SettingsProviding = Settings.shared
 }
 
 // MARK: - Environment injection

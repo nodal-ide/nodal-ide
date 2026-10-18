@@ -50,7 +50,7 @@ enum CodeFileLanguagePipeline {
 
     /// Maps the app's PHP diagnostics settings to the engine's configuration.
     static func diagnosticsConfig() -> PHPDiagnosticsConfig {
-        let settings = Settings.shared.preferences.phpDiagnostics
+        let settings = AppServices.settings.preferences.phpDiagnostics
         var config = PHPDiagnosticsConfig()
         config.classLength = settings.classLength
         config.methodLength = settings.methodLength

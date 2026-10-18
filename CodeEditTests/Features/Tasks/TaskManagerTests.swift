@@ -28,7 +28,7 @@ class TaskManagerTests {
 
     @Test
     func executeTaskInZsh() async throws {
-        Settings.shared.preferences.terminal.shell = .zsh
+        AppServices.settings.preferences.terminal.shell = .zsh
 
         let task = CETask(name: "Test Task", command: "echo 'Hello World'")
         mockWorkspaceSettings.tasks.append(task)
@@ -47,7 +47,7 @@ class TaskManagerTests {
 
     @Test
     func executeTaskInBash() async throws {
-        Settings.shared.preferences.terminal.shell = .bash
+        AppServices.settings.preferences.terminal.shell = .bash
 
         let task = CETask(name: "Test Task", command: "echo 'Hello World'")
         mockWorkspaceSettings.tasks.append(task)

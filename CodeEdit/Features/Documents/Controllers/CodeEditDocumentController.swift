@@ -129,7 +129,7 @@ final class CodeEditDocumentController: NSDocumentController {
         }
 
         if CodeEditDocumentController.shared.documents.isEmpty {
-            switch Settings[\.general].reopenWindowAfterClose {
+            switch AppServices.settings[\.general].reopenWindowAfterClose {
             case .showWelcomeWindow:
                 // Opens the welcome window
                 openWindow(sceneID: .welcome)

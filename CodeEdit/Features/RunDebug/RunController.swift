@@ -79,7 +79,7 @@ final class RunController: ObservableObject {
         }
 
         // Resolve the adapter: the configured one, else the first installed (preferring PHP).
-        let adapters = Settings.shared.preferences.developerSettings.debugAdapters
+        let adapters = AppServices.settings.preferences.developerSettings.debugAdapters
         let configuredID = configuration.adapter.flatMap { $0.isEmpty ? nil : $0 }
         if let adapterID = configuredID ?? DebuggerAutoWiring.defaultAdapterID(),
            let path = adapters[adapterID], !path.isEmpty {
@@ -142,12 +142,12 @@ final class RunController: ObservableObject {
         DebuggerAutoWiring.apply(
             launch: &launch,
             clientPort: configuration.clientPort
-                ?? Settings.shared.preferences.developerSettings.phpDebugClientPort,
+                ?? AppServices.settings.preferences.developerSettings.phpDebugClientPort,
             pathMappings: configuration.pathMappingDictionary
         )
 
         let adapterArguments = (
-            Settings.shared.preferences.developerSettings.debugAdapterArguments[adapterID] ?? ""
+            AppServices.settings.preferences.developerSettings.debugAdapterArguments[adapterID] ?? ""
         ).split(separator: " ").map(String.init)
 
         workspace.utilityAreaModel?.open(tab: .debug)
@@ -173,7 +173,7 @@ final class RunController: ObservableObject {
     private func startWebServerDebug(_ configuration: RunConfiguration) {
         guard let workspace, let debugController = workspace.debugController else { return }
         let port = configuration.clientPort
-            ?? Settings.shared.preferences.developerSettings.phpDebugClientPort
+            ?? AppServices.settings.preferences.developerSettings.phpDebugClientPort
 
         Task { [weak self] in
             guard let self, let workspace = self.workspace else { return }

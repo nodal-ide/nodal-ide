@@ -15,7 +15,7 @@ final class FindNavigatorListViewController: NSViewController {
     private var searchItems: [SearchResultModel] = []
     private var scrollView: NSScrollView!
     private var outlineView: NSOutlineView!
-    private let prefs = Settings.shared.preferences
+    private let prefs = AppServices.settings.preferences
     private var collapsedRows: Set<Int> = []
 
     var rowHeight: Double = 22 {
@@ -226,7 +226,7 @@ extension FindNavigatorListViewController: NSOutlineViewDelegate {
 
             guard availableWidth > 0 else {
                 // Not enough space to display anything, return minimum height
-                return max(rowHeight, Settings.shared.preferences.general.projectNavigatorSize.rowHeight)
+                return max(rowHeight, AppServices.settings.preferences.general.projectNavigatorSize.rowHeight)
             }
 
             let attributedString = matchItem.attributedLabel()
@@ -243,7 +243,7 @@ extension FindNavigatorListViewController: NSOutlineViewDelegate {
             tempView.cell?.wraps = true
             tempView.cell?.usesSingleLineMode = false
             tempView.lineBreakMode = .byWordWrapping
-            tempView.maximumNumberOfLines = Settings.shared.preferences.general.findNavigatorDetail.rawValue
+            tempView.maximumNumberOfLines = AppServices.settings.preferences.general.findNavigatorDetail.rawValue
             tempView.preferredMaxLayoutWidth = availableWidth
 
             var calculatedHeight = tempView.sizeThatFits(

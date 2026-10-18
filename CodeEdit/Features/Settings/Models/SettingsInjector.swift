@@ -13,7 +13,7 @@ struct SettingsInjector<Content: View>: View {
 
     @ViewBuilder var content: Content
 
-    init(settings: any SettingsProviding = Settings.shared, @ViewBuilder content: () -> Content) {
+    init(settings: any SettingsProviding = AppServices.settings, @ViewBuilder content: () -> Content) {
         self._settings = StateObject(wrappedValue: AnySettingsStore(settings))
         self.content = content()
     }

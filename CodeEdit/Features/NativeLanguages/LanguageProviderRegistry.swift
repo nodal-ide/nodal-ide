@@ -51,7 +51,7 @@ final class LanguageProviderRegistry {
 
         // Declarative packs are folded into the workspace index and served by the built-in engine.
         if languageID == "php",
-           InternalLanguage.isEnabled(.php, in: Settings.shared.preferences.developerSettings) {
+           InternalLanguage.isEnabled(.php, in: AppServices.settings.preferences.developerSettings) {
             let index = PHPWorkspaceIndex.shared.index(for: root)
             WorkspaceLanguageExtensions.shared.inject(into: index, root: root, language: "php")
             providers.append(PHPWorkspaceIndex.shared.provider(for: file, root: root, openLink: openLink))

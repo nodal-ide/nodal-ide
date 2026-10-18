@@ -184,7 +184,7 @@ extension SettingsData {
                 title: "Toggle Type-Over Completion",
                 id: "prefs.text_editing.type_over_completion",
                 command: {
-                    Settings[\.textEditing].enableTypeOverCompletion.toggle()
+                    AppServices.settings[\.textEditing].enableTypeOverCompletion.toggle()
                 }
             )
 
@@ -193,7 +193,7 @@ extension SettingsData {
                 title: "Toggle Autocomplete Braces",
                 id: "prefs.text_editing.autocomplete_braces",
                 command: {
-                    Settings[\.textEditing].autocompleteBraces.toggle()
+                    AppServices.settings[\.textEditing].autocompleteBraces.toggle()
                 }
             )
 
@@ -202,16 +202,16 @@ extension SettingsData {
                 title: "Toggle Word Wrap",
                 id: "prefs.text_editing.wrap_lines_to_editor_width",
                 command: {
-                    Settings[\.textEditing].wrapLinesToEditorWidth.toggle()
+                    AppServices.settings[\.textEditing].wrapLinesToEditorWidth.toggle()
                 }
             )
 
             mgr.addCommand(name: "Toggle Minimap", title: "Toggle Minimap", id: "prefs.text_editing.toggle_minimap") {
-                Settings[\.textEditing].showMinimap.toggle()
+                AppServices.settings[\.textEditing].showMinimap.toggle()
             }
 
             mgr.addCommand(name: "Toggle Gutter", title: "Toggle Gutter", id: "prefs.text_editing.toggle_gutter") {
-                Settings[\.textEditing].showGutter.toggle()
+                AppServices.settings[\.textEditing].showGutter.toggle()
             }
 
             mgr.addCommand(
@@ -219,7 +219,7 @@ extension SettingsData {
                 title: "Toggle Folding Ribbon",
                 id: "prefs.text_editing.toggle_folding_ribbon"
             ) {
-                Settings[\.textEditing].showFoldingRibbon.toggle()
+                AppServices.settings[\.textEditing].showFoldingRibbon.toggle()
             }
         }
 

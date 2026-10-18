@@ -14,7 +14,7 @@ struct ProjectNavigatorOutlineView: NSViewControllerRepresentable {
     @EnvironmentObject var workspace: WorkspaceDocument
     @EnvironmentObject var editorManager: EditorManager
 
-    @StateObject var prefs: Settings = .shared
+    @StateObject var prefs: AnySettingsStore = .init(AppServices.settings)
 
     typealias NSViewControllerType = ProjectNavigatorViewController
 

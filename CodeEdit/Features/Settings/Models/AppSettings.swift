@@ -16,6 +16,7 @@ import Combine
 /// (see `EnvironmentValues.settingsStore`), defaulting to ``Settings/shared``.
 protocol SettingsProviding: AnyObject {
     var preferences: SettingsData { get set }
+    var baseURL: URL { get }
     var objectWillChange: ObservableObjectPublisher { get }
 }
 
@@ -42,6 +43,8 @@ final class AnySettingsStore: ObservableObject, SettingsProviding {
         get { base.preferences }
         set { base.preferences = newValue }
     }
+
+    var baseURL: URL { base.baseURL }
 }
 
 /// Property wrapper that reads and writes a single ``SettingsData`` value through the injected settings
@@ -86,7 +89,7 @@ struct AppSettings<T>: DynamicProperty where T: Equatable {
 }
 
 struct SettingsStoreEnvironmentKey: EnvironmentKey {
-    static var defaultValue: any SettingsProviding { Settings.shared }
+    static var defaultValue: any SettingsProviding { AppServices.settings }
 }
 
 struct SettingsDataEnvironmentKey: EnvironmentKey {

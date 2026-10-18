@@ -89,7 +89,7 @@ final class RuntimeManagerViewModel: ObservableObject {
     // MARK: - Loading
 
     func loadDefaults() {
-        let defaults = Settings.shared.preferences.developerSettings.defaultRuntimeVersions
+        let defaults = AppServices.settings.preferences.developerSettings.defaultRuntimeVersions
         for kind in RuntimeKind.allCases {
             defaultVersions[kind] = defaults[kind.rawValue]
         }
@@ -175,13 +175,13 @@ final class RuntimeManagerViewModel: ObservableObject {
     }
 
     func setDefault(_ version: String?, kind: RuntimeKind) {
-        var defaults = Settings.shared.preferences.developerSettings.defaultRuntimeVersions
+        var defaults = AppServices.settings.preferences.developerSettings.defaultRuntimeVersions
         if let version, !version.isEmpty {
             defaults[kind.rawValue] = version
         } else {
             defaults.removeValue(forKey: kind.rawValue)
         }
-        Settings.shared.preferences.developerSettings.defaultRuntimeVersions = defaults
+        AppServices.settings.preferences.developerSettings.defaultRuntimeVersions = defaults
         defaultVersions[kind] = version
     }
 

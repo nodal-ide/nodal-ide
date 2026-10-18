@@ -239,7 +239,7 @@ final class CEWorkspaceFile: Codable, Comparable, Hashable, Identifiable, Editor
     /// Generates a string based on user's file name preferences.
     /// - Returns: A `String` suitable for display.
     func labelFileName() -> String {
-        let prefs = Settings.shared.preferences.general
+        let prefs = AppServices.settings.preferences.general
         switch prefs.fileExtensionsVisibility {
         case .hideAll:
             return self.fileName(typeHidden: true)

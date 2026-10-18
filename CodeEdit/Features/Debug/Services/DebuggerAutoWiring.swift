@@ -76,7 +76,7 @@ enum DebuggerAutoWiring {
               let adapter = adapterExecutable(for: debugger) else {
             return nil
         }
-        let port = port ?? Settings.shared.preferences.developerSettings.phpDebugClientPort
+        let port = port ?? AppServices.settings.preferences.developerSettings.phpDebugClientPort
         return makeOptions(
             workspace: workspace,
             debugger: debugger,
@@ -97,7 +97,7 @@ enum DebuggerAutoWiring {
         var environment = debugger.environment
         environment.merge(RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)) { _, new in new }
         let adapterArguments = (
-            Settings.shared.preferences.developerSettings.debugAdapterArguments[debugger.adapterID] ?? ""
+            AppServices.settings.preferences.developerSettings.debugAdapterArguments[debugger.adapterID] ?? ""
         ).split(separator: " ").map(String.init)
 
         return DebugSession.LaunchOptions(
@@ -113,14 +113,14 @@ enum DebuggerAutoWiring {
 
     /// The first installed debug adapter to use when none is configured, preferring PHP.
     static func defaultAdapterID() -> String? {
-        let adapters = Settings.shared.preferences.developerSettings.debugAdapters
+        let adapters = AppServices.settings.preferences.developerSettings.debugAdapters
         if adapters["php"] != nil { return "php" }
         return adapters.keys.sorted().first
     }
 
     /// The configured adapter for a debugger, else the first known candidate on `PATH`.
     static func adapterExecutable(for debugger: RuntimeDebugger) -> URL? {
-        let adapters = Settings.shared.preferences.developerSettings.debugAdapters
+        let adapters = AppServices.settings.preferences.developerSettings.debugAdapters
         if let configured = adapters[debugger.adapterID], !configured.isEmpty,
            FileManager.default.isExecutableFile(atPath: configured) {
             return URL(filePath: configured)

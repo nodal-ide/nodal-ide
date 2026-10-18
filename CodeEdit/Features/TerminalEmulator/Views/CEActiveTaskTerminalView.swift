@@ -38,7 +38,7 @@ class CEActiveTaskTerminalView: CELocalShellTerminalView {
         environment: [String] = [],
         interactive: Bool = true
     ) {
-        let terminalSettings = Settings.shared.preferences.terminal
+        let terminalSettings = AppServices.settings.preferences.terminal
 
         var terminalEnvironment: [String] = Terminal.getEnvironmentVariables()
         terminalEnvironment.append("TERM_PROGRAM=CodeEditApp_Terminal")

@@ -103,11 +103,11 @@ final class CodeFileDocument: NSDocument, ObservableObject {
     // MARK: - NSDocument
 
     override static var autosavesInPlace: Bool {
-        Settings.shared.preferences.general.isAutoSaveOn
+        AppServices.settings.preferences.general.isAutoSaveOn
     }
 
     override var autosavingFileType: String? {
-        Settings.shared.preferences.general.isAutoSaveOn
+        AppServices.settings.preferences.general.isAutoSaveOn
             ? fileType
             : nil
     }
@@ -159,7 +159,7 @@ final class CodeFileDocument: NSDocument, ObservableObject {
             }
             completionHandler(error)
         }
-        guard Settings.shared.preferences.textEditing.formatOnSave else {
+        guard AppServices.settings.preferences.textEditing.formatOnSave else {
             super.save(to: url, ofType: typeName, for: saveOperation, completionHandler: finish)
             return
         }

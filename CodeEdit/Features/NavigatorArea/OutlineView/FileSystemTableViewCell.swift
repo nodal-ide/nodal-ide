@@ -14,7 +14,7 @@ class FileSystemTableViewCell: StandardTableViewCell {
     var changeLabelLargeWidth: NSLayoutConstraint!
     var changeLabelSmallWidth: NSLayoutConstraint!
 
-    private let prefs = Settings.shared.preferences.general
+    private let prefs = AppServices.settings.preferences.general
     private var navigatorFilter: String?
 
     /// Initializes the `OutlineTableViewCell` with an `icon` and `label`

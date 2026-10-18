@@ -198,7 +198,7 @@ final class ProjectNavigatorViewController: NSViewController {
             } else {
                 outlineView.expandItem(item)
             }
-        } else if Settings[\.navigation].navigationStyle == .openInTabs {
+        } else if AppServices.settings[\.navigation].navigationStyle == .openInTabs {
             workspace?.editorManager?.activeEditor.openTab(file: item, asTemporary: false)
         }
     }

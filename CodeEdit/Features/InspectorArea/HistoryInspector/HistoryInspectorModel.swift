@@ -43,7 +43,7 @@ final class HistoryInspectorModel: ObservableObject {
                 .getCommitHistory(
                     maxCount: 40,
                     fileLocalPath: fileURL,
-                    showMergeCommits: Settings.shared.preferences.sourceControl.git.showMergeCommitsPerFileLog
+                    showMergeCommits: AppServices.settings.preferences.sourceControl.git.showMergeCommitsPerFileLog
                 )
             await setCommitHistory(commitHistory)
         } catch {

@@ -43,7 +43,7 @@ final class PHPAdapterInstaller: ObservableObject {
 
     /// The adapter to use: the configured one, the app-installed wrapper, or one on `PATH`.
     static func detectedAdapterPath() -> String? {
-        let configured = Settings.shared.preferences.developerSettings.debugAdapters[adapterID]
+        let configured = AppServices.settings.preferences.developerSettings.debugAdapters[adapterID]
         if let configured, !configured.isEmpty,
            FileManager.default.isExecutableFile(atPath: configured) {
             return configured
@@ -119,7 +119,7 @@ final class PHPAdapterInstaller: ObservableObject {
             return
         }
 
-        Settings.shared.preferences.developerSettings.debugAdapters[Self.adapterID] = wrapperPath
+        AppServices.settings.preferences.developerSettings.debugAdapters[Self.adapterID] = wrapperPath
         status = .installed(wrapperPath)
         Self.report(success: true, message: "PHP debug adapter installed.")
     }

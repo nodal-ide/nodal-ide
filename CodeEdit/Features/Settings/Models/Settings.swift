@@ -32,15 +32,6 @@ final class Settings: ObservableObject, SettingsProviding {
         }
     }
 
-    static subscript<T>(_ path: WritableKeyPath<SettingsData, T>, suite: Settings = .shared) -> T {
-        get {
-            suite.preferences[keyPath: path]
-        }
-        set {
-            suite.preferences[keyPath: path] = newValue
-        }
-    }
-
     /// Published instance of the ``Settings`` model.
     ///
     /// Changes are saved automatically.

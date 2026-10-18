@@ -154,7 +154,7 @@ struct WorkspaceSettingsRuntimesView: View {
     }
 
     private func inheritTitle(for kind: RuntimeKind) -> String {
-        if let global = Settings.shared.preferences.developerSettings.defaultRuntimeVersions[kind.rawValue],
+        if let global = AppServices.settings.preferences.developerSettings.defaultRuntimeVersions[kind.rawValue],
            !global.isEmpty {
             return "Inherit global default (v\(global))"
         }

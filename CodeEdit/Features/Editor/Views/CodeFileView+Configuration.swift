@@ -52,13 +52,13 @@ extension CodeFileView {
 
     /// The bracket-pair emphasis style derived from the setting and current theme.
     var bracketPairEmphasisStyle: BracketPairEmphasis? {
-        let color = if Settings[\.textEditing].bracketEmphasis.useCustomColor {
-            Settings[\.textEditing].bracketEmphasis.color.nsColor
+        let color = if AppServices.settings[\.textEditing].bracketEmphasis.useCustomColor {
+            AppServices.settings[\.textEditing].bracketEmphasis.color.nsColor
         } else {
             currentTheme.editor.text.nsColor.withAlphaComponent(0.8)
         }
 
-        switch Settings[\.textEditing].bracketEmphasis.highlightType {
+        switch AppServices.settings[\.textEditing].bracketEmphasis.highlightType {
         case .disabled:
             return nil
         case .flash:

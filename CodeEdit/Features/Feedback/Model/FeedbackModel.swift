@@ -138,7 +138,7 @@ public class FeedbackModel: ObservableObject {
         expectation: String?,
         actuallyHappened: String?
     ) {
-        let gitAccounts = Settings[\.accounts].sourceControlAccounts.gitAccounts
+        let gitAccounts = AppServices.settings[\.accounts].sourceControlAccounts.gitAccounts
         let firstGitAccount = gitAccounts.first
 
         let config = GitHubTokenConfiguration(keychain.get(firstGitAccount!.name))
@@ -157,7 +157,7 @@ public class FeedbackModel: ObservableObject {
         ) { response in
             switch response {
             case .success(let issue):
-                if Settings[\.sourceControl].general.openFeedbackInBrowser {
+                if AppServices.settings[\.sourceControl].general.openFeedbackInBrowser {
                     self.openIssueURL(issue.htmlURL ?? URL(string: "https://github.com/upperdo/CodeEdit/issues")!)
                 }
                 self.isSubmitted.toggle()

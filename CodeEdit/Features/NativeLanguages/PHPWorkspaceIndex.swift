@@ -66,7 +66,7 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
     // MARK: - Project-wide diagnostics
 
     private static func currentDiagnosticsConfig() -> PHPDiagnosticsConfig {
-        let settings = Settings.shared.preferences.phpDiagnostics
+        let settings = AppServices.settings.preferences.phpDiagnostics
         var config = PHPDiagnosticsConfig()
         config.classLength = settings.classLength
         config.methodLength = settings.methodLength

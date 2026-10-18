@@ -15,7 +15,7 @@ final class RegistryManager: ObservableObject {
     static let shared = RegistryManager()
 
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "RegistryManager")
-    let installPath = Settings.shared.baseURL.appending(path: "Language Servers")
+    let installPath = AppServices.settings.baseURL.appending(path: "Language Servers")
 
     /// The URL of where the registry.json file will be downloaded from
     let registryURL = URL(

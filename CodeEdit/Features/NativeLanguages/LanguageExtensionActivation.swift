@@ -15,7 +15,7 @@ import CodeEditLang
 enum LanguageExtensionActivation {
     /// Whether the extension is enabled in settings (extensions are enabled by default).
     static func isEnabled(_ ext: InstalledLanguageExtension) -> Bool {
-        !Settings.shared.preferences.extensions.disabledExtensions.contains(ext.id)
+        !AppServices.settings.preferences.extensions.disabledExtensions.contains(ext.id)
     }
 
     /// Whether the extension is active in the given workspace.

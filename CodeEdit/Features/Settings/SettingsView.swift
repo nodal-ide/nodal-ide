@@ -108,7 +108,7 @@ struct SettingsView: View {
         ),
     ]
 
-    @ObservedObject private var settings: Settings = .shared
+    @ObservedObject private var settings: AnySettingsStore = .init(AppServices.settings)
 
     let updater: SoftwareUpdater
 

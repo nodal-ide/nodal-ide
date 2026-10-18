@@ -63,7 +63,7 @@ extension ThemeModel {
             // combine user theme URLs with bundled theme URLs
             let themeURLs = userDefinedThemeURLs + bundledThemeURLs
 
-            let prefs = Settings.shared.preferences
+            let prefs = AppServices.settings.preferences
 
             // load each theme from disk and store in memory
             try themeURLs.forEach { fileURL in
@@ -259,7 +259,7 @@ extension ThemeModel {
             do {
                 try filemanager.removeItem(at: url)
 
-                Settings.shared.preferences.theme.overrides.removeValue(forKey: theme.name)
+                AppServices.settings.preferences.theme.overrides.removeValue(forKey: theme.name)
 
                 try self.loadThemes()
             } catch {

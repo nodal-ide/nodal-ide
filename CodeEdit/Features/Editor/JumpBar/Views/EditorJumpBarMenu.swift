@@ -61,7 +61,7 @@ final class EditorJumpBarMenu: NSMenu, NSMenuDelegate {
 final class JumpBarMenuItem: NSMenuItem {
     private let fileItem: CEWorkspaceFile
     private let tappedOpenFile: (CEWorkspaceFile) -> Void
-    private let generalSettings = Settings.shared.preferences.general
+    private let generalSettings = AppServices.settings.preferences.general
 
     init(
         fileItem: CEWorkspaceFile,

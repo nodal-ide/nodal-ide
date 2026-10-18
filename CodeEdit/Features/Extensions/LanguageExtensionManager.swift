@@ -42,7 +42,7 @@ final class LanguageExtensionManager: ObservableObject {
 
     func remove(_ ext: InstalledLanguageExtension) throws {
         try LanguageExtensionStore.shared.remove(ext)
-        Settings.shared.preferences.extensions.disabledExtensions.removeAll { $0 == ext.id }
+        AppServices.settings.preferences.extensions.disabledExtensions.removeAll { $0 == ext.id }
         reloadAll()
     }
 }

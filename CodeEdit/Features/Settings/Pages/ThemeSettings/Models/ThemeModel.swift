@@ -55,7 +55,7 @@ final class ThemeModel: ObservableObject {
     @Published var selectedLightTheme: Theme? {
         didSet {
             DispatchQueue.main.async {
-                Settings.shared
+                AppServices.settings
                     .preferences.theme.selectedLightTheme = self.selectedLightTheme?.name ?? "Broken"
             }
         }
@@ -66,7 +66,7 @@ final class ThemeModel: ObservableObject {
     @Published var selectedDarkTheme: Theme? {
         didSet {
             DispatchQueue.main.async {
-                Settings.shared
+                AppServices.settings
                     .preferences.theme.selectedDarkTheme = self.selectedDarkTheme?.name ?? "Broken"
             }
         }
@@ -85,7 +85,7 @@ final class ThemeModel: ObservableObject {
     @Published var selectedTheme: Theme? {
         didSet {
             DispatchQueue.main.async {
-                Settings[\.theme].selectedTheme = self.selectedTheme?.name
+                AppServices.settings[\.theme].selectedTheme = self.selectedTheme?.name
             }
         }
     }

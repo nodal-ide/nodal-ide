@@ -12,7 +12,7 @@ import AboutWindow
 @main
 struct CodeEditApp: App {
     @NSApplicationDelegateAdaptor var appdelegate: AppDelegate
-    @ObservedObject var settings = Settings.shared
+    @ObservedObject var settings = AnySettingsStore(AppServices.settings)
 
     let updater: SoftwareUpdater = SoftwareUpdater()
 

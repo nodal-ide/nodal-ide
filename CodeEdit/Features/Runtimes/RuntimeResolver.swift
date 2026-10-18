@@ -18,7 +18,7 @@ enum RuntimeResolver {
            let match = match(pinned, in: installed) {
             return match
         }
-        if let global = Settings.shared.preferences.developerSettings.defaultRuntimeVersions[kind.rawValue],
+        if let global = AppServices.settings.preferences.developerSettings.defaultRuntimeVersions[kind.rawValue],
            let match = match(global, in: installed) {
             return match
         }

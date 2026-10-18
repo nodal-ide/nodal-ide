@@ -103,7 +103,7 @@ final class PHPRuntimeProvider: RuntimeProvider {
     func debugger(for runtime: InstalledRuntime) -> RuntimeDebugger? {
         var environment = environment(for: runtime)
         // Enable step debugging per session without touching the user's `php.ini`.
-        let port = Settings.shared.preferences.developerSettings.phpDebugClientPort
+        let port = AppServices.settings.preferences.developerSettings.phpDebugClientPort
         environment["XDEBUG_MODE"] = "debug"
         environment["XDEBUG_CONFIG"] = "client_port=\(port) start_with_request=yes"
         return RuntimeDebugger(

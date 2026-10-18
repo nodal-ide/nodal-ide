@@ -56,7 +56,7 @@ extension RegistryManager {
     /// default to stdio with **no** arguments and often reject `--stdio`. A per-server override
     /// (`developerSettings.lspServerArguments`) always wins.
     func launchArguments(for package: RegistryItem) -> [String] {
-        if let override = Settings.shared.preferences.developerSettings.lspServerArguments[package.name],
+        if let override = AppServices.settings.preferences.developerSettings.lspServerArguments[package.name],
            !override.isEmpty {
             return override.split(separator: " ").map(String.init)
         }

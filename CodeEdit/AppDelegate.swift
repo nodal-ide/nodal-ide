@@ -22,7 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         enableWindowSizeSaveOnQuit()
-        Settings.shared.preferences.general.appAppearance.applyAppearance()
+        AppServices.settings.preferences.general.appAppearance.applyAppearance()
         checkForFilesToOpen()
 
         NSApp.closeWindow(.welcome, .about)
@@ -86,7 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func handleOpen() {
-        let behavior = Settings.shared.preferences.general.reopenBehavior
+        let behavior = AppServices.settings.preferences.general.reopenBehavior
         switch behavior {
         case .welcome:
             if !tryFocusWindow(id: .welcome) {

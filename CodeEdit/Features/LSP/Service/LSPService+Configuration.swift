@@ -52,7 +52,8 @@ extension LSPService {
 
     /// Launch arguments for a manually-configured binary, honoring the user override then known defaults.
     private static func manualLaunchArguments(for key: String) -> [String] {
-        if let override = Settings.shared.preferences.developerSettings.lspServerArguments[key], !override.isEmpty {
+        let overrides = AppServices.settings.preferences.developerSettings.lspServerArguments
+        if let override = overrides[key], !override.isEmpty {
             return override.split(separator: " ").map(String.init)
         }
         return RegistryManager.knownServerArguments[key] ?? ["--stdio"]

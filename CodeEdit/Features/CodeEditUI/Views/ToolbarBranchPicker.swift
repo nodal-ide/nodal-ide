@@ -84,7 +84,7 @@ struct ToolbarBranchPicker: View {
             self.currentBranch = branch
         }
         .task {
-            if Settings.shared.preferences.sourceControl.general.sourceControlIsEnabled {
+            if AppServices.settings.preferences.sourceControl.general.sourceControlIsEnabled {
                 await self.sourceControlManager?.refreshCurrentBranch()
                 await self.sourceControlManager?.refreshBranches()
             }

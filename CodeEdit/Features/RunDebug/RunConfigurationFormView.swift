@@ -182,7 +182,7 @@ struct RunConfigurationFormView: View {
     }
 
     private var adapterNames: [String] {
-        Settings.shared.preferences.developerSettings.debugAdapters.keys.sorted()
+        AppServices.settings.preferences.developerSettings.debugAdapters.keys.sorted()
     }
 
     private var adapterBinding: Binding<String> {

@@ -38,7 +38,7 @@ struct RuntimeDebugger {
             }
             // Ensure the launched script starts a debug session (XDEBUG_CONFIG can't set this).
             launch["runtimeArgs"] = .array([.string("-dxdebug.start_with_request=yes")])
-            launch["port"] = .number(Double(Settings.shared.preferences.developerSettings.phpDebugClientPort))
+            launch["port"] = .number(Double(AppServices.settings.preferences.developerSettings.phpDebugClientPort))
             launch["xdebugSettings"] = .object([
                 "max_children": .number(128),
                 "max_data": .number(2048),

@@ -109,9 +109,14 @@ struct TerminalEmulatorView: NSViewRepresentable {
         terminalSettings.optionAsMeta
     }
 
+    /// Whether the terminal should use the dark theme (theme follows system appearance and terminal is dark).
+    private var usesDarkTerminalTheme: Bool {
+        AppServices.settings[\.theme].matchAppearance && AppServices.settings[\.terminal].darkAppearance
+    }
+
     /// Returns the mapped array of `SwiftTerm.Color` objects of ANSI Colors
     private var colors: [SwiftTerm.Color] {
-        if let selectedTheme = Settings[\.theme].matchAppearance && Settings[\.terminal].darkAppearance
+        if let selectedTheme = usesDarkTerminalTheme
             ? themeModel.selectedDarkTheme
             : themeModel.selectedTheme,
            let index = themeModel.themes.firstIndex(of: selectedTheme) {
@@ -124,7 +129,7 @@ struct TerminalEmulatorView: NSViewRepresentable {
 
     /// Returns the `cursor` color of the selected theme
     private var cursorColor: NSColor {
-        if let selectedTheme = Settings[\.theme].matchAppearance && Settings[\.terminal].darkAppearance
+        if let selectedTheme = usesDarkTerminalTheme
             ? themeModel.selectedDarkTheme
             : themeModel.selectedTheme,
            let index = themeModel.themes.firstIndex(of: selectedTheme) {
@@ -135,7 +140,7 @@ struct TerminalEmulatorView: NSViewRepresentable {
 
     /// Returns the `selection` color of the selected theme
     private var selectionColor: NSColor {
-        if let selectedTheme = Settings[\.theme].matchAppearance && Settings[\.terminal].darkAppearance
+        if let selectedTheme = usesDarkTerminalTheme
             ? themeModel.selectedDarkTheme
             : themeModel.selectedTheme,
            let index = themeModel.themes.firstIndex(of: selectedTheme) {
@@ -146,7 +151,7 @@ struct TerminalEmulatorView: NSViewRepresentable {
 
     /// Returns the `text` color of the selected theme
     private var textColor: NSColor {
-        if let selectedTheme = Settings[\.theme].matchAppearance && Settings[\.terminal].darkAppearance
+        if let selectedTheme = usesDarkTerminalTheme
             ? themeModel.selectedDarkTheme
             : themeModel.selectedTheme,
            let index = themeModel.themes.firstIndex(of: selectedTheme) {

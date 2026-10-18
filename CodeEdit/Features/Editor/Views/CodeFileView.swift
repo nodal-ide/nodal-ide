@@ -153,7 +153,7 @@ struct CodeFileView: View {
         }
     }
 
-    @State var font: NSFont = Settings[\.textEditing].font.current
+    @State var font: NSFont = AppServices.settings[\.textEditing].font.current
 
     @Environment(\.edgeInsets)
     var edgeInsets

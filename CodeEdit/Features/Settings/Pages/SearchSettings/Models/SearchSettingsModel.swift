@@ -18,7 +18,7 @@ final class SearchSettingsModel: ObservableObject {
     /// Reads settings file for Search Settings and updates the values in this model
     /// correspondingly
     private init() {
-        let value = Settings[\.search].ignoreGlobPatterns
+        let value = AppServices.settings[\.search].ignoreGlobPatterns
         self.ignoreGlobPatterns = value
     }
 
@@ -55,7 +55,7 @@ final class SearchSettingsModel: ObservableObject {
     @Published var ignoreGlobPatterns: [GlobPattern] {
         didSet {
             DispatchQueue.main.async {
-                Settings[\.search].ignoreGlobPatterns = self.ignoreGlobPatterns
+                AppServices.settings[\.search].ignoreGlobPatterns = self.ignoreGlobPatterns
             }
         }
     }
