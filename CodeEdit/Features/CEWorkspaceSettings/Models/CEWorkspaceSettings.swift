@@ -7,10 +7,13 @@
 
 import SwiftUI
 import Combine
+import os
 
 /// The CodeEdit workspace settings model.
 final class CEWorkspaceSettings: ObservableObject {
     @Published public var settings: CEWorkspaceSettingsData = .init()
+
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "CEWorkspaceSettings")
 
     private var storeTask: AnyCancellable?
     private let fileManager = FileManager.default
@@ -28,8 +31,15 @@ final class CEWorkspaceSettings: ObservableObject {
         storeTask = $settings
             .receive(on: DispatchQueue.main)
             .throttle(for: 2.0, scheduler: RunLoop.main, latest: true)
-            .sink { _ in
-                try? self.savePreferences()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                do {
+                    try self.savePreferences()
+                } catch {
+                    self.logger.error(
+                        "Failed to save workspace settings: \(error.localizedDescription, privacy: .public)"
+                    )
+                }
             }
     }
 
@@ -44,11 +54,13 @@ final class CEWorkspaceSettings: ObservableObject {
 
     /// Load and construct ``CEWorkspaceSettings`` model from `.codeedit/settings.json`
     private func loadSettings() {
-        guard fileManager.fileExists(atPath: settingsURL.path),
-              let json = try? Data(contentsOf: settingsURL),
-              let prefs = try? JSONDecoder().decode(CEWorkspaceSettingsData.self, from: json)
-        else { return }
-        self.settings = prefs
+        guard fileManager.fileExists(atPath: settingsURL.path) else { return }
+        do {
+            let json = try Data(contentsOf: settingsURL)
+            self.settings = try JSONDecoder().decode(CEWorkspaceSettingsData.self, from: json)
+        } catch {
+            logger.error("Failed to load workspace settings: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     /// Save``CEWorkspaceSettingsManager`` model to `.codeedit/settings.json`

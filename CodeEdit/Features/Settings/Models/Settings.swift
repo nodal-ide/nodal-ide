@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import os
 
 /// The Preferences View Model. Accessible via the singleton "``SettingsModel/shared``".
 ///
@@ -21,14 +22,21 @@ final class Settings: ObservableObject, SettingsProviding {
     /// The publicly available singleton instance of ``SettingsModel``
     static let shared: Settings = .init()
 
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "Settings")
+
     private var storeTask: AnyCancellable!
 
     private init() {
         self.preferences = .init()
         self.preferences = loadSettings()
 
-        self.storeTask = self.$preferences.throttle(for: 2, scheduler: RunLoop.main, latest: true).sink {
-            try? self.savePreferences($0)
+        self.storeTask = self.$preferences.throttle(for: 2, scheduler: RunLoop.main, latest: true).sink { [weak self] in
+            guard let self else { return }
+            do {
+                try self.savePreferences($0)
+            } catch {
+                self.logger.error("Failed to save settings: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 
@@ -41,16 +49,21 @@ final class Settings: ObservableObject, SettingsProviding {
     /// `~/Library/Application Support/CodeEdit/settings.json`
     private func loadSettings() -> SettingsData {
         if !filemanager.fileExists(atPath: settingsURL.path) {
-            try? filemanager.createDirectory(at: baseURL, withIntermediateDirectories: false)
+            do {
+                try filemanager.createDirectory(at: baseURL, withIntermediateDirectories: false)
+            } catch {
+                logger.error("Failed to create settings directory: \(error.localizedDescription, privacy: .public)")
+            }
             return .init()
         }
 
-        guard let json = try? Data(contentsOf: settingsURL),
-              let prefs = try? JSONDecoder().decode(SettingsData.self, from: json)
-        else {
+        do {
+            let json = try Data(contentsOf: settingsURL)
+            return try JSONDecoder().decode(SettingsData.self, from: json)
+        } catch {
+            logger.error("Failed to load settings, using defaults: \(error.localizedDescription, privacy: .public)")
             return .init()
         }
-        return prefs
     }
 
     /// Save``Settings`` model to
