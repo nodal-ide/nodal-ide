@@ -29,8 +29,9 @@ final class KnowledgeViewModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            guard let request = notification.object as? KnowledgeRouter.Request else { return }
-            MainActor.assumeIsolated {
+            let request = notification.object as? KnowledgeRouter.Request
+            Task { @MainActor in
+                guard let request else { return }
                 self?.apply(request)
                 AppServices.knowledgeRouter.clearPending()
             }

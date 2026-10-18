@@ -114,7 +114,7 @@ final class KnowledgeRouter {
     static let shared = KnowledgeRouter()
     static let didRequestOpen = Notification.Name("CodeEdit.KnowledgeRouter.didRequestOpen")
 
-    struct Request {
+    struct Request: Sendable {
         let sourceID: String?
         let path: String
     }

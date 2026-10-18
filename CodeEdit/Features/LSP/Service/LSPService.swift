@@ -149,10 +149,11 @@ final class LSPService: ObservableObject {
             forName: CodeFileDocument.didOpenNotification,
             object: nil,
             queue: .main
-        ) { notification in
-            MainActor.assumeIsolated {
-                guard let document = notification.object as? CodeFileDocument else { return }
-                self.openDocument(document)
+        ) { [weak self] notification in
+            let document = notification.object as? CodeFileDocument
+            Task { @MainActor in
+                guard let document else { return }
+                self?.openDocument(document)
             }
         }
 
@@ -160,10 +161,11 @@ final class LSPService: ObservableObject {
             forName: CodeFileDocument.didCloseNotification,
             object: nil,
             queue: .main
-        ) { notification in
-            MainActor.assumeIsolated {
-                guard let url = notification.object as? URL else { return }
-                self.closeDocument(url)
+        ) { [weak self] notification in
+            let url = notification.object as? URL
+            Task { @MainActor in
+                guard let url else { return }
+                self?.closeDocument(url)
             }
         }
     }
