@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension WorkspaceDocument.SearchState {
+extension WorkspaceSearchService {
     /// Adds the contents of the current workspace URL to the search index.
     /// That means that the contents of the workspace will be indexed and searchable.
     func addProjectToIndex() {

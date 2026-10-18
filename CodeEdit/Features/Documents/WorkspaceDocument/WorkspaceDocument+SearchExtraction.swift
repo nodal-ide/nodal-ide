@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension WorkspaceDocument.SearchState {
+extension WorkspaceSearchService {
     /// Extracts the range of the search term within the line preceding a matching occurrence.
     ///
     /// - Parameters:

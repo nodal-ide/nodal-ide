@@ -46,7 +46,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     var editorManager: EditorManager? = EditorManager()
     var statusBarViewModel: StatusBarViewModel? = StatusBarViewModel()
     var utilityAreaModel: UtilityAreaViewModel? = UtilityAreaViewModel()
-    var searchState: SearchState?
+    var searchState: WorkspaceSearchService?
     var openQuicklyViewModel: OpenQuicklyViewModel?
     var commandsPaletteState: QuickActionsViewModel?
     var listenerModel: WorkspaceNotificationModel = .init()

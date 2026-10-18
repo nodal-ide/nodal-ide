@@ -43,7 +43,7 @@ struct FindNavigatorResultList: NSViewControllerRepresentable {
     }
 
     class Coordinator: NSObject {
-        init(state: WorkspaceDocument.SearchState?, controller: FindNavigatorListViewController?) {
+        init(state: WorkspaceSearchService?, controller: FindNavigatorListViewController?) {
             self.controller = controller
             super.init()
             self.listener = state?

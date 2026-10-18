@@ -8,7 +8,7 @@
 import Foundation
 import AppKit
 
-extension WorkspaceDocument.SearchState {
+extension WorkspaceSearchService {
     /// Performs a search and replace operation in a collection of files based on the provided query.
     ///
     /// - Parameters:
