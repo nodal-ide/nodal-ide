@@ -85,6 +85,9 @@ final class CodeEditDocumentController: NSDocumentController {
         }
 
         super.openDocument(withContentsOf: url, display: displayDocument) { document, documentWasAlreadyOpen, error in
+            // `NSDocumentController` always invokes this completion handler on the main thread, so
+            // assuming main-actor isolation here is sound and avoids an extra async hop that could
+            // reorder document-open callbacks.
             MainActor.assumeIsolated {
                 if let document {
                     self.addDocument(document)

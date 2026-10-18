@@ -150,6 +150,8 @@ enum AppServices {
 
 private struct LSPServiceEnvironmentKey: EnvironmentKey {
     static var defaultValue: LSPService {
+        // `EnvironmentKey.defaultValue` is nonisolated, but SwiftUI reads it on the main actor when a
+        // view is created. `LSPService` is main-actor isolated, so bridge the isolation here.
         MainActor.assumeIsolated { AppServices.lspService }
     }
 }
