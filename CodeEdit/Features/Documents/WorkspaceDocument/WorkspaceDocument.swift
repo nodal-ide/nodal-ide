@@ -41,16 +41,16 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         WorkspaceStateStore(fileURL: fileURL)
     }
 
-    var workspaceFileManager: CEWorkspaceFileManager?
+    var workspaceFileManager: CEWorkspaceFileManager? { services?.workspaceFileManager }
+    var editorManager: EditorManager? { services?.editorManager }
+    var statusBarViewModel: StatusBarViewModel? { services?.statusBarViewModel }
+    var utilityAreaModel: UtilityAreaViewModel? { services?.utilityAreaModel }
+    var sourceControlManager: SourceControlManager? { services?.sourceControlManager }
 
-    var editorManager: EditorManager? = EditorManager()
-    var statusBarViewModel: StatusBarViewModel? = StatusBarViewModel()
-    var utilityAreaModel: UtilityAreaViewModel? = UtilityAreaViewModel()
     var searchState: WorkspaceSearchService?
     var openQuicklyViewModel: OpenQuicklyViewModel?
     var commandsPaletteState: QuickActionsViewModel?
     var listenerModel: WorkspaceNotificationModel = .init()
-    var sourceControlManager: SourceControlManager?
 
     var taskManager: TaskManager? { services?.taskManager }
     var runConfigurationStore: RunConfigurationStore? { services?.runConfigurationStore }
@@ -106,10 +106,6 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     }
 
     // MARK: NSDocument
-
-    private let ignoredFilesAndDirectory = [
-        ".DS_Store"
-    ]
 
     override static var autosavesInPlace: Bool {
         false
@@ -167,27 +163,15 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         self.fileURL = url
         self.displayName = url.lastPathComponent
 
-        let sourceControlManager = SourceControlManager(
-            workspaceURL: url,
-            editorManager: editorManager!
-        )
-
-        self.workspaceFileManager = .init(
-            folderUrl: url,
-            ignoredFilesAndFolders: Set(ignoredFilesAndDirectory),
-            sourceControlManager: sourceControlManager
-        )
-        self.sourceControlManager = sourceControlManager
-        sourceControlManager.fileManager = workspaceFileManager
-        self.searchState = .init(self)
-        self.openQuicklyViewModel = .init(fileURL: url)
-        self.commandsPaletteState = .init()
         self.workspaceSettingsManager = CEWorkspaceSettings(workspaceURL: url)
         self.services = WorkspaceServices(
             workspace: self,
             url: url,
             settingsManager: workspaceSettingsManager
         )
+        self.searchState = .init(self)
+        self.openQuicklyViewModel = .init(fileURL: url)
+        self.commandsPaletteState = .init()
         self.taskNotificationHandler.workspaceURL = url
 
         workspaceFileManager?.addObserver(undoRegistration)
@@ -225,15 +209,10 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
 
         cancellables.forEach({ $0.cancel() })
         runtimeCoordinator = nil
-        statusBarViewModel = nil
-        utilityAreaModel = nil
         searchState = nil
-        editorManager = nil
         openQuicklyViewModel = nil
         commandsPaletteState = nil
-        sourceControlManager = nil
         workspaceFileManager?.cleanUp()
-        workspaceFileManager = nil
         workspaceSettingsManager?.cleanUp()
         workspaceSettingsManager = nil
         services = nil

@@ -12,6 +12,17 @@ import Foundation
 /// `WorkspaceDocument`. Grows group by group as services are moved off the document.
 @MainActor
 final class WorkspaceServices {
+    /// Files/folders ignored by the workspace file manager.
+    private static let ignoredFilesAndDirectory: Set<String> = [".DS_Store"]
+
+    // MARK: Editor / documents
+
+    let editorManager = EditorManager()
+    let statusBarViewModel = StatusBarViewModel()
+    let utilityAreaModel = UtilityAreaViewModel()
+    let sourceControlManager: SourceControlManager?
+    let workspaceFileManager: CEWorkspaceFileManager?
+
     // MARK: Run / debug / tasks
 
     let taskManager: TaskManager?
@@ -22,6 +33,16 @@ final class WorkspaceServices {
     let debugController: DebugController?
 
     init(workspace: WorkspaceDocument, url: URL, settingsManager: CEWorkspaceSettings?) {
+        let sourceControlManager = SourceControlManager(workspaceURL: url, editorManager: editorManager)
+        let workspaceFileManager = CEWorkspaceFileManager(
+            folderUrl: url,
+            ignoredFilesAndFolders: Self.ignoredFilesAndDirectory,
+            sourceControlManager: sourceControlManager
+        )
+        sourceControlManager.fileManager = workspaceFileManager
+        self.sourceControlManager = sourceControlManager
+        self.workspaceFileManager = workspaceFileManager
+
         if let settingsManager {
             taskManager = TaskManager(workspaceSettings: settingsManager.settings, workspaceURL: url)
         } else {
