@@ -283,7 +283,7 @@ private extension ProblemsView {
 
     /// Opens the problem's file and scrolls to its location.
     func open(_ problem: EditorProblem) {
-        workspace.revealSourceLocation(
+        workspace.editorManager?.revealSourceLocation(
             url: problem.fileURL,
             line: problem.line ?? 1,
             column: problem.column ?? 1

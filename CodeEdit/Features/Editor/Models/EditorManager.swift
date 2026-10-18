@@ -118,6 +118,30 @@ class EditorManager: ObservableObject {
         return false
     }
 
+    /// Reveals `line`/`column` in `url`, opening the file if needed and scrolling it into view once
+    /// its editor has appeared.
+    func revealSourceLocation(url: URL, line: Int, column: Int = 1) {
+        if reveal(url: url, line: line, column: column) { return }
+        CodeEditDocumentController.shared.openDocument(
+            withContentsOf: url,
+            display: true
+        ) { [weak self] document, _, _ in
+            (document as? CodeFileDocument)?.openOptions = .init(
+                cursorPositions: [CursorPosition(line: max(1, line), column: max(1, column))]
+            )
+            self?.revealSourceLocationWhenReady(url: url, line: line, column: column, attempts: 8)
+        }
+    }
+
+    /// Retries revealing until the file's editor has appeared.
+    private func revealSourceLocationWhenReady(url: URL, line: Int, column: Int, attempts: Int) {
+        if reveal(url: url, line: line, column: column) { return }
+        guard attempts > 0 else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) { [weak self] in
+            self?.revealSourceLocationWhenReady(url: url, line: line, column: column, attempts: attempts - 1)
+        }
+    }
+
     /// bind active tap group to listen to file selection changes.
     func switchToActiveEditor() {
         cancellable?.cancel()

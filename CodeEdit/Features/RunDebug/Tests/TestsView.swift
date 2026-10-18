@@ -135,7 +135,7 @@ private struct TestsContentView: View {
 
     private func open(_ result: TestResult) {
         guard let url = result.fileURL else { return }
-        workspace.revealSourceLocation(url: url, line: result.line ?? 1)
+        workspace.editorManager?.revealSourceLocation(url: url, line: result.line ?? 1)
     }
 }
 

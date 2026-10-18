@@ -199,10 +199,10 @@ private struct BreakpointRowView: View {
         .background(hovering ? Color.secondary.opacity(0.08) : .clear)
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
-        .onTapGesture { workspace.revealSourceLocation(url: breakpoint.fileURL, line: breakpoint.line) }
+        .onTapGesture { workspace.editorManager?.revealSourceLocation(url: breakpoint.fileURL, line: breakpoint.line) }
         .contextMenu {
             Button("Reveal in Editor") {
-                workspace.revealSourceLocation(url: breakpoint.fileURL, line: breakpoint.line)
+                workspace.editorManager?.revealSourceLocation(url: breakpoint.fileURL, line: breakpoint.line)
             }
             Button("Edit Condition…") { BreakpointActions.editCondition(store: store, breakpoint: breakpoint) }
             Button(breakpoint.enabled ? "Disable" : "Enable") {
