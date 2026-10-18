@@ -36,11 +36,6 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         set { filters.recentsFilter = newValue }
     }
 
-    /// Persistence for per-workspace UI state; always resolves against the current `fileURL`.
-    private var stateStore: WorkspaceStateStore {
-        WorkspaceStateStore(fileURL: fileURL)
-    }
-
     /// Composition root for workspace-scoped services (see ``WorkspaceServices``). The services are
     /// exposed below through computed forwards so call sites are unchanged.
     let services = WorkspaceServices()
@@ -67,9 +62,6 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     var testRunner: TestRunner? { services.testRunner }
     var breakpointStore: BreakpointStore? { services.breakpointStore }
     var debugController: DebugController? { services.debugController }
-
-    private var runtimeCoordinator: WorkspaceRuntimeCoordinator?
-    private let launchCoordinator = WorkspaceLaunchCoordinator()
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -100,11 +92,11 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     }
 
     func getFromWorkspaceState(_ key: WorkspaceStateKey) -> Any? {
-        return stateStore.value(for: key)
+        return services.stateStore.value(for: key)
     }
 
     func addToWorkspaceState(key: WorkspaceStateKey, value: Any?) {
-        stateStore.set(value, for: key)
+        services.stateStore.set(value, for: key)
     }
 
     // MARK: NSDocument
@@ -166,22 +158,6 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         self.displayName = url.lastPathComponent
 
         services.configure(workspace: self, url: url)
-        taskNotificationHandler.workspaceURL = url
-
-        workspaceFileManager?.addObserver(undoRegistration)
-        editorManager?.restoreFromState(self)
-        utilityAreaModel?.restoreFromState(self)
-
-        // Resolve the runtime environment now and keep it in sync with the project's runtime pins.
-        self.runtimeCoordinator = WorkspaceRuntimeCoordinator(workspace: self)
-        runtimeCoordinator?.start(settingsManager: workspaceSettingsManager)
-
-        // Kick off a background project scan (symbols + code-quality diagnostics) shortly after launch
-        // so the Problems panel isn't limited to open files. Only for PHP projects.
-        launchCoordinator.scheduleProjectScan(
-            at: url,
-            language: workspaceSettingsManager?.settings.project.language ?? ""
-        )
     }
 
     override func read(from url: URL, ofType typeName: String) throws {
@@ -202,7 +178,6 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         utilityAreaModel?.saveRestorationState(self)
 
         cancellables.forEach({ $0.cancel() })
-        runtimeCoordinator = nil
         services.tearDown()
     }
 

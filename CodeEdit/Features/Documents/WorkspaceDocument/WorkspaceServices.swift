@@ -28,6 +28,13 @@ final class WorkspaceServices {
     let undoRegistration = UndoManagerRegistration()
     let taskNotificationHandler = TaskNotificationHandler()
 
+    // MARK: Lifecycle helpers
+
+    /// Persistence for per-workspace UI state.
+    private(set) var stateStore = WorkspaceStateStore(fileURL: nil)
+    private let launchCoordinator = WorkspaceLaunchCoordinator()
+    private var runtimeCoordinator: WorkspaceRuntimeCoordinator?
+
     // MARK: Created when the workspace is configured
 
     private(set) var workspaceSettingsManager: CEWorkspaceSettings?
@@ -67,10 +74,28 @@ final class WorkspaceServices {
         testRunner = TestRunner(workspace: workspace)
         breakpointStore = BreakpointStore(workspaceURL: url)
         debugController = DebugController(workspace: workspace)
+
+        stateStore = WorkspaceStateStore(fileURL: url)
+        taskNotificationHandler.workspaceURL = url
+        self.workspaceFileManager?.addObserver(undoRegistration)
+        editorManager.restoreFromState(workspace)
+        utilityAreaModel.restoreFromState(workspace)
+
+        // Resolve the runtime environment now and keep it in sync with the project's runtime pins.
+        runtimeCoordinator = WorkspaceRuntimeCoordinator(workspace: workspace)
+        runtimeCoordinator?.start(settingsManager: settingsManager)
+
+        // Kick off a background project scan (symbols + code-quality diagnostics) shortly after launch
+        // so the Problems panel isn't limited to open files. Only for PHP projects.
+        launchCoordinator.scheduleProjectScan(
+            at: url,
+            language: settingsManager.settings.project.language
+        )
     }
 
     /// Releases the workspace-dependent services (keeping the eagerly-created ones).
     func tearDown() {
+        runtimeCoordinator = nil
         workspaceFileManager?.cleanUp()
         workspaceSettingsManager?.cleanUp()
         workspaceSettingsManager = nil
