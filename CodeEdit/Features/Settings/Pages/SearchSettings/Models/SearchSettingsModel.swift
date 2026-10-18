@@ -12,7 +12,7 @@ import SwiftUI
 /// **Usage:**
 /// ```swift
 /// @StateObject
-/// private var searchSettigs: SearchSettingsModel = .shared
+/// private var searchSettigs: SearchSettingsModel = AppServices.searchSettingsModel
 /// ```
 final class SearchSettingsModel: ObservableObject {
     /// Reads settings file for Search Settings and updates the values in this model

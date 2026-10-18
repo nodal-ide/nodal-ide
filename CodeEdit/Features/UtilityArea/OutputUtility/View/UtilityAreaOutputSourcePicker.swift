@@ -17,7 +17,7 @@ struct UtilityAreaOutputSourcePicker: View {
 
     @Binding var selectedSource: Sources?
 
-    @ObservedObject var extensionManager = ExtensionManager.shared
+    @ObservedObject var extensionManager = AppServices.extensionManager
 
     @Environment(\.lspService)
     private var lspService

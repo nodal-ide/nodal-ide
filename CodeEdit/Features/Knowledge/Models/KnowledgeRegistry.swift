@@ -36,7 +36,7 @@ final class KnowledgeRegistry {
             try fileManager.removeItem(at: destination)
         }
         try fileManager.copyItem(at: source, to: destination)
-        KnowledgeSearchIndex.shared.invalidate()
+        AppServices.knowledgeSearchIndex.invalidate()
         reload()
     }
 

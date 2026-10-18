@@ -24,7 +24,7 @@ struct SearchSettingsView: View {
 }
 
 struct ExcludedGlobPatternList: View {
-    @ObservedObject private var model: SearchSettingsModel = .shared
+    @ObservedObject private var model: SearchSettingsModel = AppServices.searchSettingsModel
 
     var body: some View {
         GlobPatternList(

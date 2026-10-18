@@ -43,13 +43,13 @@ struct SourceControlNavigatorChangesList: View {
                             .disabled(true) // TODO: Implementation Needed
                         Divider()
                         Button("Show Diff") {
-                            DiffViewerPresenter.shared.show(file: file, manager: sourceControlManager)
+                            AppServices.diffViewerPresenter.show(file: file, manager: sourceControlManager)
                         }
                         Button("Show Blame") {
-                            BlameViewerPresenter.shared.show(url: file.fileURL, manager: sourceControlManager)
+                            AppServices.blameViewerPresenter.show(url: file.fileURL, manager: sourceControlManager)
                         }
                         Button("Resolve Conflicts") {
-                            ConflictResolverPresenter.shared.show(url: file.fileURL, manager: sourceControlManager)
+                            AppServices.conflictResolverPresenter.show(url: file.fileURL, manager: sourceControlManager)
                         }
                     }
                     if file.anyStatus() != .none {

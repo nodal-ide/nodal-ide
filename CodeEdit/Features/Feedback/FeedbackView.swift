@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FeedbackView: View {
-    @ObservedObject private var feedbackModel: FeedbackModel = .shared
+    @ObservedObject private var feedbackModel: FeedbackModel = AppServices.feedbackModel
 
     @State var showsAlert: Bool = false
 

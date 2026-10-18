@@ -63,6 +63,71 @@ enum AppServices {
 
     /// The app-wide project-scan progress tracker.
     @MainActor static var projectScanStatus: ProjectScanStatus = .shared
+
+    // MARK: Source control viewers
+
+    /// The app-wide diff viewer state.
+    @MainActor static var diffViewerState: DiffViewerState = .shared
+
+    /// The app-wide diff viewer presenter.
+    @MainActor static var diffViewerPresenter: DiffViewerPresenter = .shared
+
+    /// The app-wide blame viewer state.
+    @MainActor static var blameViewerState: BlameViewerState = .shared
+
+    /// The app-wide blame viewer presenter.
+    @MainActor static var blameViewerPresenter: BlameViewerPresenter = .shared
+
+    /// The app-wide merge-conflict resolver state.
+    @MainActor static var conflictResolverState: ConflictResolverState = .shared
+
+    /// The app-wide merge-conflict resolver presenter.
+    @MainActor static var conflictResolverPresenter: ConflictResolverPresenter = .shared
+
+    // MARK: Knowledge
+
+    /// The app-wide documentation-set registry.
+    static var knowledgeRegistry: KnowledgeRegistry = .shared
+
+    /// The app-wide knowledge search index.
+    static var knowledgeSearchIndex: KnowledgeSearchIndex = .shared
+
+    /// The app-wide knowledge navigation router.
+    static var knowledgeRouter: KnowledgeRouter = .shared
+
+    // MARK: Extensions
+
+    /// The app-wide extension manager.
+    static var extensionManager: ExtensionManager = .shared
+
+    /// The app-wide extension discovery service.
+    static var extensionDiscovery: ExtensionDiscovery = .shared
+
+    /// The app-wide language-extension manager.
+    static var languageExtensionManager: LanguageExtensionManager = .shared
+
+    // MARK: Misc
+
+    /// The app-wide LSP server registry manager.
+    @MainActor static var registryManager: RegistryManager = .shared
+
+    /// The app-wide feedback model.
+    static var feedbackModel: FeedbackModel = .shared
+
+    /// The app-wide search-settings model.
+    static var searchSettingsModel: SearchSettingsModel = .shared
+
+    /// The app-wide problems-results cache.
+    @MainActor static var problemsResultsCache: ProblemsResultsCache = .shared
+
+    /// The app-wide internal-development output source.
+    static var internalDevelopmentOutputSource: InternalDevelopmentOutputSource = .shared
+
+    /// The app-wide LSP diagnostics cache.
+    @MainActor static var lspDiagnosticsCache: LSPDiagnosticsCache = .shared
+
+    /// The app-wide editor state restoration store.
+    static var editorStateRestoration: EditorStateRestoration? = .shared
 }
 
 // MARK: - Environment injection

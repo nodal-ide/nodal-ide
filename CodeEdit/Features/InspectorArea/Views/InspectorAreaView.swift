@@ -10,7 +10,7 @@ import SwiftUI
 struct InspectorAreaView: View {
     @EnvironmentObject private var workspace: WorkspaceDocument
     @EnvironmentObject private var editorManager: EditorManager
-    @ObservedObject private var extensionManager = ExtensionManager.shared
+    @ObservedObject private var extensionManager = AppServices.extensionManager
     @ObservedObject public var viewModel: InspectorAreaViewModel
 
     @AppSettings(\.general.inspectorTabBarPosition)

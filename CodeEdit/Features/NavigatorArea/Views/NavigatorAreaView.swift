@@ -9,7 +9,7 @@ import SwiftUI
 
 struct NavigatorAreaView: View {
     @ObservedObject private var workspace: WorkspaceDocument
-    @ObservedObject private var extensionManager = ExtensionManager.shared
+    @ObservedObject private var extensionManager = AppServices.extensionManager
     @ObservedObject public var viewModel: NavigatorAreaViewModel
 
     @AppSettings(\.general.navigatorTabBarPosition)

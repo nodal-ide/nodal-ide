@@ -36,7 +36,7 @@ class EditorInstance: ObservableObject, Hashable {
     init(workspace: WorkspaceDocument?, file: CEWorkspaceFile, cursorPositions: [CursorPosition]? = nil) {
         self.file = file
         let url = file.url
-        let editorState = EditorStateRestoration.shared?.restorationState(for: url)
+        let editorState = AppServices.editorStateRestoration?.restorationState(for: url)
 
         findText = workspace?.searchState?.searchQuery
         findTextSubject = PassthroughSubject()
@@ -57,7 +57,7 @@ class EditorInstance: ObservableObject, Hashable {
                 .removeDuplicates()
         )
         .sink { (cursorPositions, scrollPosition) in
-            EditorStateRestoration.shared?.updateRestorationState(
+            AppServices.editorStateRestoration?.updateRestorationState(
                 for: url,
                 data: .init(cursorPositions: cursorPositions, scrollPosition: scrollPosition ?? .zero)
             )

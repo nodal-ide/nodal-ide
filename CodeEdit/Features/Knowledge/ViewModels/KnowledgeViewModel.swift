@@ -32,12 +32,12 @@ final class KnowledgeViewModel: ObservableObject {
             guard let request = notification.object as? KnowledgeRouter.Request else { return }
             MainActor.assumeIsolated {
                 self?.apply(request)
-                KnowledgeRouter.shared.clearPending()
+                AppServices.knowledgeRouter.clearPending()
             }
         }
 
         // If this window was created in response to a request, honor it.
-        if let pending = KnowledgeRouter.shared.consumePending() {
+        if let pending = AppServices.knowledgeRouter.consumePending() {
             apply(pending)
         }
     }
@@ -49,7 +49,7 @@ final class KnowledgeViewModel: ObservableObject {
     }
 
     func reload() {
-        sources = KnowledgeRegistry.shared.sources
+        sources = AppServices.knowledgeRegistry.sources
         if let current = sources.first(where: { $0.id == selectedSourceID }) {
             selectedSourceID = current.id
         } else if let first = sources.first {
@@ -140,7 +140,7 @@ final class KnowledgeViewModel: ObservableObject {
             searchResults = []
             return
         }
-        searchResults = KnowledgeSearchIndex.shared.search(query, in: source)
+        searchResults = AppServices.knowledgeSearchIndex.search(query, in: source)
     }
 
     private func apply(_ request: KnowledgeRouter.Request) {

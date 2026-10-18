@@ -27,7 +27,7 @@ struct InternalDevelopmentOutputView: View {
     }
 
     func pushLog(_ level: UtilityAreaLogLevel) {
-        InternalDevelopmentOutputSource.shared.pushLog(
+        AppServices.internalDevelopmentOutputSource.pushLog(
             .init(
                 message: randomString(),
                 subsystem: "internal.development",

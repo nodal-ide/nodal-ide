@@ -106,7 +106,7 @@ extension LSPService {
         defer { PerformanceSignposts.end("lsp.publishDiagnostics", id: signpost) }
 
         // Feed the editor (inline diagnostics) and the Problems panel.
-        LSPDiagnosticsCache.shared.update(uri: params.uri, diagnostics: params.diagnostics)
+        AppServices.lspDiagnosticsCache.update(uri: params.uri, diagnostics: params.diagnostics)
         NotificationCenter.default.post(name: Notification.Name("LSPDiagnosticsUpdated"), object: nil)
         guard let url = URL(string: params.uri) else { return }
         let content = (NSDocumentController.shared.document(for: url) as? CodeFileDocument)?.content?.string

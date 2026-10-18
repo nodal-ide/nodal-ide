@@ -52,7 +52,7 @@ extension ProjectNavigatorMenu {
               }) else {
             return
         }
-        DiffViewerPresenter.shared.show(file: changed, manager: manager)
+        AppServices.diffViewerPresenter.show(file: changed, manager: manager)
     }
 
     /// Opens the blame viewer for the selected file.
@@ -64,7 +64,7 @@ extension ProjectNavigatorMenu {
               let file = selectedItems().first ?? item else {
             return
         }
-        BlameViewerPresenter.shared.show(url: file.url, manager: manager)
+        AppServices.blameViewerPresenter.show(url: file.url, manager: manager)
     }
 
     /// Opens the merge-conflict resolver for the selected file.
@@ -76,7 +76,7 @@ extension ProjectNavigatorMenu {
               let file = selectedItems().first ?? item else {
             return
         }
-        ConflictResolverPresenter.shared.show(url: file.url, manager: manager)
+        AppServices.conflictResolverPresenter.show(url: file.url, manager: manager)
     }
 
     /// Action that opens **Finder** at the items location.

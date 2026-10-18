@@ -17,9 +17,9 @@ final class KnowledgeProvider: CommandCenterProvider {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return [] }
 
-        let results = KnowledgeSearchIndex.shared.search(
+        let results = AppServices.knowledgeSearchIndex.search(
             trimmed,
-            in: KnowledgeRegistry.shared.sources,
+            in: AppServices.knowledgeRegistry.sources,
             limitPerSource: 10
         )
         return results.map { result in

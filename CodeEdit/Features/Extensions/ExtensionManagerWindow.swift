@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct ExtensionManagerWindow: Scene {
-    @ObservedObject var manager = ExtensionManager.shared
-    @ObservedObject var languageManager = LanguageExtensionManager.shared
+    @ObservedObject var manager = AppServices.extensionManager
+    @ObservedObject var languageManager = AppServices.languageExtensionManager
 
     @State var selection = Set<ExtensionItem>()
 

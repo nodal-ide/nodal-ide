@@ -82,7 +82,7 @@ struct KnowledgeView: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         do {
-            try KnowledgeRegistry.shared.importDocset(from: url)
+            try AppServices.knowledgeRegistry.importDocset(from: url)
             model.reload()
         } catch {
             importError = error.localizedDescription
@@ -90,8 +90,8 @@ struct KnowledgeView: View {
     }
 
     private func reloadSources() {
-        KnowledgeSearchIndex.shared.invalidate()
-        KnowledgeRegistry.shared.reload()
+        AppServices.knowledgeSearchIndex.invalidate()
+        AppServices.knowledgeRegistry.reload()
         model.reload()
     }
 

@@ -10,7 +10,7 @@ import AppKit
 struct LanguageExtensionDetailView: View {
     let ext: InstalledLanguageExtension
 
-    @ObservedObject private var languageManager = LanguageExtensionManager.shared
+    @ObservedObject private var languageManager = AppServices.languageExtensionManager
 
     @AppSettings(\.extensions.disabledExtensions)
     var disabledExtensions

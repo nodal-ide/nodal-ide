@@ -41,7 +41,7 @@ struct ProblemsView: View {
         .task(id: cacheKey) { await refresh() }
         .onAppear {
             // Show the previous derivation instantly when returning to the tab.
-            if let cached = ProblemsResultsCache.shared.value(for: cacheKey) {
+            if let cached = AppServices.problemsResultsCache.value(for: cacheKey) {
                 apply(cached)
                 hasLoaded = true
             }
@@ -252,7 +252,7 @@ struct ProblemsView: View {
         guard !Task.isCancelled else { return }
         apply(output)
         hasLoaded = true
-        ProblemsResultsCache.shared.set(output, for: cacheKey)
+        AppServices.problemsResultsCache.set(output, for: cacheKey)
     }
 
     private func apply(_ output: ProblemsDerivation.Output) {

@@ -9,7 +9,7 @@ import SwiftUI
 
 /// Displays a searchable list of packages from the ``RegistryManager``.
 struct LanguageServersView: View {
-    @StateObject var registryManager: RegistryManager = .shared
+    @StateObject var registryManager: RegistryManager = AppServices.registryManager
     @StateObject private var searchModel = FuzzySearchUIModel<RegistryItem>()
     @State private var searchText: String = ""
     @State private var selectedInstall: PackageManagerInstallOperation?

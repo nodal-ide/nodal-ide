@@ -81,7 +81,7 @@ struct UtilityAreaOutputView: View {
                         }
                     case .devOutput:
                         UtilityAreaOutputLogList(
-                            source: InternalDevelopmentOutputSource.shared,
+                            source: AppServices.internalDevelopmentOutputSource,
                             filterText: $filterText
                         ) {
                             UtilityAreaOutputSourcePicker(selectedSource: $selectedSource)

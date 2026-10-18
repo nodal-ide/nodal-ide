@@ -19,7 +19,7 @@ final class DiffViewerPresenter {
 
     /// Loads and shows the diff for a changed file.
     func show(file: GitChangedFile, manager: SourceControlManager) {
-        DiffViewerState.shared.load(file: file, manager: manager)
+        AppServices.diffViewerState.load(file: file, manager: manager)
 
         if let panel {
             panel.makeKeyAndOrderFront(nil)
@@ -36,7 +36,7 @@ final class DiffViewerPresenter {
         panel.isReleasedWhenClosed = false
         panel.contentMinSize = NSSize(width: 620, height: 420)
 
-        let hostingView = NSHostingView(rootView: DiffViewerView(state: DiffViewerState.shared))
+        let hostingView = NSHostingView(rootView: DiffViewerView(state: AppServices.diffViewerState))
         hostingView.frame = NSRect(x: 0, y: 0, width: 820, height: 560)
         panel.contentView = hostingView
         panel.setContentSize(NSSize(width: 820, height: 560))

@@ -18,7 +18,7 @@ final class BlameViewerPresenter {
 
     /// Loads and shows blame for a file.
     func show(url: URL, manager: SourceControlManager) {
-        BlameViewerState.shared.load(url: url, manager: manager)
+        AppServices.blameViewerState.load(url: url, manager: manager)
 
         if let panel {
             panel.makeKeyAndOrderFront(nil)
@@ -35,7 +35,7 @@ final class BlameViewerPresenter {
         panel.isReleasedWhenClosed = false
         panel.contentMinSize = NSSize(width: 620, height: 420)
 
-        let hostingView = NSHostingView(rootView: BlameViewerView(state: BlameViewerState.shared))
+        let hostingView = NSHostingView(rootView: BlameViewerView(state: AppServices.blameViewerState))
         hostingView.frame = NSRect(x: 0, y: 0, width: 900, height: 560)
         panel.contentView = hostingView
         panel.setContentSize(NSSize(width: 900, height: 560))

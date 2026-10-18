@@ -17,7 +17,7 @@ final class ConflictResolverPresenter {
     private init() {}
 
     func show(url: URL, manager: SourceControlManager) {
-        ConflictResolverState.shared.load(url: url, manager: manager)
+        AppServices.conflictResolverState.load(url: url, manager: manager)
 
         if let panel {
             panel.makeKeyAndOrderFront(nil)
@@ -34,7 +34,7 @@ final class ConflictResolverPresenter {
         panel.isReleasedWhenClosed = false
         panel.contentMinSize = NSSize(width: 560, height: 400)
 
-        let hostingView = NSHostingView(rootView: ConflictResolverView(state: ConflictResolverState.shared))
+        let hostingView = NSHostingView(rootView: ConflictResolverView(state: AppServices.conflictResolverState))
         hostingView.frame = NSRect(x: 0, y: 0, width: 760, height: 600)
         panel.contentView = hostingView
         panel.setContentSize(NSSize(width: 760, height: 600))

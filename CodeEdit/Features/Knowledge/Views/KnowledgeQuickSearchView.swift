@@ -33,7 +33,7 @@ struct KnowledgeQuickSearchView: View {
             },
             preview: nil,
             onRowClick: { result in
-                KnowledgeRouter.shared.requestOpen(sourceID: result.sourceID, path: result.path)
+                AppServices.knowledgeRouter.requestOpen(sourceID: result.sourceID, path: result.path)
                 openWindow(sceneID: .knowledge)
                 onClose()
             },
@@ -50,7 +50,7 @@ struct KnowledgeQuickSearchView: View {
             results = []
             return
         }
-        results = KnowledgeSearchIndex.shared.search(trimmed, in: KnowledgeRegistry.shared.sources)
+        results = AppServices.knowledgeSearchIndex.search(trimmed, in: AppServices.knowledgeRegistry.sources)
     }
 }
 
