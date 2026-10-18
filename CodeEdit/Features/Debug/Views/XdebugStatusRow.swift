@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct XdebugStatusRow: View {
-    @ObservedObject private var detector = XdebugDetector.shared
+    @ObservedObject private var detector = AppServices.xdebugDetector
 
     var body: some View {
         HStack(spacing: 8) {

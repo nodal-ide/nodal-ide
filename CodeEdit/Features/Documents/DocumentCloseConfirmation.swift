@@ -32,7 +32,7 @@ enum DocumentCloseConfirmation {
     /// may close. Returns `true` when the document has no unsaved changes.
     static func confirmClose(of document: NSDocument) -> Bool {
         guard document.isDocumentEdited else { return true }
-        let target = CloseConfirmationTarget.shared
+        let target = AppServices.closeConfirmationTarget
         target.shouldClose = true
         document.canClose(
             withDelegate: target,

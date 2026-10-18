@@ -131,6 +131,19 @@ enum AppServices {
 
     /// The app-wide cache of terminal views (kept alive while off-screen).
     static var terminalCache: TerminalCache = .shared
+
+    // MARK: Debug
+
+    /// The app-wide Xdebug detector.
+    @MainActor static var xdebugDetector: XdebugDetector = .shared
+
+    /// The app-wide PHP debug-adapter installer.
+    @MainActor static var phpAdapterInstaller: PHPAdapterInstaller = .shared
+
+    // MARK: Documents
+
+    /// The app-wide close-confirmation responder target.
+    static var closeConfirmationTarget: CloseConfirmationTarget = .shared
 }
 
 // MARK: - Environment injection

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PHPAdapterSettingsRow: View {
-    @ObservedObject private var installer = PHPAdapterInstaller.shared
+    @ObservedObject private var installer = AppServices.phpAdapterInstaller
 
     var body: some View {
         HStack(spacing: 8) {
