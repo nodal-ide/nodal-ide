@@ -7,6 +7,15 @@
 
 import SwiftUI
 
+/// The **in-content** SwiftUI split view. Splits the content of a single pane along `axis` (editor
+/// groups, the utility area, the workspace layout) and is backed by AppKit through
+/// ``SplitViewControllerView``/``SplitViewController``.
+///
+/// This is deliberately separate from ``CodeEditSplitViewController``, which owns the window's
+/// top-level navigator/content/inspector panes. Rule of thumb: splitting content inside a pane →
+/// this; window chrome → `CodeEditSplitViewController`. All divider styling and resize-cursor
+/// behavior (``CodeEditDividerStyle`` + `SplitViewController.CustomSplitView`) lives here, so there
+/// is a single divider-resize implementation.
 struct SplitView<Content: View>: View {
     var axis: Axis
     var dividerStyle: CodeEditDividerStyle

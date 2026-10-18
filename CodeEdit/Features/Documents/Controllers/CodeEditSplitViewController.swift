@@ -8,6 +8,15 @@
 import Cocoa
 import SwiftUI
 
+/// The **window-level** split view controller. It lays out the three top-level panes of a window —
+/// the navigator (sidebar), the main content, and the inspector — and owns their collapse/resize
+/// behavior (`NSSplitViewItem` spring-loading, haptics, snap widths, state persistence).
+///
+/// This is deliberately separate from the in-content SwiftUI ``SplitView`` (backed by
+/// ``SplitViewControllerView``/``SplitViewController``), which splits *within* a pane (editor
+/// groups, utility area). Rule of thumb: window chrome → AppKit here; splitting content inside a
+/// pane → SwiftUI ``SplitView``. Divider appearance and resize-cursor behavior for content splits
+/// live in one place, ``CodeEditDividerStyle`` + `SplitViewController.CustomSplitView`, not here.
 final class CodeEditSplitViewController: NSSplitViewController {
     static let minSidebarWidth = Metrics.Sidebar.minWidth
     static let maxSnapWidth = Metrics.Sidebar.maxSnapWidth
