@@ -5,32 +5,40 @@
 //  Created by Lukas Pistrol on 22.03.22.
 //
 
+import AppKit
 import SwiftUI
 
-extension View {
+/// The single way to show a cursor while hovering a view.
+///
+/// Balances `NSCursor.push()`/`pop()` so a view that disappears while hovered still pops exactly once.
+private struct CursorModifier: ViewModifier {
+    let cursor: NSCursor
+    @State private var isPushed = false
 
-    /// Changes the cursor appearance when hovering attached View
-    /// - Parameters:
-    ///   - active: onHover() value
-    ///   - isDragging: indicate that dragging is happening. If true this will not change the cursor.
-    ///   - cursor: the cursor to display on hover
-    func isHovering(_ active: Bool, isDragging: Bool = false, cursor: NSCursor = .arrow) {
-        if isDragging { return }
-        if active {
-            cursor.push()
-        } else {
-            NSCursor.pop()
-        }
+    func body(content: Content) -> some View {
+        content
+            .onHover { hovering in
+                hovering ? push() : pop()
+            }
+            .onDisappear(perform: pop)
     }
 
-    /// Pushes `cursor` while the view is hovered and pops it on exit.
+    private func push() {
+        guard !isPushed else { return }
+        isPushed = true
+        cursor.push()
+    }
+
+    private func pop() {
+        guard isPushed else { return }
+        isPushed = false
+        NSCursor.pop()
+    }
+}
+
+extension View {
+    /// Shows `cursor` while the view is hovered, popping it on exit and on disappear (balanced).
     func cursor(_ cursor: NSCursor) -> some View {
-        onHover { hovering in
-            if hovering {
-                cursor.push()
-            } else {
-                NSCursor.pop()
-            }
-        }
+        modifier(CursorModifier(cursor: cursor))
     }
 }

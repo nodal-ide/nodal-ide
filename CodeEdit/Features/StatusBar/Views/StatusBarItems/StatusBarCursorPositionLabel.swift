@@ -31,7 +31,7 @@ struct StatusBarCursorPositionLabel: View {
         .fixedSize()
         .accessibilityIdentifier("CursorPositionLabel")
         .accessibilityAddTraits(.updatesFrequently)
-        .onHover { isHovering($0) }
+        .cursor(.arrow)
         .onAppear {
             updateSource()
         }

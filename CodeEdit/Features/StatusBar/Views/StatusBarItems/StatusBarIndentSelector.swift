@@ -33,6 +33,6 @@ struct StatusBarIndentSelector: View {
             Text("\(defaultTabWidth) Spaces")
         }
         .menuStyle(StatusBarMenuStyle())
-        .onHover { isHovering($0) }
+        .cursor(.arrow)
     }
 }

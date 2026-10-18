@@ -214,14 +214,8 @@ struct EditorTabView: View {
         .contentShape(Rectangle()) // Make entire area clickable.
         .onHover { hover in
             isHovering = hover
-            DispatchQueue.main.async {
-                if hover {
-                    NSCursor.arrow.push()
-                } else {
-                    NSCursor.pop()
-                }
-            }
         }
+        .cursor(.arrow)
         .onReceive(tabFile.fileDocumentPublisher) { _ in
             documentRefreshID += 1
             isDocumentEdited = tabFile.fileDocument?.hasUnsavedChanges ?? false

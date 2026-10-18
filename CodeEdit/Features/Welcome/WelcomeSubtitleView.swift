@@ -54,7 +54,7 @@ struct WelcomeSubtitleView: View {
             appVersion, appVersionPostfix, appBuild
         ))
         .textSelection(.enabled)
-        .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+        .cursor(.pointingHand)
         .onTapGesture { copyInformation() }
         .help("Copy System Information to Clipboard")
     }
