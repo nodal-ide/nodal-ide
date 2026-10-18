@@ -49,7 +49,8 @@ class CEActiveTaskTerminalView: CELocalShellTerminalView {
         let shellArgs = ["-lic", activeTask.task.command]
 
         // Activate the project's runtimes (PATH) before the task's own env so the task can override it.
-        let runtimeEnvironment = RuntimeEnvironment.shared.cachedEnvironment(for: url).map { "\($0.key)=\($0.value)" }
+        let runtimeEnvironment = AppServices.runtimeEnvironment.cachedEnvironment(for: url)
+            .map { "\($0.key)=\($0.value)" }
         var overrides = environment
         overrides += runtimeEnvironment
         overrides.append("\(ShellIntegration.Variables.disableHistory)=1")

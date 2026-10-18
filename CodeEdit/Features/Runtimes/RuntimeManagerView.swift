@@ -9,7 +9,7 @@ import SwiftUI
 
 struct RuntimeManagerView: View {
     @StateObject private var model = RuntimeManagerViewModel()
-    @ObservedObject private var tooling = RuntimeManager.shared.tooling
+    @ObservedObject private var tooling = AppServices.runtimeManager.tooling
 
     @State private var confirmingUninstall = false
 

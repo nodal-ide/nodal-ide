@@ -30,7 +30,7 @@ enum DebuggerAutoWiring {
     ) async -> DebugSession.LaunchOptions? {
         guard !program.isEmpty else { return nil }
         let runtimeKind = kind(forProgram: program)
-        guard let provider = RuntimeManager.shared.provider(for: runtimeKind),
+        guard let provider = AppServices.runtimeManager.provider(for: runtimeKind),
               let runtime = await RuntimeResolver.resolve(kind: runtimeKind, workspace: workspace),
               let debugger = provider.debugger(for: runtime),
               let adapter = adapterExecutable(for: debugger) else {
@@ -70,7 +70,7 @@ enum DebuggerAutoWiring {
         workspace: WorkspaceDocument,
         port: Int? = nil
     ) async -> DebugSession.LaunchOptions? {
-        guard let provider = RuntimeManager.shared.provider(for: .php),
+        guard let provider = AppServices.runtimeManager.provider(for: .php),
               let runtime = await RuntimeResolver.resolve(kind: .php, workspace: workspace),
               let debugger = provider.debugger(for: runtime),
               let adapter = adapterExecutable(for: debugger) else {
@@ -95,7 +95,7 @@ enum DebuggerAutoWiring {
         launchArguments: [String: JSONValue]
     ) -> DebugSession.LaunchOptions {
         var environment = debugger.environment
-        environment.merge(RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)) { _, new in new }
+        environment.merge(AppServices.runtimeEnvironment.cachedEnvironment(for: workspace.fileURL)) { _, new in new }
         let adapterArguments = (
             AppServices.settings.preferences.developerSettings.debugAdapterArguments[debugger.adapterID] ?? ""
         ).split(separator: " ").map(String.init)

@@ -162,10 +162,10 @@ struct WorkspaceSettingsRuntimesView: View {
     }
 
     private func loadInstalled() async {
-        if let provider = RuntimeManager.shared.provider(for: .php) {
+        if let provider = AppServices.runtimeManager.provider(for: .php) {
             installedPHP = await provider.installedVersions()
         }
-        if let provider = RuntimeManager.shared.provider(for: .node) {
+        if let provider = AppServices.runtimeManager.provider(for: .node) {
             installedNode = await provider.installedVersions()
         }
     }

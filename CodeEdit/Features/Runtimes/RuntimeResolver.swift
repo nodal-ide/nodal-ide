@@ -11,7 +11,7 @@ import Foundation
 enum RuntimeResolver {
     /// Resolves the installed runtime for a project.
     static func resolve(kind: RuntimeKind, workspace: WorkspaceDocument?) async -> InstalledRuntime? {
-        let installed = await RuntimeManager.shared.provider(for: kind)?.installedVersions() ?? []
+        let installed = await AppServices.runtimeManager.provider(for: kind)?.installedVersions() ?? []
         guard !installed.isEmpty else { return nil }
 
         if let pinned = projectPinnedVersion(kind: kind, workspace: workspace),

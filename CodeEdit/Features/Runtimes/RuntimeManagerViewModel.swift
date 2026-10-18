@@ -37,7 +37,7 @@ final class RuntimeManagerViewModel: ObservableObject {
     @Published var packageManagerInput = ""
     @Published private(set) var jobs: [RuntimeJob] = []
 
-    private let manager = RuntimeManager.shared
+    private let manager = AppServices.runtimeManager
     private var cancellables = Set<AnyCancellable>()
 
     init() {

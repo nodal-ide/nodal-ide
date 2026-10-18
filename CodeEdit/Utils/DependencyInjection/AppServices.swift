@@ -34,6 +34,12 @@ enum AppServices {
 
     /// The app-wide command-center provider registry.
     static var commandCenterRegistry: CommandCenterRegistry = .shared
+
+    /// The app-wide runtime manager.
+    @MainActor static var runtimeManager: RuntimeManager = .shared
+
+    /// The app-wide resolved runtime environment.
+    @MainActor static var runtimeEnvironment: RuntimeEnvironment = .shared
 }
 
 // MARK: - Environment injection

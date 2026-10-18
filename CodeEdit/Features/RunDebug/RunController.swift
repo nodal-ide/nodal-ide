@@ -46,7 +46,7 @@ final class RunController: ObservableObject {
     func run(_ configuration: RunConfiguration) {
         Task { [weak self] in
             guard let self, let workspace = self.workspace else { return }
-            await RuntimeEnvironment.shared.refresh(workspace: workspace)
+            await AppServices.runtimeEnvironment.refresh(workspace: workspace)
             self.performRun(configuration)
         }
     }
@@ -160,7 +160,7 @@ final class RunController: ObservableObject {
                 request: configuration.debugRequest == "attach" ? "attach" : "launch",
                 launchArguments: launch,
                 workingDirectory: workspace.fileURL,
-                environment: RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)
+                environment: AppServices.runtimeEnvironment.cachedEnvironment(for: workspace.fileURL)
             )
         )
     }
@@ -177,7 +177,7 @@ final class RunController: ObservableObject {
 
         Task { [weak self] in
             guard let self, let workspace = self.workspace else { return }
-            await RuntimeEnvironment.shared.refresh(workspace: workspace)
+            await AppServices.runtimeEnvironment.refresh(workspace: workspace)
             guard let options = await DebuggerAutoWiring.listenOptions(workspace: workspace, port: port) else {
                 DebuggerAutoWiring.reportUnavailable(kind: .php)
                 return
@@ -223,7 +223,7 @@ final class RunController: ObservableObject {
         guard let workspace, workspace.debugController != nil else { return }
         Task { [weak self] in
             guard let self, let workspace = self.workspace else { return }
-            await RuntimeEnvironment.shared.refresh(workspace: workspace)
+            await AppServices.runtimeEnvironment.refresh(workspace: workspace)
             guard let options = await DebuggerAutoWiring.listenOptions(workspace: workspace) else {
                 DebuggerAutoWiring.reportUnavailable(kind: .php)
                 return
@@ -241,7 +241,7 @@ final class RunController: ObservableObject {
         pathMappings: [String: String] = [:]
     ) async {
         guard let workspace, let debugController = workspace.debugController else { return }
-        await RuntimeEnvironment.shared.refresh(workspace: workspace)
+        await AppServices.runtimeEnvironment.refresh(workspace: workspace)
         guard let options = await DebuggerAutoWiring.options(
             workspace: workspace,
             program: program,

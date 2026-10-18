@@ -198,7 +198,7 @@ struct UtilityAreaTerminalView: View {
             onOpenLink: { link in
                 openTerminalLink(link)
             },
-            environment: RuntimeEnvironment.shared.cachedEnvironment(for: workspace.fileURL)
+            environment: AppServices.runtimeEnvironment.cachedEnvironment(for: workspace.fileURL)
         )
     }
 
@@ -293,7 +293,7 @@ struct UtilityAreaTerminalView: View {
             return
         }
         Task {
-            await RuntimeEnvironment.shared.refresh(workspace: workspace)
+            await AppServices.runtimeEnvironment.refresh(workspace: workspace)
             utilityAreaViewModel.initializeTerminals(workspaceURL: workspaceURL)
         }
     }

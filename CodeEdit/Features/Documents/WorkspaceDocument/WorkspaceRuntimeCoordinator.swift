@@ -29,7 +29,7 @@ final class WorkspaceRuntimeCoordinator {
     /// the project's runtime pins to re-resolve on change.
     func start(settingsManager: CEWorkspaceSettings?) {
         guard let workspace else { return }
-        Task { await RuntimeEnvironment.shared.refresh(workspace: workspace) }
+        Task { await AppServices.runtimeEnvironment.refresh(workspace: workspace) }
 
         guard let settingsManager else { return }
         settingsManager.$settings
@@ -38,7 +38,7 @@ final class WorkspaceRuntimeCoordinator {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self, let workspace = self.workspace else { return }
-                Task { await RuntimeEnvironment.shared.refresh(workspace: workspace) }
+                Task { await AppServices.runtimeEnvironment.refresh(workspace: workspace) }
             }
             .store(in: &cancellables)
     }
