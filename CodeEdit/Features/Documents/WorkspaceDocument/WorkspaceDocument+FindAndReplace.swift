@@ -209,7 +209,7 @@ extension WorkspaceSearchService {
     }
 
     /// Locates a match in the given content, verifying the stored offset and falling back to a search.
-    static func rangeForMatch(matchedText: String, offset: Int, in content: NSString) -> NSRange? {
+    nonisolated static func rangeForMatch(matchedText: String, offset: Int, in content: NSString) -> NSRange? {
         let length = (matchedText as NSString).length
         guard length > 0 else { return nil }
         let offset = min(max(offset, 0), content.length)
@@ -241,8 +241,6 @@ extension WorkspaceSearchService {
     }
 
     func setStatus(_ status: FindNavigatorStatus) async {
-        await MainActor.run {
-            self.findNavigatorStatus = status
-        }
+        findNavigatorStatus = status
     }
 }

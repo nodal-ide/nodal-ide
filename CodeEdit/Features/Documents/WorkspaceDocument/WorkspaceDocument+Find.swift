@@ -7,8 +7,6 @@
 
 import Foundation
 
-extension WorkspaceSearchService: @unchecked Sendable {}
-
 extension WorkspaceSearchService {
     /// Creates a search term based on the given query and search mode.
     ///
@@ -97,13 +95,12 @@ extension WorkspaceSearchService {
     func search(_ query: String) async {
         clearResults()
 
-        await MainActor.run {
-            self.searchQuery = query
-            self.findNavigatorStatus = .searching
-        }
+        self.searchQuery = query
+        self.findNavigatorStatus = .searching
 
         let searchQuery = getSearchTerm(query)
         let regexPattern = getRegexPattern(query)
+        let caseSensitive = self.caseSensitive
 
         // The SearchKit index can't evaluate regular expressions, so scan the workspace files directly.
         if selectedMode.second == .RegularExpression {
@@ -138,7 +135,8 @@ extension WorkspaceSearchService {
                         let result = await self.evaluateSearchResult(
                             fileURL: fileURL,
                             fileScore: fileScore,
-                            regexPattern: capturedRegexPattern
+                            regexPattern: capturedRegexPattern,
+                            caseSensitive: caseSensitive
                         )
 
                         if let result = result {
@@ -166,19 +164,19 @@ extension WorkspaceSearchService {
         }
 
         let files = fileManager.flattenedFileItems.values.filter { !$0.isFolder }
+        let caseSensitive = self.caseSensitive
         for file in files {
             if let result = await evaluateSearchResult(
                 fileURL: file.url,
                 fileScore: 0,
-                regexPattern: regexPattern
+                regexPattern: regexPattern,
+                caseSensitive: caseSensitive
             ) {
                 await appendNewResultsToTempResults(newResult: result)
             }
         }
 
-        await MainActor.run {
-            self.setSearchResults()
-        }
+        setSearchResults()
     }
 
     /// Appends a new search result to the temporary search results array on the main thread.
@@ -223,7 +221,11 @@ extension WorkspaceSearchService {
     /// var resultModel = SearchResultModel()
     /// await evaluateFile(query: "example", searchResult: &resultModel)
     /// ```
-    func evaluateFile(query: String, searchResult: inout SearchResultModel) async {
+    nonisolated func evaluateFile(
+        query: String,
+        searchResult: inout SearchResultModel,
+        caseSensitive: Bool
+    ) async {
         guard let data = try? Data(contentsOf: searchResult.file.url) else {
             return
         }
@@ -280,7 +282,7 @@ extension WorkspaceSearchService {
     /// The resulting model includes information about the match's range within the file,
     /// the file itself, the content of the line containing the match,
     /// and the range of the matched keyword within that line.
-    private func createMatchModel(
+    private nonisolated func createMatchModel(
         from matchRange: Range<String.Index>,
         fileContent: String,
         file: CEWorkspaceFile,
@@ -315,7 +317,7 @@ extension WorkspaceSearchService {
     /// occurrence of a newline character, ensuring that only the line containing the search term is displayed.
     /// The extracted line is then trimmed of leading and trailing whitespaces and
     /// newline characters before being returned.
-    private func extractPreLine(from matchRange: Range<String.Index>, fileContent: String) -> String {
+    private nonisolated func extractPreLine(from matchRange: Range<String.Index>, fileContent: String) -> String {
         let preRangeStart = fileContent.index(
             matchRange.lowerBound,
             offsetBy: -60,

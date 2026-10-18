@@ -11,6 +11,7 @@ import DequeModule
 import AppKit
 import OSLog
 
+@MainActor
 final class Editor: ObservableObject, Identifiable {
     enum EditorError: Error {
         case noWorkspaceAttached

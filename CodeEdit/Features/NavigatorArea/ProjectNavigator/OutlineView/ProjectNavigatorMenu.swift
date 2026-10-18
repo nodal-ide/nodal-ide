@@ -9,6 +9,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// A subclass of `NSMenu` implementing the contextual menu for the project navigator
+@MainActor
 final class ProjectNavigatorMenu: NSMenu {
 
     /// The item to show the contextual menu for

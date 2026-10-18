@@ -13,6 +13,7 @@ import CodeEditSourceEditor
 
 /// A single instance of an editor in a group with a published ``EditorInstance/cursorPositions`` variable to publish
 /// the user's current location in a file.
+@MainActor
 class EditorInstance: ObservableObject, Hashable {
     /// The file presented in this editor instance.
     let file: CEWorkspaceFile

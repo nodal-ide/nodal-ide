@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 final class SplitViewData: ObservableObject {
     @Published var editorLayouts: [EditorLayout]
 

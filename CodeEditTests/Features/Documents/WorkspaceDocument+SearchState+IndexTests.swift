@@ -8,6 +8,7 @@
 import XCTest
 @testable import CodeEdit
 
+@MainActor
 final class WorkspaceDocumentIndexTests: XCTestCase {
     private var directory: URL!
     private var files: [CEWorkspaceFile] = []

@@ -11,6 +11,7 @@ import DequeModule
 import os
 import CodeEditSourceEditor
 
+@MainActor
 class EditorManager: ObservableObject {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "EditorManager")
 

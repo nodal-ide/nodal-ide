@@ -43,10 +43,14 @@ struct UpdatingWindowController: DynamicProperty {
             windowCancellable = NSApp.publisher(for: \.keyWindow).receive(on: RunLoop.main).sink { [weak self] window in
                 // Fix an issue where NSMenuItems with custom views would trigger this callback.
                 guard window?.className != "NSPopupMenuWindow" else { return }
-                self?.setNewController(window?.windowController as? CodeEditWindowController)
+                let newController = window?.windowController as? CodeEditWindowController
+                Task { @MainActor [weak self] in
+                    self?.setNewController(newController)
+                }
             }
         }
 
+        @MainActor
         func setNewController(_ controller: CodeEditWindowController?) {
             cancellables.forEach { $0.cancel() }
             cancellables.removeAll()

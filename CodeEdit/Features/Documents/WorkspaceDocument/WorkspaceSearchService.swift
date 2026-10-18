@@ -14,6 +14,10 @@ import Foundation
 /// the document's namespace. Behavior is unchanged. Its operations are spread across
 /// `WorkspaceDocument+Index`, `WorkspaceDocument+Find`, `WorkspaceDocument+FindAndReplace` and
 /// `WorkspaceDocument+SearchExtraction` extensions.
+///
+/// Main-actor isolated: its published state is read/written from SwiftUI views. File IO and regex
+/// matching that used to run off-main are `nonisolated` helpers so they don't block the UI thread.
+@MainActor
 final class WorkspaceSearchService: ObservableObject {
     enum IndexStatus: Equatable {
         case none

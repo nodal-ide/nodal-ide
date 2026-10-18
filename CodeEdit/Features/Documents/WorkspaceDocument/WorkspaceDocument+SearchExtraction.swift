@@ -20,7 +20,7 @@ extension WorkspaceSearchService {
     /// the provided line preceding a matching occurrence.
     /// It considers the length of the search term to determine
     /// the lower and upper bounds of the keyword range within the line.
-    func extractKeywordRange(from preLine: String, matchWordLength: Int) -> Range<String.Index> {
+    nonisolated func extractKeywordRange(from preLine: String, matchWordLength: Int) -> Range<String.Index> {
         let keywordLowerBound = preLine.index(
             preLine.endIndex,
             offsetBy: -matchWordLength,
@@ -43,7 +43,7 @@ extension WorkspaceSearchService {
     /// It considers a context of up to 60 characters after the match and clips the result to the first
     /// occurrence of a newline character, ensuring that only the relevant portion of the line is displayed.
     /// The extracted line is then converted to a string before being returned.
-    func extractPostLine(from matchRange: Range<String.Index>, fileContent: String) -> String {
+    nonisolated func extractPostLine(from matchRange: Range<String.Index>, fileContent: String) -> String {
         let postRangeStart = matchRange.upperBound
         let postRangeEnd = fileContent.index(
             matchRange.upperBound,
@@ -60,12 +60,10 @@ extension WorkspaceSearchService {
 
     /// Resets the search results along with counts for overall results and file-specific results.
     func clearResults() {
-        DispatchQueue.main.async {
-            self.searchResult.removeAll()
-            self.searchResultsCount = 0
-            self.searchResultsFileCount = 0
-            self.findNavigatorStatus = .none
-        }
+        searchResult.removeAll()
+        searchResultsCount = 0
+        searchResultsFileCount = 0
+        findNavigatorStatus = .none
     }
 
     /// Evaluates a matched file to determine if it contains any search matches.
@@ -78,17 +76,18 @@ extension WorkspaceSearchService {
     ///   - fileScore:  The file's score from a ``SearchIndexer``
     ///   - regexPattern: The pattern to evaluate against the file's contents.
     /// - Returns: `nil` if there are no relevant search matches, or a search result if matches are found.
-    func evaluateSearchResult(
+    nonisolated func evaluateSearchResult(
         fileURL: URL,
         fileScore: Float,
-        regexPattern: String
+        regexPattern: String,
+        caseSensitive: Bool
     ) async -> SearchResultModel? {
         var newResult = SearchResultModel(
             file: CEWorkspaceFile(url: fileURL),
             score: fileScore
         )
 
-        await evaluateFile(query: regexPattern, searchResult: &newResult)
+        await evaluateFile(query: regexPattern, searchResult: &newResult, caseSensitive: caseSensitive)
 
         return newResult.lineMatches.isEmpty ? nil : newResult
     }

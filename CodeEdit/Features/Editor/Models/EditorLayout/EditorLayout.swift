@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 enum EditorLayout: Equatable {
     case one(Editor)
     case vertical(SplitViewData)

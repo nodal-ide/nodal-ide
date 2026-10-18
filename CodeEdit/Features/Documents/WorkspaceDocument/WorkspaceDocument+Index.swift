@@ -76,7 +76,7 @@ extension WorkspaceSearchService {
     /// - Parameter url: The URL of the directory to search for files.
     ///
     /// - Returns: An array of file URLs found within the specified directory.
-    func getFileURLs(at url: URL) -> [URL] {
+    nonisolated func getFileURLs(at url: URL) -> [URL] {
         let enumerator = FileManager.default.enumerator(
             at: url,
             includingPropertiesForKeys: [.isRegularFileKey],
@@ -90,7 +90,7 @@ extension WorkspaceSearchService {
     /// - Parameter filePaths: An array of file URLs representing the paths of the files.
     ///
     /// - Returns: An array of `TextFile` objects containing the standardised file URLs and text content.
-    func getFileContent(from filePaths: [URL]) async -> [SearchIndexer.AsyncManager.TextFile] {
+    nonisolated func getFileContent(from filePaths: [URL]) async -> [SearchIndexer.AsyncManager.TextFile] {
         var textFiles = [SearchIndexer.AsyncManager.TextFile]()
         for file in filePaths {
             if let content = try? String(contentsOf: file) {
