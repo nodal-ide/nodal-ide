@@ -43,6 +43,5 @@ struct EditorAreaFileView: View {
     var body: some View {
         editorAreaFileView
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .cursor(.iBeam)
     }
 }
