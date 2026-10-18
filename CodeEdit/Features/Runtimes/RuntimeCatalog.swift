@@ -6,8 +6,11 @@
 //
 
 import Foundation
+import os
 
 enum RuntimeCatalog {
+    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "RuntimeCatalog")
+
     /// How long a cached catalog is considered fresh.
     private static let ttl: TimeInterval = 6 * 3600
 
@@ -34,9 +37,13 @@ enum RuntimeCatalog {
     // MARK: - Sources
 
     private static func fetchNode() async -> [RuntimeVersion] {
-        guard let url = URL(string: "https://nodejs.org/dist/index.json"),
-              let data = try? await URLSession.shared.data(from: url).0,
-              let releases = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+        guard let url = URL(string: "https://nodejs.org/dist/index.json") else { return [] }
+        guard let data = try? await URLSession.shared.data(from: url).0 else {
+            logger.info("Could not fetch the Node version catalog; using cache")
+            return []
+        }
+        guard let releases = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+            logger.error("Failed to decode the Node version catalog")
             return []
         }
         let formatter = DateFormatter()
@@ -125,7 +132,11 @@ enum RuntimeCatalog {
             .appending(path: ".codeedit")
             .appending(path: "cache")
             .appending(path: "runtimes")
-        try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        do {
+            try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        } catch {
+            logger.error("Failed to create runtime cache directory: \(error.localizedDescription, privacy: .public)")
+        }
         return base
     }
 
@@ -146,15 +157,26 @@ enum RuntimeCatalog {
         for entry in entries {
             let date = (try? entry.resourceValues(forKeys: Set(keys)).contentModificationDate) ?? .distantPast
             if date < cutoff {
-                try? FileManager.default.removeItem(at: entry)
+                do {
+                    try FileManager.default.removeItem(at: entry)
+                } catch {
+                    logger.warning(
+                        "Failed to prune stale runtime cache: \(error.localizedDescription, privacy: .public)"
+                    )
+                }
             }
         }
     }
 
     private static func load(_ kind: RuntimeKind) -> Cache? {
-        guard let data = try? Data(contentsOf: cacheURL(kind)),
-              let cache = try? JSONDecoder().decode(Cache.self, from: data),
-              cache.schema == Cache.currentSchema else {
+        let url = cacheURL(kind)
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        guard let cache = try? JSONDecoder().decode(Cache.self, from: data) else {
+            logger.error("Failed to decode runtime catalog cache at \(url.path, privacy: .public)")
+            return nil
+        }
+        guard cache.schema == Cache.currentSchema else {
+            logger.info("Ignoring runtime catalog cache with outdated schema at \(url.path, privacy: .public)")
             return nil
         }
         return cache
@@ -162,7 +184,14 @@ enum RuntimeCatalog {
 
     private static func save(_ kind: RuntimeKind, _ versions: [RuntimeVersion]) {
         let cache = Cache(schema: Cache.currentSchema, fetchedAt: Date(), versions: versions)
-        guard let data = try? JSONEncoder().encode(cache) else { return }
-        try? data.write(to: cacheURL(kind), options: .atomic)
+        guard let data = try? JSONEncoder().encode(cache) else {
+            logger.error("Failed to encode runtime catalog cache")
+            return
+        }
+        do {
+            try data.write(to: cacheURL(kind), options: .atomic)
+        } catch {
+            logger.error("Failed to write runtime catalog cache: \(error.localizedDescription, privacy: .public)")
+        }
     }
 }

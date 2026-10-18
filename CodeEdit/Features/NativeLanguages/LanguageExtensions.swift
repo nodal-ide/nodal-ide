@@ -9,52 +9,35 @@
 import Foundation
 import AppKit
 import CodeEditLang
+import os
+
+private let languageExtensionsLogger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "",
+    category: "LanguageExtensions"
+)
+
+/// Decodes a JSON file, logging read/decode failures (only when the file actually exists).
+private func loadJSONFile<T: Decodable>(_ type: T.Type, from url: URL, descriptor: String) -> T? {
+    let fileManager = FileManager.default
+    guard let data = try? Data(contentsOf: url) else {
+        if fileManager.fileExists(atPath: url.path(percentEncoded: false)) {
+            languageExtensionsLogger.error(
+                "Failed to read \(descriptor, privacy: .public) at \(url.path, privacy: .public)"
+            )
+        }
+        return nil
+    }
+    guard let value = try? JSONDecoder().decode(T.self, from: data) else {
+        languageExtensionsLogger.error(
+            "Failed to decode \(descriptor, privacy: .public) at \(url.path, privacy: .public)"
+        )
+        return nil
+    }
+    return value
+}
 
 /// `LanguageExtensionManifest` (the `extension.json` model) lives in `CodeEditLang` so the app and
 /// the `codeedit-ext` authoring tool share it.
-
-/// An installed declarative language extension (a pack on disk).
-struct InstalledLanguageExtension: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let version: String?
-    let root: URL
-    let manifest: LanguageExtensionManifest
-
-    /// The framework this pack targets, if any (from `framework` or `activation.framework.requires`).
-    var frameworkName: String? { manifest.frameworkName }
-
-    /// A short display line: version and/or author.
-    var subtitle: String? {
-        [version, manifest.author].compactMap { $0 }.joined(separator: " · ").nilIfEmpty
-    }
-
-    /// The pack icon (`icon` in the manifest, relative to the pack root) or a default symbol.
-    var icon: NSImage {
-        if let iconPath = manifest.icon {
-            let url = root.appending(path: iconPath)
-            if let image = NSImage(contentsOf: url) {
-                return image
-            }
-        }
-        if let symbol = NSImage(systemSymbolName: "puzzlepiece.extension.fill", accessibilityDescription: nil) {
-            return symbol
-        }
-        return NSImage()
-    }
-
-    static func == (lhs: InstalledLanguageExtension, rhs: InstalledLanguageExtension) -> Bool {
-        lhs.id == rhs.id
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-}
-
-private extension String {
-    var nilIfEmpty: String? { isEmpty ? nil : self }
-}
 
 /// Discovers declarative language extensions from the global Application Support directory and
 /// the workspace-local `.codeedit/extensions` directory.
@@ -118,13 +101,19 @@ final class LanguageExtensionStore {
             includingPropertiesForKeys: [.isDirectoryKey],
             options: [.skipsHiddenFiles]
         ) else {
+            if fileManager.fileExists(atPath: directory.path(percentEncoded: false)) {
+                languageExtensionsLogger.error(
+                    "Failed to list extensions in \(directory.path, privacy: .public)"
+                )
+            }
             return []
         }
 
         return entries.compactMap { entry in
             let manifestURL = entry.appending(path: "extension.json")
-            guard let data = try? Data(contentsOf: manifestURL),
-                  let manifest = try? JSONDecoder().decode(LanguageExtensionManifest.self, from: data) else {
+            guard let manifest = loadJSONFile(
+                LanguageExtensionManifest.self, from: manifestURL, descriptor: "manifest"
+            ) else {
                 return nil
             }
             return InstalledLanguageExtension(
@@ -178,7 +167,15 @@ final class LanguageExtensionStore {
         let tempName = "ce-ext-\(UUID().uuidString)"
         let temp = fileManager.temporaryDirectory.appending(path: tempName, directoryHint: .isDirectory)
         try fileManager.createDirectory(at: temp, withIntermediateDirectories: true)
-        defer { try? fileManager.removeItem(at: temp) }
+        defer {
+            do {
+                try fileManager.removeItem(at: temp)
+            } catch {
+                languageExtensionsLogger.warning(
+                    "Failed to remove temporary unzip directory: \(error.localizedDescription, privacy: .public)"
+                )
+            }
+        }
 
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
@@ -214,6 +211,11 @@ final class LanguageExtensionStore {
             includingPropertiesForKeys: [.isDirectoryKey],
             options: [.skipsHiddenFiles]
         )) ?? []
+        if subdirectories.isEmpty {
+            languageExtensionsLogger.warning(
+                "No subdirectories while searching for extension.json in \(directory.path, privacy: .public)"
+            )
+        }
         for subdirectory in subdirectories {
             let candidate = subdirectory.appending(path: "extension.json")
             if fileManager.fileExists(atPath: candidate.path(percentEncoded: false)) {
@@ -330,8 +332,9 @@ final class WorkspaceLanguageExtensions {
             var entries: [LanguageSymbolPack.Entry] = []
             for file in symbolFiles {
                 let url = ext.root.appending(path: file)
-                guard let data = try? Data(contentsOf: url),
-                      let pack = try? JSONDecoder().decode(LanguageSymbolPack.self, from: data) else {
+                guard let pack = loadJSONFile(
+                    LanguageSymbolPack.self, from: url, descriptor: "symbol pack"
+                ) else {
                     continue
                 }
                 entries.append(contentsOf: pack.symbols)
@@ -340,7 +343,13 @@ final class WorkspaceLanguageExtensions {
 
             let stubURL = self.stubURL(for: ext)
             let (text, _) = DeclarativeStub.build(entries: entries)
-            try? text.write(to: stubURL, atomically: true, encoding: .utf8)
+            do {
+                try text.write(to: stubURL, atomically: true, encoding: .utf8)
+            } catch {
+                languageExtensionsLogger.error(
+                    "Failed to write symbol stub: \(error.localizedDescription, privacy: .public)"
+                )
+            }
 
             let pack = LanguageSymbolPack(language: language, framework: nil, symbols: entries)
             result.append(contentsOf: DeclarativeStub.symbols(from: pack, stubURL: stubURL))
@@ -351,7 +360,13 @@ final class WorkspaceLanguageExtensions {
 
     private func stubURL(for ext: InstalledLanguageExtension) -> URL {
         let fileManager = FileManager.default
-        try? fileManager.createDirectory(at: Self.stubCacheDirectory, withIntermediateDirectories: true)
+        do {
+            try fileManager.createDirectory(at: Self.stubCacheDirectory, withIntermediateDirectories: true)
+        } catch {
+            languageExtensionsLogger.error(
+                "Failed to create stub cache directory: \(error.localizedDescription, privacy: .public)"
+            )
+        }
         return Self.stubCacheDirectory.appending(path: "\(ext.id).txt")
     }
 

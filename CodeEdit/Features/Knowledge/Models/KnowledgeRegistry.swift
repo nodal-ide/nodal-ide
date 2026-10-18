@@ -7,10 +7,13 @@
 
 import Foundation
 import CodeEditLang
+import os
 
 /// Discovers the knowledge bases available to the app.
 final class KnowledgeRegistry {
     static let shared = KnowledgeRegistry()
+
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "KnowledgeRegistry")
 
     private(set) var sources: [KnowledgeSource] = []
 
@@ -69,8 +72,14 @@ final class KnowledgeRegistry {
             for contribution in contributions {
                 let root = ext.root.appending(path: contribution.root ?? ".")
                 let indexURL = root.appending(path: contribution.index ?? "index.json")
-                guard let data = try? Data(contentsOf: indexURL),
-                      let index = try? JSONDecoder().decode(KnowledgeIndex.self, from: data) else {
+                guard let data = try? Data(contentsOf: indexURL) else {
+                    if FileManager.default.fileExists(atPath: indexURL.path(percentEncoded: false)) {
+                        logger.error("Failed to read knowledge index at \(indexURL.path, privacy: .public)")
+                    }
+                    continue
+                }
+                guard let index = try? JSONDecoder().decode(KnowledgeIndex.self, from: data) else {
+                    logger.error("Failed to decode knowledge index at \(indexURL.path, privacy: .public)")
                     continue
                 }
                 result.append(
@@ -97,8 +106,14 @@ final class KnowledgeRegistry {
 
         return entries.compactMap { entry in
             let indexURL = entry.appending(path: "index.json")
-            guard let data = try? Data(contentsOf: indexURL),
-                  let index = try? JSONDecoder().decode(KnowledgeIndex.self, from: data) else {
+            guard let data = try? Data(contentsOf: indexURL) else {
+                if FileManager.default.fileExists(atPath: indexURL.path(percentEncoded: false)) {
+                    logger.error("Failed to read knowledge index at \(indexURL.path, privacy: .public)")
+                }
+                return nil
+            }
+            guard let index = try? JSONDecoder().decode(KnowledgeIndex.self, from: data) else {
+                logger.error("Failed to decode knowledge index at \(indexURL.path, privacy: .public)")
                 return nil
             }
             return KnowledgeSource(

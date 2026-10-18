@@ -124,7 +124,10 @@ extension ProjectNavigatorViewController: NSOutlineViewDataSource {
                 do {
                     try CEWorkspaceFile.fileManager.removeItem(at: destURL)
                 } catch {
-                    fatalError(error.localizedDescription)
+                    Self.logger.error(
+                        "Failed to remove existing item at destination: \(error.localizedDescription, privacy: .public)"
+                    )
+                    return false
                 }
             }
             if info.draggingSourceOperationMask == .copy {

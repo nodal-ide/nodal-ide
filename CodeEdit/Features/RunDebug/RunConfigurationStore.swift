@@ -7,10 +7,13 @@
 
 import Combine
 import Foundation
+import os
 
 @MainActor
 final class RunConfigurationStore: ObservableObject {
     @Published private(set) var configurations: [RunConfiguration] = []
+
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "RunConfigurationStore")
 
     private let fileURL: URL
 
@@ -56,18 +59,27 @@ final class RunConfigurationStore: ObservableObject {
     // MARK: - Persistence
 
     private func load() {
-        guard let data = try? Data(contentsOf: fileURL) else { return }
-        configurations = (try? JSONDecoder().decode([RunConfiguration].self, from: data)) ?? []
+        guard fileURL.path != "/dev/null" else { return }
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        do {
+            let data = try Data(contentsOf: fileURL)
+            configurations = try JSONDecoder().decode([RunConfiguration].self, from: data)
+        } catch {
+            logger.error("Failed to load run configurations: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private func save() {
         guard fileURL.path != "/dev/null" else { return }
         let directory = fileURL.deletingLastPathComponent()
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        guard let data = try? encoder.encode(configurations) else { return }
-        try? data.write(to: fileURL, options: .atomic)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let data = try encoder.encode(configurations)
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            logger.error("Failed to save run configurations: \(error.localizedDescription, privacy: .public)")
+        }
     }
 }

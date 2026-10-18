@@ -7,6 +7,9 @@
 
 import Foundation
 import AppKit
+import os
+
+private let findReplaceLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "FindAndReplace")
 
 extension WorkspaceSearchService {
     /// Performs a search and replace operation in a collection of files based on the provided query.
@@ -201,7 +204,12 @@ extension WorkspaceSearchService {
                     matchedText: matchedText, offset: offset, in: nsString
                 ) else { return }
                 let updated = nsString.replacingCharacters(in: range, with: replacingTerm)
-                try? updated.write(to: url, atomically: true, encoding: .utf8)
+                do {
+                    try updated.write(to: url, atomically: true, encoding: .utf8)
+                } catch {
+                    let message = "Failed to write replacement to \(url.path): \(error.localizedDescription)"
+                    findReplaceLogger.error("\(message, privacy: .public)")
+                }
             }.value
         }
 

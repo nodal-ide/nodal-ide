@@ -9,6 +9,9 @@ import AppKit
 import CodeEditSourceEditor
 import CodeEditTextView
 import LanguageServerProtocol
+import os
+
+private let lspEditorLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "LSPEditorActions")
 
 /// Menu/command actions that drive the active editor's language server.
 @MainActor
@@ -213,7 +216,12 @@ enum LSPEditorActions {
             } else {
                 guard let original = try? String(contentsOf: url, encoding: .utf8) else { continue }
                 let updated = apply(edits, to: original)
-                try? updated.write(to: url, atomically: true, encoding: .utf8)
+                do {
+                    try updated.write(to: url, atomically: true, encoding: .utf8)
+                } catch {
+                    let message = "Failed to write LSP edits to \(url.path): \(error.localizedDescription)"
+                    lspEditorLogger.error("\(message, privacy: .public)")
+                }
             }
         }
     }

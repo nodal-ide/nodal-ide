@@ -7,10 +7,13 @@
 
 import Combine
 import Foundation
+import os
 
 @MainActor
 final class BreakpointStore: ObservableObject {
     @Published private(set) var breakpoints: [Breakpoint] = []
+
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "BreakpointStore")
 
     private let fileURL: URL
 
@@ -129,19 +132,29 @@ final class BreakpointStore: ObservableObject {
     // MARK: - Persistence
 
     private func load() {
-        guard let data = try? Data(contentsOf: fileURL) else { return }
-        breakpoints = (try? JSONDecoder().decode([Breakpoint].self, from: data)) ?? []
+        guard fileURL.path != "/dev/null" else { return }
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        do {
+            let data = try Data(contentsOf: fileURL)
+            breakpoints = try JSONDecoder().decode([Breakpoint].self, from: data)
+        } catch {
+            logger.error("Failed to load breakpoints: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private func save() {
         guard fileURL.path != "/dev/null" else { return }
-        try? FileManager.default.createDirectory(
-            at: fileURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        guard let data = try? encoder.encode(breakpoints) else { return }
-        try? data.write(to: fileURL, options: .atomic)
+        do {
+            try FileManager.default.createDirectory(
+                at: fileURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let data = try encoder.encode(breakpoints)
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            logger.error("Failed to save breakpoints: \(error.localizedDescription, privacy: .public)")
+        }
     }
 }
