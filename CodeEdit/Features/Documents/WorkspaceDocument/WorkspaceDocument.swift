@@ -13,13 +13,28 @@ import LanguageServerProtocol
 
 @objc(WorkspaceDocument)
 final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
-    @Published var sortFoldersOnTop: Bool = true
-    /// A string used to filter the displayed files and folders in the project navigator area based on user input.
-    @Published var navigatorFilter: String = ""
-    /// Whether the workspace only shows files with changes.
-    @Published var sourceControlFilter = false
-    /// Whether the workspace only shows files modified recently.
-    @Published var recentsFilter = false
+    /// Project-navigator filter/sort state (formerly four `@Published` properties on this class).
+    let filters = WorkspaceUIFilters()
+
+    var sortFoldersOnTop: Bool {
+        get { filters.sortFoldersOnTop }
+        set { filters.sortFoldersOnTop = newValue }
+    }
+
+    var navigatorFilter: String {
+        get { filters.navigatorFilter }
+        set { filters.navigatorFilter = newValue }
+    }
+
+    var sourceControlFilter: Bool {
+        get { filters.sourceControlFilter }
+        set { filters.sourceControlFilter = newValue }
+    }
+
+    var recentsFilter: Bool {
+        get { filters.recentsFilter }
+        set { filters.recentsFilter = newValue }
+    }
 
     /// Persistence for per-workspace UI state; always resolves against the current `fileURL`.
     private var stateStore: WorkspaceStateStore {
@@ -60,6 +75,14 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
 
         // Observe changes to notification panel
         notificationPanel.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        // Re-publish navigator filter changes so views observing the document stay in sync.
+        filters.objectWillChange
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.objectWillChange.send()

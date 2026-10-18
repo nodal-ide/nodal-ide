@@ -19,7 +19,10 @@ struct ProjectNavigatorToolbarBottom: View {
 
     var body: some View {
         NavigatorFilterView(
-            text: $workspace.navigatorFilter,
+            text: Binding(
+                get: { workspace.navigatorFilter },
+                set: { workspace.navigatorFilter = $0 }
+            ),
             hasValue: {
                 !workspace.navigatorFilter.isEmpty || workspace.recentsFilter || workspace.sourceControlFilter
             },
@@ -53,11 +56,17 @@ struct ProjectNavigatorToolbarBottom: View {
 
     @ViewBuilder private var trailingAccessories: some View {
         HStack(spacing: 0) {
-            Toggle(isOn: $workspace.recentsFilter) {
+            Toggle(isOn: Binding(
+                get: { workspace.recentsFilter },
+                set: { workspace.recentsFilter = $0 }
+            )) {
                 Image(systemName: "clock")
             }
             .help("Show only recent files")
-            Toggle(isOn: $workspace.sourceControlFilter) {
+            Toggle(isOn: Binding(
+                get: { workspace.sourceControlFilter },
+                set: { workspace.sourceControlFilter = $0 }
+            )) {
                 Image(systemName: "plusminus.circle")
             }
             .help("Show only files with source-control status")
