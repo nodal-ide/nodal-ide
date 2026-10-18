@@ -146,8 +146,8 @@ final class LanguageServerCodeFileDocumentTests: XCTestCase {
         let (connection, server) = try await makeTestServer()
 
         // This service should receive the didOpen/didClose notifications
-        let lspService = ServiceContainer.resolve(.singleton, LSPService.self)
-        await MainActor.run { lspService?.languageClients[.init(.swift, tempTestDir.path() + "/")] = server }
+        let lspService = AppServices.lspService
+        await MainActor.run { lspService.languageClients[.init(.swift, tempTestDir.path() + "/")] = server }
 
         // Set up workspace
         let (workspace, fileManager) = try makeTestWorkspace()

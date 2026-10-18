@@ -92,7 +92,8 @@ struct CodeFileView: View {
     @State private var treeSitter = TreeSitterClient()
 
     /// Provides access to the LSP service to decide whether an LSP-backed highlight provider is worthwhile.
-    @Service var lspService: LSPService
+    @Environment(\.lspService)
+    private var lspService
 
     /// Owns the document-change tracking, symbol-index refresh, and language-server start (stable lifetime).
     @StateObject private var lifecycle = CodeFileLifecycleCoordinator()

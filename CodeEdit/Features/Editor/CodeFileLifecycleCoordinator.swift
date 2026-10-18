@@ -45,10 +45,9 @@ final class CodeFileLifecycleCoordinator: ObservableObject {
     /// Ensures the language server starts for this document. Documents restored at launch may open before the
     /// workspace/configs are ready, so the `didOpen` notification alone can miss them.
     func ensureLanguageServerStarted(codeFile: CodeFileDocument) {
-        guard codeFile.getLanguage().lspLanguage != nil,
-              let lsp = ServiceContainer.resolve(.singleton, LSPService.self) else {
+        guard codeFile.getLanguage().lspLanguage != nil else {
             return
         }
-        lsp.openDocument(codeFile)
+        AppServices.lspService.openDocument(codeFile)
     }
 }

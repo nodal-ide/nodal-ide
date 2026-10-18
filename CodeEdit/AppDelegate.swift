@@ -18,7 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     @Environment(\.openWindow)
     var openWindow
 
-    @LazyService var lspService: LSPService
+    private var lspService: LSPService { AppServices.lspService }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         enableWindowSizeSaveOnQuit()

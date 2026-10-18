@@ -68,8 +68,8 @@ final class LanguageProviderRegistry {
         openLink: @escaping (JumpToDefinitionLink) -> Void
     ) -> [any LanguageProvider] {
         MainActor.assumeIsolated { () -> [any LanguageProvider] in
-            guard let lsp = ServiceContainer.resolve(.singleton, LSPService.self),
-                  let language = LanguageIdentifier(rawValue: languageID),
+            let lsp = AppServices.lspService
+            guard let language = LanguageIdentifier(rawValue: languageID),
                   !lsp.usesInternalLanguage(language),
                   lsp.hasServer(for: language) else {
                 return []

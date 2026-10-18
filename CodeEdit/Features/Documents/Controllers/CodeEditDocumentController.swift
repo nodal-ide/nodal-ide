@@ -13,7 +13,7 @@ final class CodeEditDocumentController: NSDocumentController {
     @Environment(\.openWindow)
     private var openWindow
 
-    @Service var lspService: LSPService
+    private var lspService: LSPService { AppServices.lspService }
 
     private let fileManager = FileManager.default
 

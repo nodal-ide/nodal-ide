@@ -50,9 +50,9 @@ final class SymbolsProvider: CommandCenterProvider {
     // MARK: - LSP
 
     private func lspSymbols(_ query: String, workspace: WorkspaceDocument) async -> [CommandCenterItem] {
+        let lsp = AppServices.lspService
         guard let document = workspace.editorManager?.activeEditor.selectedTab?.file.fileDocument,
               let language = document.getLanguage().lspLanguage,
-              let lsp = ServiceContainer.resolve(.singleton, LSPService.self),
               let client = lsp.languageClient(for: language, workspacePath: workspace.fileURL?.absolutePath ?? ""),
               let response = try? await client.requestWorkspaceSymbols(query) else {
             return []

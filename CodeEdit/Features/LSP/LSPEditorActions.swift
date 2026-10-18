@@ -87,10 +87,10 @@ enum LSPEditorActions {
     /// Formats a document's content in place before it is saved (format on save). Edits are applied
     /// bottom-to-top, and the content is only replaced if formatting actually changed it.
     static func formatForSave(document: CodeFileDocument, url: URL) async {
-        guard let language = document.getLanguage().lspLanguage,
-              let lsp = ServiceContainer.resolve(.singleton, LSPService.self) else {
+        guard let language = document.getLanguage().lspLanguage else {
             return
         }
+        let lsp = AppServices.lspService
         let workspacePath = document.findWorkspace()?.fileURL?.absolutePath ?? ""
         guard let server = lsp.languageClient(for: language, workspacePath: workspacePath),
               let edits = try? await server.requestFormatting(
@@ -154,8 +154,7 @@ enum LSPEditorActions {
               let controller = tab.rangeTranslator.controller,
               let document = tab.file.fileDocument,
               let language = document.getLanguage().lspLanguage,
-              let lsp = ServiceContainer.resolve(.singleton, LSPService.self),
-              let server = lsp.languageClient(
+              let server = AppServices.lspService.languageClient(
                   for: language,
                   workspacePath: workspace.fileURL?.absolutePath ?? ""
               ) else {

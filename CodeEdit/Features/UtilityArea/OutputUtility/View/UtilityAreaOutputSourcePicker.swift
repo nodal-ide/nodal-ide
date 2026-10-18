@@ -19,7 +19,8 @@ struct UtilityAreaOutputSourcePicker: View {
 
     @ObservedObject var extensionManager = ExtensionManager.shared
 
-    @Service var lspService: LSPService
+    @Environment(\.lspService)
+    private var lspService
     @State private var updater: UUID = UUID()
     @State private var languageServerClients: [LSPService.LanguageServerType] = []
 

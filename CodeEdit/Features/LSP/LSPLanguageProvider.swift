@@ -42,11 +42,10 @@ final class LSPLanguageProvider: LanguageProvider {
     /// file is opened).
     var server: LanguageServer<CodeFileDocument>? {
         MainActor.assumeIsolated {
-            guard let lsp = ServiceContainer.resolve(.singleton, LSPService.self),
-                  let language = LanguageIdentifier(rawValue: languageID) else {
+            guard let language = LanguageIdentifier(rawValue: languageID) else {
                 return nil
             }
-            return lsp.languageClient(for: language, workspacePath: workspacePath)
+            return AppServices.lspService.languageClient(for: language, workspacePath: workspacePath)
         }
     }
 

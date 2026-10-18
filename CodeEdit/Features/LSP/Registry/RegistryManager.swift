@@ -74,7 +74,7 @@ final class RegistryManager: ObservableObject {
     /// server actually starts for its languages.
     @MainActor
     func reloadLanguageServerConfigs() {
-        ServiceContainer.resolve(.singleton, LSPService.self)?.reloadConfigurationsAndRestart()
+        AppServices.lspService.reloadConfigurationsAndRestart()
     }
 
     // MARK: - Uninstall
