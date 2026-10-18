@@ -87,7 +87,7 @@ struct CodeFileView: View {
     @State var findRevision = 0
     @State var breakpointObservers = Set<AnyCancellable>()
 
-    @ObservedObject private var themeModel: ThemeModel = .shared
+    @ObservedObject var themeModel: ThemeModel = .shared
 
     @State private var treeSitter = TreeSitterClient()
 
@@ -97,11 +97,11 @@ struct CodeFileView: View {
     /// Owns the document-change tracking, symbol-index refresh, and language-server start (stable lifetime).
     @StateObject private var lifecycle = CodeFileLifecycleCoordinator()
 
-    private let isEditable: Bool
+    let isEditable: Bool
 
     /// Whether this view is a lightweight preview (e.g. in the Command Center / Open Quickly), where editor
     /// peripherals like the minimap are unnecessary.
-    private let isPreview: Bool
+    let isPreview: Bool
 
     /// Native language provider for this file, if one exists (currently PHP). Kept for wiring
     /// diagnostics + the debounced index refresh.
@@ -152,64 +152,17 @@ struct CodeFileView: View {
         }
     }
 
-    @State private var font: NSFont = Settings[\.textEditing].font.current
+    @State var font: NSFont = Settings[\.textEditing].font.current
 
     @Environment(\.edgeInsets)
-    private var edgeInsets
+    var edgeInsets
 
     var body: some View {
         SourceEditor(
             codeFile.content ?? NSTextStorage(),
             language: codeFile.getLanguage(),
-            configuration: SourceEditorConfiguration(
-                appearance: .init(
-                    theme: currentTheme.editor.editorTheme,
-                    useThemeBackground: useThemeBackground,
-                    font: font,
-                    lineHeightMultiple: lineHeightMultiple,
-                    letterSpacing: letterSpacing,
-                    wrapLines: wrapLinesToEditorWidth,
-                    useSystemCursor: useSystemCursor,
-                    tabWidth: defaultTabWidth,
-                    bracketPairEmphasis: getBracketPairEmphasis()
-                ),
-                behavior: .init(
-                    isEditable: isEditable,
-                    indentOption: indentOption.textViewOption(),
-                    reformatAtColumn: reformatAtColumn
-                ),
-                layout: .init(
-                    editorOverscroll: overscroll.overscrollPercentage,
-                    contentInsets: edgeInsets.nsEdgeInsets,
-                    additionalTextInsets: NSEdgeInsets(top: 2, left: 0, bottom: 0, right: 0)
-                ),
-                peripherals: .init(
-                    showGutter: showGutter,
-                    showMinimap: isPreview ? false : (showMinimap && isSmallDocument),
-                    showReformattingGuide: showReformattingGuide,
-                    showFoldingRibbon: showFoldingRibbon,
-                    invisibleCharactersConfiguration: invisibleCharactersConfiguration.textViewOption(),
-                    warningCharacters: Set(warningCharacters.characters.keys)
-                )
-            ),
-            state: Binding(
-                get: {
-                    SourceEditorState(
-                        cursorPositions: editorInstance.cursorPositions,
-                        scrollPosition: editorInstance.scrollPosition,
-                        findText: editorFindText,
-                        replaceText: editorReplaceText
-                    )
-                },
-                set: { newState in
-                    editorInstance.cursorPositions = newState.cursorPositions ?? []
-                    editorInstance.scrollPosition = newState.scrollPosition
-                    editorInstance.findText = newState.findText
-                    editorInstance.findTextSubject.send(newState.findText)
-                    editorInstance.replaceText = newState.replaceText
-                    editorInstance.replaceTextSubject.send(newState.replaceText)
-                }
-            ),
+            configuration: editorConfiguration,
+            state: editorStateBinding,
             highlightProviders: highlightProviders,
             undoManager: undoRegistration.manager(forFile: editorInstance.file),
             coordinators: textViewCoordinators,
@@ -225,18 +178,8 @@ struct CodeFileView: View {
             documentHighlightDelegate: languageDelegate,
             breakpointLines: currentBreakpointLines,
             disabledBreakpointLines: currentDisabledBreakpointLines,
-            onToggleBreakpoint: { line in
-                guard let store = codeFile.findWorkspace()?.breakpointStore, let url = codeFile.fileURL else {
-                    return
-                }
-                store.toggleOrAdd(url, line: line)
-            },
-            onBreakpointMenu: { line in
-                guard let store = codeFile.findWorkspace()?.breakpointStore, let url = codeFile.fileURL else {
-                    return nil
-                }
-                return BreakpointMenu.menu(for: url, line: line, store: store)
-            },
+            onToggleBreakpoint: toggleBreakpoint(line:),
+            onBreakpointMenu: breakpointMenu(line:),
             debugLine: currentDebugLine
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.
@@ -259,34 +202,6 @@ struct CodeFileView: View {
         .frame(minHeight: .zero, maxHeight: .infinity)
         .onChange(of: settingsFont) { _, newFontSetting in
             font = newFontSetting.current
-        }
-    }
-
-}
-
-extension CodeFileView {
-    private var currentTheme: Theme {
-        themeModel.selectedTheme ?? themeModel.themes.first!
-    }
-
-    /// Determines the style of bracket emphasis based on the `bracketEmphasis` setting and the current theme.
-    /// - Returns: The emphasis style to use for bracket pair emphasis.
-    private func getBracketPairEmphasis() -> BracketPairEmphasis? {
-        let color = if Settings[\.textEditing].bracketEmphasis.useCustomColor {
-            Settings[\.textEditing].bracketEmphasis.color.nsColor
-        } else {
-            currentTheme.editor.text.nsColor.withAlphaComponent(0.8)
-        }
-
-        switch Settings[\.textEditing].bracketEmphasis.highlightType {
-        case .disabled:
-            return nil
-        case .flash:
-            return .flash
-        case .bordered:
-            return .bordered(color: color)
-        case .underline:
-            return .underline(color: color)
         }
     }
 }
