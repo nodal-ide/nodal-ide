@@ -52,17 +52,19 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     var listenerModel: WorkspaceNotificationModel = .init()
     var sourceControlManager: SourceControlManager?
 
-    var taskManager: TaskManager?
-    var runConfigurationStore: RunConfigurationStore?
-    var runController: RunController?
-    var testRunner: TestRunner?
-    var breakpointStore: BreakpointStore?
-    var debugController: DebugController?
+    var taskManager: TaskManager? { services?.taskManager }
+    var runConfigurationStore: RunConfigurationStore? { services?.runConfigurationStore }
+    var runController: RunController? { services?.runController }
+    var testRunner: TestRunner? { services?.testRunner }
+    var breakpointStore: BreakpointStore? { services?.breakpointStore }
+    var debugController: DebugController? { services?.debugController }
     var workspaceSettingsManager: CEWorkspaceSettings?
     var taskNotificationHandler: TaskNotificationHandler = TaskNotificationHandler()
 
     private var runtimeCoordinator: WorkspaceRuntimeCoordinator?
     private let launchCoordinator = WorkspaceLaunchCoordinator()
+    /// Composition root for workspace-scoped services (see ``WorkspaceServices``).
+    private var services: WorkspaceServices?
 
     var undoRegistration: UndoManagerRegistration = UndoManagerRegistration()
 
@@ -181,17 +183,11 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         self.openQuicklyViewModel = .init(fileURL: url)
         self.commandsPaletteState = .init()
         self.workspaceSettingsManager = CEWorkspaceSettings(workspaceURL: url)
-        if let workspaceSettingsManager {
-            self.taskManager = TaskManager(
-                workspaceSettings: workspaceSettingsManager.settings,
-                workspaceURL: url
-            )
-        }
-        self.runConfigurationStore = RunConfigurationStore(workspaceURL: url)
-        self.runController = RunController(workspace: self)
-        self.testRunner = TestRunner(workspace: self)
-        self.breakpointStore = BreakpointStore(workspaceURL: url)
-        self.debugController = DebugController(workspace: self)
+        self.services = WorkspaceServices(
+            workspace: self,
+            url: url,
+            settingsManager: workspaceSettingsManager
+        )
         self.taskNotificationHandler.workspaceURL = url
 
         workspaceFileManager?.addObserver(undoRegistration)
@@ -240,7 +236,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         workspaceFileManager = nil
         workspaceSettingsManager?.cleanUp()
         workspaceSettingsManager = nil
-        taskManager = nil
+        services = nil
     }
 
     /// Determines the windows should be closed.
