@@ -21,15 +21,9 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     /// Whether the workspace only shows files modified recently.
     @Published var recentsFilter = false
 
-    private var workspaceState: [String: Any] {
-        get {
-            let key = "workspaceState-\(self.fileURL?.absoluteString ?? "")"
-            return UserDefaults.standard.object(forKey: key) as? [String: Any] ?? [:]
-        }
-        set {
-            let key = "workspaceState-\(self.fileURL?.absoluteString ?? "")"
-            UserDefaults.standard.set(newValue, forKey: key)
-        }
+    /// Persistence for per-workspace UI state; always resolves against the current `fileURL`.
+    private var stateStore: WorkspaceStateStore {
+        WorkspaceStateStore(fileURL: fileURL)
     }
 
     var workspaceFileManager: CEWorkspaceFileManager?
@@ -51,6 +45,8 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     var debugController: DebugController?
     var workspaceSettingsManager: CEWorkspaceSettings?
     var taskNotificationHandler: TaskNotificationHandler = TaskNotificationHandler()
+
+    private var runtimeCoordinator: WorkspaceRuntimeCoordinator?
 
     var undoRegistration: UndoManagerRegistration = UndoManagerRegistration()
 
@@ -76,15 +72,11 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     }
 
     func getFromWorkspaceState(_ key: WorkspaceStateKey) -> Any? {
-        return workspaceState[key.rawValue]
+        return stateStore.value(for: key)
     }
 
     func addToWorkspaceState(key: WorkspaceStateKey, value: Any?) {
-        if let value {
-            workspaceState.updateValue(value, forKey: key.rawValue)
-        } else {
-            workspaceState.removeValue(forKey: key.rawValue)
-        }
+        stateStore.set(value, for: key)
     }
 
     // MARK: NSDocument
@@ -170,16 +162,6 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
                 workspaceSettings: workspaceSettingsManager.settings,
                 workspaceURL: url
             )
-            // Re-resolve the runtime PATH whenever the project's runtime pins change.
-            workspaceSettingsManager.$settings
-                .map(\.runtimes)
-                .removeDuplicates()
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in
-                    guard let self else { return }
-                    Task { await RuntimeEnvironment.shared.refresh(workspace: self) }
-                }
-                .store(in: &cancellables)
         }
         self.runConfigurationStore = RunConfigurationStore(workspaceURL: url)
         self.runController = RunController(workspace: self)
@@ -192,7 +174,9 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         editorManager?.restoreFromState(self)
         utilityAreaModel?.restoreFromState(self)
 
-        Task { await RuntimeEnvironment.shared.refresh(workspace: self) }
+        // Resolve the runtime environment now and keep it in sync with the project's runtime pins.
+        self.runtimeCoordinator = WorkspaceRuntimeCoordinator(workspace: self)
+        runtimeCoordinator?.start(settingsManager: workspaceSettingsManager)
 
         // Kick off a background project scan (symbols + code-quality diagnostics) shortly after launch
         // so the Problems panel isn't limited to open files. Only for PHP projects.
@@ -228,6 +212,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         utilityAreaModel?.saveRestorationState(self)
 
         cancellables.forEach({ $0.cancel() })
+        runtimeCoordinator = nil
         statusBarViewModel = nil
         utilityAreaModel = nil
         searchState = nil
