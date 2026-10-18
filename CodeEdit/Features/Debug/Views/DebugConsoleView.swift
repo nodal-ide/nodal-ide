@@ -45,24 +45,7 @@ struct DebugConsoleView: View {
     }
 
     private var console: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 1) {
-                    ForEach(Array(session.console.enumerated()), id: \.offset) { index, line in
-                        Text(line)
-                            .font(.system(size: 12, design: .monospaced))
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .id(index)
-                    }
-                }
-                .padding(8)
-            }
-            .onChange(of: session.console.count) { _, _ in
-                guard !session.console.isEmpty else { return }
-                withAnimation { proxy.scrollTo(session.console.count - 1, anchor: .bottom) }
-            }
-        }
+        OutputConsoleView(lines: session.console)
     }
 
     private var inputBar: some View {
