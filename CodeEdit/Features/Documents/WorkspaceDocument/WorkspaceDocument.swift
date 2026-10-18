@@ -41,34 +41,36 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         WorkspaceStateStore(fileURL: fileURL)
     }
 
-    var workspaceFileManager: CEWorkspaceFileManager? { services?.workspaceFileManager }
-    var editorManager: EditorManager? { services?.editorManager }
-    var statusBarViewModel: StatusBarViewModel? { services?.statusBarViewModel }
-    var utilityAreaModel: UtilityAreaViewModel? { services?.utilityAreaModel }
-    var sourceControlManager: SourceControlManager? { services?.sourceControlManager }
+    /// Composition root for workspace-scoped services (see ``WorkspaceServices``). The services are
+    /// exposed below through computed forwards so call sites are unchanged.
+    let services = WorkspaceServices()
 
-    var searchState: WorkspaceSearchService? { services?.searchState }
-    var openQuicklyViewModel: OpenQuicklyViewModel? { services?.openQuicklyViewModel }
-    var commandsPaletteState: QuickActionsViewModel? { services?.commandsPaletteState }
-    var listenerModel: WorkspaceNotificationModel = .init()
+    // Eagerly-created services.
+    var editorManager: EditorManager? { services.editorManager }
+    var statusBarViewModel: StatusBarViewModel? { services.statusBarViewModel }
+    var utilityAreaModel: UtilityAreaViewModel? { services.utilityAreaModel }
+    var listenerModel: WorkspaceNotificationModel { services.listenerModel }
+    var notificationPanel: NotificationPanelViewModel { services.notificationPanel }
+    var undoRegistration: UndoManagerRegistration { services.undoRegistration }
+    var taskNotificationHandler: TaskNotificationHandler { services.taskNotificationHandler }
 
-    var taskManager: TaskManager? { services?.taskManager }
-    var runConfigurationStore: RunConfigurationStore? { services?.runConfigurationStore }
-    var runController: RunController? { services?.runController }
-    var testRunner: TestRunner? { services?.testRunner }
-    var breakpointStore: BreakpointStore? { services?.breakpointStore }
-    var debugController: DebugController? { services?.debugController }
-    var workspaceSettingsManager: CEWorkspaceSettings? { services?.workspaceSettingsManager }
-    var taskNotificationHandler: TaskNotificationHandler = TaskNotificationHandler()
+    // Workspace-dependent services (created once the URL is known).
+    var workspaceFileManager: CEWorkspaceFileManager? { services.workspaceFileManager }
+    var sourceControlManager: SourceControlManager? { services.sourceControlManager }
+    var workspaceSettingsManager: CEWorkspaceSettings? { services.workspaceSettingsManager }
+    var searchState: WorkspaceSearchService? { services.searchState }
+    var openQuicklyViewModel: OpenQuicklyViewModel? { services.openQuicklyViewModel }
+    var commandsPaletteState: QuickActionsViewModel? { services.commandsPaletteState }
+    var taskManager: TaskManager? { services.taskManager }
+    var runConfigurationStore: RunConfigurationStore? { services.runConfigurationStore }
+    var runController: RunController? { services.runController }
+    var testRunner: TestRunner? { services.testRunner }
+    var breakpointStore: BreakpointStore? { services.breakpointStore }
+    var debugController: DebugController? { services.debugController }
 
     private var runtimeCoordinator: WorkspaceRuntimeCoordinator?
     private let launchCoordinator = WorkspaceLaunchCoordinator()
-    /// Composition root for workspace-scoped services (see ``WorkspaceServices``).
-    private var services: WorkspaceServices?
 
-    var undoRegistration: UndoManagerRegistration = UndoManagerRegistration()
-
-    var notificationPanel = NotificationPanelViewModel()
     private var cancellables = Set<AnyCancellable>()
 
     override init() {
@@ -163,8 +165,8 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         self.fileURL = url
         self.displayName = url.lastPathComponent
 
-        self.services = WorkspaceServices(workspace: self, url: url)
-        self.taskNotificationHandler.workspaceURL = url
+        services.configure(workspace: self, url: url)
+        taskNotificationHandler.workspaceURL = url
 
         workspaceFileManager?.addObserver(undoRegistration)
         editorManager?.restoreFromState(self)
@@ -201,9 +203,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
 
         cancellables.forEach({ $0.cancel() })
         runtimeCoordinator = nil
-        workspaceFileManager?.cleanUp()
-        workspaceSettingsManager?.cleanUp()
-        services = nil
+        services.tearDown()
     }
 
     /// Determines the windows should be closed.
