@@ -74,7 +74,7 @@ struct EditorTabCloseButton: View {
         .accessibilityLabel(Text("Close"))
         // Only show when the mouse is hovering and there is no tab dragging.
         .opacity(isHoveringTab && !isDragging ? 1 : 0)
-        .animation(.easeInOut(duration: 0.08), value: isHoveringTab)
+        .animation(CodeEditAnimations.hover, value: isHoveringTab)
         .padding(.leading, 4)
     }
 

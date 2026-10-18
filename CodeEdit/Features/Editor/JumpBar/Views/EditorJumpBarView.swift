@@ -23,7 +23,7 @@ struct EditorJumpBarView: View {
 
     @Binding var codeFile: CodeFileDocument?
 
-    static let height = 28.0
+    static let height = Metrics.Bar.jumpBarHeight
 
     @State private var textWidth: CGFloat = 0
     @State private var containerWidth: CGFloat = 0

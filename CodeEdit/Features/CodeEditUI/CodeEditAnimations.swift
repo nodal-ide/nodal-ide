@@ -34,4 +34,7 @@ enum CodeEditAnimations {
 
     /// A quick animation for small, local UI changes (hover, inline reveals).
     static let quick: Animation = .easeInOut(duration: 0.12)
+
+    /// Fast hover/focus transitions on small controls (tabs, buttons).
+    static let hover: Animation = .easeInOut(duration: 0.08)
 }

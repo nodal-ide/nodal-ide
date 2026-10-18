@@ -9,10 +9,10 @@ import Cocoa
 import SwiftUI
 
 final class CodeEditSplitViewController: NSSplitViewController {
-    static let minSidebarWidth: CGFloat = 242
-    static let maxSnapWidth: CGFloat = snapWidth + 10
-    static let snapWidth: CGFloat = 272
-    static let minSnapWidth: CGFloat = snapWidth - 10
+    static let minSidebarWidth = Metrics.Sidebar.minWidth
+    static let maxSnapWidth = Metrics.Sidebar.maxSnapWidth
+    static let snapWidth = Metrics.Sidebar.snapWidth
+    static let minSnapWidth = Metrics.Sidebar.minSnapWidth
 
     private weak var workspace: WorkspaceDocument?
     private weak var navigatorViewModel: NavigatorAreaViewModel?

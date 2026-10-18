@@ -248,7 +248,7 @@ struct EditorTabView: View {
         content
             .background {
                 EditorTabBackground(isActive: isActive, isPressing: isPressing, isDragging: isDragging)
-                    .animation(.easeInOut(duration: 0.08), value: isHovering)
+                    .animation(CodeEditAnimations.hover, value: isHovering)
             }
             .if(.tahoe) {
                 if #available(macOS 26, *) {

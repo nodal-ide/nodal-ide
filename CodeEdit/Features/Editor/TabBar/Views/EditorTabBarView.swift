@@ -12,7 +12,7 @@ struct EditorTabBarView: View {
     @Binding var codeFile: CodeFileDocument?
     /// The height of tab bar.
     /// I am not making it a private variable because it may need to be used in outside views.
-    static let height = 28.0
+    static let height = Metrics.Bar.tabBarHeight
 
     var body: some View {
         HStack(alignment: .center, spacing: 0) {

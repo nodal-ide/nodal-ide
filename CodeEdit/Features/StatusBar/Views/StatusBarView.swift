@@ -25,11 +25,7 @@ struct StatusBarView: View {
     @EnvironmentObject private var utilityAreaViewModel: UtilityAreaViewModel
 
     static var height: CGFloat {
-        if #available(macOS 26, *) {
-            37.0
-        } else {
-            29.0
-        }
+        Metrics.Bar.statusBarHeight
     }
 
     private var trailingPadding: CGFloat {

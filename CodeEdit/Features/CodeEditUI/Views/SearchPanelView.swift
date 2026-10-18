@@ -105,7 +105,7 @@ struct SearchPanelView<RowView: View, PreviewView: View, Option: Identifiable & 
                         Text("No matching options")
                             .font(.system(size: 17))
                             .foregroundColor(.secondary)
-                            .frame(maxWidth: hasPreview ? 272 : .infinity, maxHeight: .infinity)
+                            .frame(maxWidth: hasPreview ? Metrics.Sidebar.snapWidth : .infinity, maxHeight: .infinity)
                     } else {
                         NSTableViewWrapper(
                             data: options,
@@ -113,7 +113,7 @@ struct SearchPanelView<RowView: View, PreviewView: View, Option: Identifiable & 
                             selection: $selection,
                             itemView: rowViewBuilder
                         )
-                        .frame(maxWidth: hasPreview && previewVisible ? 272 : .infinity)
+                        .frame(maxWidth: hasPreview && previewVisible ? Metrics.Sidebar.snapWidth : .infinity)
                     }
                     if hasPreview && previewVisible {
                         Divider()
