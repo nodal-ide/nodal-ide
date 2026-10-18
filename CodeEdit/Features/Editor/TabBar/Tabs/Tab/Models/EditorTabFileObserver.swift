@@ -21,9 +21,11 @@ final class EditorTabFileObserver: ObservableObject,
     }
 
     nonisolated func fileManagerUpdated(updatedItems: Set<CEWorkspaceFile>) {
+        guard let parent = tabFile.parent, updatedItems.contains(parent) else { return }
         Task { @MainActor in
-            if let parent = tabFile.parent, updatedItems.contains(parent) {
-                isDeleted = tabFile.doesExist == false
+            let exists = tabFile.doesExist
+            if isDeleted != !exists {
+                isDeleted = !exists
             }
         }
     }

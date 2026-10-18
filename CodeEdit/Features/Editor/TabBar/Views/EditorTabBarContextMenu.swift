@@ -46,20 +46,16 @@ struct EditorTabBarContextMenu: ViewModifier {
 
                 Button("Close Other Tabs") {
                     withAnimation {
-                        tabs.tabs.map({ $0.file }).forEach { file in
-                            if file != item {
-                                tabs.closeTab(file: file)
-                            }
-                        }
+                        let otherFiles = tabs.tabs.compactMap { $0.file != item ? $0.file : nil }
+                        tabs.closeTabs(otherFiles)
                     }
                 }
 
                 Button("Close Tabs to the Right") {
                     withAnimation {
                         if let index = tabs.tabs.firstIndex(where: { $0.file == item }), index + 1 < tabs.tabs.count {
-                            tabs.tabs[(index + 1)...].forEach {
-                                tabs.closeTab(file: $0.file)
-                            }
+                            let filesToRight = tabs.tabs[(index + 1)...].map(\.file)
+                            tabs.closeTabs(filesToRight)
                         }
                     }
                 }
@@ -68,9 +64,7 @@ struct EditorTabBarContextMenu: ViewModifier {
 
                 Button("Close All") {
                     withAnimation {
-                        tabs.tabs.forEach {
-                            tabs.closeTab(file: $0.file)
-                        }
+                        tabs.closeTabs(tabs.tabs.map(\.file))
                     }
                 }
 

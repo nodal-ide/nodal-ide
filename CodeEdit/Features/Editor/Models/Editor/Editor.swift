@@ -168,6 +168,47 @@ final class Editor: ObservableObject, Identifiable {
         file.fileDocument = nil
     }
 
+    /// Closes a collection of tabs in a single batch operation, minimizing state invalidation cascades.
+    /// - Parameter files: The files to close
+    func closeTabs<S: Sequence>(_ files: S) where S.Element == CEWorkspaceFile {
+        let fileSet = Set(files)
+        guard !fileSet.isEmpty else { return }
+
+        var closableFiles: [CEWorkspaceFile] = []
+        for file in fileSet {
+            if canCloseTab(file: file) {
+                closableFiles.append(file)
+            }
+        }
+        guard !closableFiles.isEmpty else { return }
+        let closableSet = Set(closableFiles)
+
+        if let temp = temporaryTab, closableSet.contains(temp.file) {
+            temporaryTab = nil
+        }
+        clearFuture()
+
+        for file in closableFiles {
+            if file != selectedTab?.file {
+                addToHistory(EditorInstance(workspace: workspace, file: file))
+            }
+        }
+
+        tabs.removeAll(where: { closableSet.contains($0.file) })
+
+        if let selectedTab {
+            addToHistory(selectedTab)
+        }
+
+        for file in closableFiles {
+            file.fileDocument?.updateChangeCount(.changeCleared)
+            if let codeFile = file.fileDocument {
+                codeFile.close()
+            }
+            file.fileDocument = nil
+        }
+    }
+
     /// Closes the currently opened tab in the tab group.
     func closeSelectedTab() {
         guard let file = selectedTab?.file else {

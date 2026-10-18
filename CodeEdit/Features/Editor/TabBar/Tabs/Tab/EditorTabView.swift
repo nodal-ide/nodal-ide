@@ -174,14 +174,13 @@ struct EditorTabView: View {
             .padding(.horizontal, 20)
             .overlay {
                 ZStack {
-                    // Close Button with is file changed indicator
-                    EditorFileTabCloseButton(
+                    EditorTabCloseButton(
                         isActive: isActive,
                         isHoveringTab: isHovering,
                         isDragging: draggingTabId != nil || onDragTabId != nil,
                         closeAction: closeAction,
                         closeButtonGestureActive: $closeButtonGestureActive,
-                        item: tabFile,
+                        isDocumentEdited: isDocumentEdited,
                         isHoveringClose: $isHoveringClose
                     )
                 }

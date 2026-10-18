@@ -203,11 +203,8 @@ struct EditorTabs: View {
                 // In order to avoid the lag due to the update of workspace state.
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.40) {
                     if draggingStartLocation == nil {
-                        editor.tabs = .init(openedTabs.compactMap { id in
-                            editor.tabs.first { $0.file.id == id }
-                        })
-                        // workspace.reorderedTabs(openedTabs: openedTabs)
-                        // TODO: Fix save state
+                        let tabLookup = Dictionary(uniqueKeysWithValues: editor.tabs.map { ($0.file.id, $0) })
+                        editor.tabs = .init(openedTabs.compactMap { id in tabLookup[id] })
                     }
                 }
             })
@@ -225,12 +222,16 @@ struct EditorTabs: View {
                 .onChange(
                     of: tabItemGeoReader.frame(in: .global)
                 ) { _, tabCGRect in
-                    tabLocations[id] = tabCGRect
+                    if tabLocations[id] != tabCGRect {
+                        tabLocations[id] = tabCGRect
+                    }
                 }
                 .onChange(
                     of: tabItemGeoReader.size.width
                 ) { _, newWidth in
-                    tabWidth[id] = newWidth
+                    if tabWidth[id] != newWidth {
+                        tabWidth[id] = newWidth
+                    }
                 }
         }
     }
@@ -252,12 +253,13 @@ struct EditorTabs: View {
                 contentTrailingOffset: $scrollTrailingOffset
             ) {
                 ScrollViewReader { scrollReader in
+                    let tabLookup = Dictionary(uniqueKeysWithValues: editor.tabs.map { ($0.file.id, $0) })
                     HStack(
                         alignment: .center,
                         spacing: -1 // Negative spacing for overlapping the divider.
                     ) {
                         ForEach(Array(openedTabs.enumerated()), id: \.element) { index, id in
-                            if let item = editor.tabs.first(where: { $0.file.id == id }) {
+                            if let item = tabLookup[id] {
                                 if index != 0
                                     && editor.selectedTab?.file.id != id
                                     && editor.selectedTab?.file.id != openedTabs[index - 1] {
