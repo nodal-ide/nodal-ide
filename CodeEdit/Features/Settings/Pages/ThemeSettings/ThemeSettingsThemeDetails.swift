@@ -18,7 +18,7 @@ struct ThemeSettingsThemeDetails: View {
 
     var originalTheme: Theme
 
-    @StateObject private var themeModel: ThemeModel = .shared
+    @StateObject private var themeModel: ThemeModel = AppServices.themeModel
 
     @State private var duplicatingTheme: Theme?
 

@@ -8,11 +8,11 @@ import Foundation
 
 /**
 The object of this class intended to be a hearth of command palette. This object only exists as singleton.
- In Order to access its instance use `CommandManager.shared`
+ In Order to access its instance use `AppServices.commandManager`
 
 ```
  /* To add or execute command see snipper below */
-let mgr = CommandManager.shared
+let mgr = AppServices.commandManager
 let wrap = CommandClosureWrapper.init(closure: {
     print("testing closure")
 })

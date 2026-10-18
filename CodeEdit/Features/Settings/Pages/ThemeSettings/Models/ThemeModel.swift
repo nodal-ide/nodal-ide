@@ -12,7 +12,7 @@ import SwiftUI
 /// **Usage:**
 /// ```swift
 /// @StateObject
-/// private var themeModel: ThemeModel = .shared
+/// private var themeModel: ThemeModel = AppServices.themeModel
 /// ```
 final class ThemeModel: ObservableObject {
     static let shared: ThemeModel = .init()

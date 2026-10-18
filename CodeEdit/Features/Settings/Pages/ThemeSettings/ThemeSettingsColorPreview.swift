@@ -10,7 +10,7 @@ import SwiftUI
 struct ThemeSettingsColorPreview: View {
     var theme: Theme
 
-    @StateObject private var themeModel: ThemeModel = .shared
+    @StateObject private var themeModel: ThemeModel = AppServices.themeModel
 
     @State private var displayName: String
 

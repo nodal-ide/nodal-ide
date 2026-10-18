@@ -25,7 +25,7 @@ internal struct StatusBarToggleUtilityAreaButton: View {
         .cursor(.arrow)
         .onChange(of: controlActiveState) { _, newValue in
             if newValue == .key {
-                CommandManager.shared.addCommand(
+                AppServices.commandManager.addCommand(
                     name: "Toggle Utility Area",
                     title: "Toggle Utility Area",
                     id: "open.drawer",
@@ -34,7 +34,7 @@ internal struct StatusBarToggleUtilityAreaButton: View {
             }
         }
         .onAppear {
-            CommandManager.shared.addCommand(
+            AppServices.commandManager.addCommand(
                 name: "Toggle Utility Area",
                 title: "Toggle Utility Area",
                 id: "open.drawer",

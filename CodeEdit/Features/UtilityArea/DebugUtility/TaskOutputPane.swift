@@ -27,7 +27,7 @@ struct TaskOutputPane: View {
     private var colorScheme
 
     @State private var scrollProxy: ScrollViewProxy?
-    @StateObject private var themeModel: ThemeModel = .shared
+    @StateObject private var themeModel: ThemeModel = AppServices.themeModel
 
     @Namespace var bottomID
 

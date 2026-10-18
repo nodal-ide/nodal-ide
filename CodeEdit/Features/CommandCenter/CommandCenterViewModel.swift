@@ -39,7 +39,7 @@ final class CommandCenterViewModel: ObservableObject {
             try? await Task.sleep(for: .milliseconds(120))
             guard !Task.isCancelled, let self else { return }
             self.isSearching = true
-            let items = await CommandCenterRegistry.shared.search(trimmed, category: category)
+            let items = await AppServices.commandCenterRegistry.search(trimmed, category: category)
             guard !Task.isCancelled else { return }
             self.results = items
             self.isSearching = false

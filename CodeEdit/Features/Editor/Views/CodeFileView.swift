@@ -87,7 +87,7 @@ struct CodeFileView: View {
     @State var findRevision = 0
     @State var breakpointObservers = Set<AnyCancellable>()
 
-    @ObservedObject var themeModel: ThemeModel = .shared
+    @ObservedObject var themeModel: ThemeModel = AppServices.themeModel
 
     @State private var treeSitter = TreeSitterClient()
 

@@ -15,7 +15,7 @@ struct QuickActionsView: View {
 
     @ObservedObject private var state: QuickActionsViewModel
 
-    @ObservedObject private var commandManager: CommandManager = .shared
+    @ObservedObject private var commandManager: CommandManager = AppServices.commandManager
 
     @State private var monitor: Any?
 

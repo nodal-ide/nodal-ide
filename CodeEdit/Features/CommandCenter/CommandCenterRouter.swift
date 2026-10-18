@@ -19,7 +19,7 @@ enum CommandCenterRouter {
         case let .position(url, line, character):
             open(url, range: nil, position: (line, character))
         case .command(let id):
-            CommandManager.shared.executeCommand(id)
+            AppServices.commandManager.executeCommand(id)
         case .route(let route):
             handle(route, workspace: workspace)
         }

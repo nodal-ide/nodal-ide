@@ -32,27 +32,27 @@ private extension LocationsSettingsView {
     }
 
     private var settingsLocation: some View {
-        ExternalLink(destination: ThemeModel.shared.settingsURL) {
+        ExternalLink(destination: AppServices.themeModel.settingsURL) {
             Text("Settings")
-            Text(ThemeModel.shared.settingsURL.path)
+            Text(AppServices.themeModel.settingsURL.path)
                 .font(.footnote)
                 .foregroundColor(.secondary)
         }
     }
 
     private var themesLocation: some View {
-        ExternalLink(destination: ThemeModel.shared.themesURL) {
+        ExternalLink(destination: AppServices.themeModel.themesURL) {
             Text("Themes")
-            Text(ThemeModel.shared.themesURL.path)
+            Text(AppServices.themeModel.themesURL.path)
                 .font(.footnote)
                 .foregroundColor(.secondary)
         }
     }
 
     private var extensionsLocation: some View {
-        ExternalLink(destination: ThemeModel.shared.extensionsURL) {
+        ExternalLink(destination: AppServices.themeModel.extensionsURL) {
             Text("Extensions")
-            Text(ThemeModel.shared.extensionsURL.path())
+            Text(AppServices.themeModel.extensionsURL.path())
                 .font(.footnote)
                 .foregroundColor(.secondary)
         }

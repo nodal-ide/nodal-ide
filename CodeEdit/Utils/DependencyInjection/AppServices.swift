@@ -22,6 +22,18 @@ enum AppServices {
 
     /// The app-wide notification manager (in-app banners + system notifications).
     static var notificationManager: NotificationManager = .shared
+
+    /// The app-wide theme model.
+    static var themeModel: ThemeModel = .shared
+
+    /// The app-wide command registry.
+    static var commandManager: CommandManager = .shared
+
+    /// The app-wide keybinding manager.
+    static var keybindingManager: KeybindingManager = .shared
+
+    /// The app-wide command-center provider registry.
+    static var commandCenterRegistry: CommandCenterRegistry = .shared
 }
 
 // MARK: - Environment injection

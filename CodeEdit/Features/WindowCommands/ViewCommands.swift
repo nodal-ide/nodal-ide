@@ -144,7 +144,7 @@ extension ViewCommands {
             .keyboardShortcut("i", modifiers: [.control, .command])
 
             Button("\(utilityAreaCollapsed ? "Show" : "Hide") Utility Area") {
-                CommandManager.shared.executeCommand("open.drawer")
+                AppServices.commandManager.executeCommand("open.drawer")
             }
             .disabled(windowController == nil)
             .keyboardShortcut("y", modifiers: [.shift, .command])

@@ -11,7 +11,7 @@ enum CommandCenterProviders {
     /// Registers (or replaces) the built-in providers for the given workspace.
     @MainActor
     static func register(for workspace: WorkspaceDocument) {
-        let registry = CommandCenterRegistry.shared
+        let registry = AppServices.commandCenterRegistry
 
         registry.register(CommandsProvider())
         registry.register(KnowledgeProvider())

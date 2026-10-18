@@ -28,7 +28,7 @@ struct WorkspaceView: View {
     @EnvironmentObject private var editorManager: EditorManager
     @EnvironmentObject private var utilityAreaViewModel: UtilityAreaViewModel
 
-    @StateObject private var themeModel: ThemeModel = .shared
+    @StateObject private var themeModel: ThemeModel = AppServices.themeModel
 
     @State private var showingAlert = false
     @State private var terminalCollapsed = true

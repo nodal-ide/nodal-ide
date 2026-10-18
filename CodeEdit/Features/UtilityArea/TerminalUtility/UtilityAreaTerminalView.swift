@@ -31,7 +31,7 @@ struct UtilityAreaTerminalView: View {
 
     @State private var sidebarIsCollapsed = false
 
-    @StateObject private var themeModel: ThemeModel = .shared
+    @StateObject private var themeModel: ThemeModel = AppServices.themeModel
 
     @State private var isMenuVisible = false
 

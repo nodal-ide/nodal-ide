@@ -164,7 +164,7 @@ struct EditorAreaView: View {
                     // private var backgroundColor: NSColor {
                     //     let fallback = NSColor.textBackgroundColor
                     //     return if useThemeBackground {
-                    //         ThemeModel.shared.selectedTheme?.editor.background.nsColor ?? fallback
+                    //         AppServices.themeModel.selectedTheme?.editor.background.nsColor ?? fallback
                     //     } else {
                     //         fallback
                     //     }

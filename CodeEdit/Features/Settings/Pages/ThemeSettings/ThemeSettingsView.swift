@@ -11,7 +11,7 @@ import SwiftUI
 struct ThemeSettingsView: View {
     @Environment(\.colorScheme)
     var colorScheme
-    @ObservedObject private var themeModel: ThemeModel = .shared
+    @ObservedObject private var themeModel: ThemeModel = AppServices.themeModel
     @AppSettings(\.theme)
     var settings
     @AppSettings(\.terminal.darkAppearance)

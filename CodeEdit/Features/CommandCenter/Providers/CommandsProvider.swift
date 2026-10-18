@@ -15,7 +15,7 @@ final class CommandsProvider: CommandCenterProvider {
 
     func search(_ query: String) async -> [CommandCenterItem] {
         let trimmed = query.trimmingCharacters(in: .whitespaces)
-        let all = CommandManager.shared.commands
+        let all = AppServices.commandManager.commands
         let filtered = trimmed.isEmpty
             ? all
             : all.filter { $0.title.localizedCaseInsensitiveContains(trimmed) }
