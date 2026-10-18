@@ -281,23 +281,9 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
             .compactMap(\.fileDocument)
             .filter(\.isDocumentEdited) ?? []
 
-        for editedCodeFile in editedCodeFiles {
-            let shouldClose = UnsafeMutablePointer<Bool>.allocate(capacity: 1)
-            shouldClose.initialize(to: true)
-            defer {
-                _ = shouldClose.move()
-                shouldClose.deallocate()
-            }
-            // Present a panel giving the user the choice of canceling, discarding changes, or saving.
-            editedCodeFile.canClose(
-                withDelegate: self,
-                shouldClose: #selector(document(_:shouldClose:contextInfo:)),
-                contextInfo: shouldClose
-            )
-            // pointee becomes false when user select cancel
-            guard shouldClose.pointee else {
-                break
-            }
+        for editedCodeFile in editedCodeFiles where !DocumentCloseConfirmation.confirmClose(of: editedCodeFile) {
+            // The user chose to cancel: stop and report that the window should not close.
+            break
         }
         // Invoke shouldCloseSelector at delegate
         let implementation = object.method(for: shouldCloseSelector)
@@ -309,26 +295,5 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
             .compactMap(\.fileDocument)
             .allSatisfy { !$0.isDocumentEdited } ?? false
         function(object, shouldCloseSelector, self, areAllOpenedCodeFilesClean, contextInfo)
-    }
-
-    // MARK: NSDocument delegate
-
-    /// Receives result of `canClose` and then, set `shouldClose` to `contextInfo`'s `pointee`.
-    ///
-    /// - Parameters:
-    ///   - document: The document may be closed.
-    ///   - shouldClose: The result of user selection.
-    ///      `shouldClose` becomes false if the user selects cancel, otherwise true.
-    ///   - contextInfo: The additional info which will be set `shouldClose`.
-    ///       `contextInfo` must be `UnsafeMutablePointer<Bool>`.
-    @objc
-    func document(
-        _ document: NSDocument,
-        shouldClose: Bool,
-        contextInfo: UnsafeMutableRawPointer
-    ) {
-        let opaquePtr = OpaquePointer(contextInfo)
-        let mutablePointer = UnsafeMutablePointer<Bool>(opaquePtr)
-        mutablePointer.pointee = shouldClose
     }
 }

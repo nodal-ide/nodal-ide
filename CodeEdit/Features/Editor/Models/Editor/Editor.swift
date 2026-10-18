@@ -281,43 +281,7 @@ final class Editor: ObservableObject, Identifiable {
     /// If document edited it will show dialog where user can save document before closing or cancel.
     private func canCloseTab(file: CEWorkspaceFile) -> Bool {
         guard let codeFile = file.fileDocument else { return true }
-
-        if codeFile.isDocumentEdited {
-            let shouldClose = UnsafeMutablePointer<Bool>.allocate(capacity: 1)
-            shouldClose.initialize(to: true)
-            defer {
-                _ = shouldClose.move()
-                shouldClose.deallocate()
-            }
-            codeFile.canClose(
-                withDelegate: self,
-                shouldClose: #selector(document(_:shouldClose:contextInfo:)),
-                contextInfo: shouldClose
-            )
-
-            return shouldClose.pointee
-        }
-
-        return true
-    }
-
-    /// Receives result of `canClose` and then, set `shouldClose` to `contextInfo`'s `pointee`.
-    ///
-    /// - Parameters:
-    ///   - document: The document may be closed.
-    ///   - shouldClose: The result of user selection.
-    ///      `shouldClose` becomes false if the user selects cancel, otherwise true.
-    ///   - contextInfo: The additional info which will be set `shouldClose`.
-    ///       `contextInfo` must be `UnsafeMutablePointer<Bool>`.
-    @objc
-    func document(
-        _ document: NSDocument,
-        shouldClose: Bool,
-        contextInfo: UnsafeMutableRawPointer
-    ) {
-        let opaquePtr = OpaquePointer(contextInfo)
-        let mutablePointer = UnsafeMutablePointer<Bool>(opaquePtr)
-        mutablePointer.pointee = shouldClose
+        return DocumentCloseConfirmation.confirmClose(of: codeFile)
     }
 
     /// Remove the given file from tabs.
