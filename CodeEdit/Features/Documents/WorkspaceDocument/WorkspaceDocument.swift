@@ -47,6 +47,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     var taskNotificationHandler: TaskNotificationHandler = TaskNotificationHandler()
 
     private var runtimeCoordinator: WorkspaceRuntimeCoordinator?
+    private let launchCoordinator = WorkspaceLaunchCoordinator()
 
     var undoRegistration: UndoManagerRegistration = UndoManagerRegistration()
 
@@ -180,18 +181,10 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
 
         // Kick off a background project scan (symbols + code-quality diagnostics) shortly after launch
         // so the Problems panel isn't limited to open files. Only for PHP projects.
-        let projectLanguage = workspaceSettingsManager?.settings.project.language.lowercased() ?? ""
-        if projectLanguage.isEmpty || projectLanguage == "php" {
-            startProjectScan(at: url)
-        }
-    }
-
-    /// Starts a background PHP project scan (symbols + diagnostics) a moment after launch.
-    private func startProjectScan(at root: URL) {
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            _ = PHPWorkspaceIndex.shared.index(for: root)
-        }
+        launchCoordinator.scheduleProjectScan(
+            at: url,
+            language: workspaceSettingsManager?.settings.project.language ?? ""
+        )
     }
 
     override func read(from url: URL, ofType typeName: String) throws {
