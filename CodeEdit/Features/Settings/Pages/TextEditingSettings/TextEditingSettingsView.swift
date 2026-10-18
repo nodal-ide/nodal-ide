@@ -26,7 +26,6 @@ struct TextEditingSettingsView: View {
             }
             Section {
                 showGutter
-                showMinimap
                 showFoldingRibbon
                 showInlayHints
                 reformatSettings
@@ -223,12 +222,6 @@ private extension TextEditingSettingsView {
     @ViewBuilder private var showGutter: some View {
         Toggle("Show Gutter", isOn: $textEditing.showGutter)
             .help("The gutter displays line numbers and code folding regions.")
-    }
-
-    @ViewBuilder private var showMinimap: some View {
-        Toggle("Show Minimap", isOn: $textEditing.showMinimap)
-            // swiftlint:disable:next line_length
-            .help("The minimap gives you a high-level summary of your source code, with controls to quickly navigate your document.")
     }
 
     @ViewBuilder private var showFoldingRibbon: some View {

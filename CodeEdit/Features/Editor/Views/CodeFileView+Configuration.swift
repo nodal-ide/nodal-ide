@@ -37,7 +37,6 @@ extension CodeFileView {
             ),
             peripherals: .init(
                 showGutter: showGutter,
-                showMinimap: isPreview ? false : (showMinimap && isSmallDocument),
                 showReformattingGuide: showReformattingGuide,
                 showFoldingRibbon: showFoldingRibbon,
                 invisibleCharactersConfiguration: invisibleCharactersConfiguration.textViewOption(),

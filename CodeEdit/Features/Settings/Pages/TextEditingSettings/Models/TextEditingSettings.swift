@@ -29,7 +29,6 @@ extension SettingsData {
                 "Bracket Pair Emphasis",
                 "Bracket Pair Highlight",
                 "Show Gutter",
-                "Show Minimap",
                 "Reformat at Column",
                 "Show Reformatting Guide",
                 "Invisibles",
@@ -81,9 +80,6 @@ extension SettingsData {
 
         /// Toggle the gutter in the editor.
         var showGutter: Bool = true
-
-        /// Toggle the minimap in the editor.
-        var showMinimap: Bool = true
 
         /// Toggle the code folding ribbon.
         var showFoldingRibbon: Bool = true
@@ -155,7 +151,6 @@ extension SettingsData {
             }
 
             self.showGutter = try container.decodeIfPresent(Bool.self, forKey: .showGutter) ?? true
-            self.showMinimap = try container.decodeIfPresent(Bool.self, forKey: .showMinimap) ?? true
             self.showFoldingRibbon = try container.decodeIfPresent(Bool.self, forKey: .showFoldingRibbon) ?? true
             self.showInlayHints = try container.decodeIfPresent(Bool.self, forKey: .showInlayHints) ?? true
             self.reformatAtColumn = try container.decodeIfPresent(Int.self, forKey: .reformatAtColumn) ?? 80
@@ -205,10 +200,6 @@ extension SettingsData {
                     AppServices.settings[\.textEditing].wrapLinesToEditorWidth.toggle()
                 }
             )
-
-            mgr.addCommand(name: "Toggle Minimap", title: "Toggle Minimap", id: "prefs.text_editing.toggle_minimap") {
-                AppServices.settings[\.textEditing].showMinimap.toggle()
-            }
 
             mgr.addCommand(name: "Toggle Gutter", title: "Toggle Gutter", id: "prefs.text_editing.toggle_gutter") {
                 AppServices.settings[\.textEditing].showGutter.toggle()

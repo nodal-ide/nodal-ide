@@ -64,8 +64,6 @@ struct CodeFileView: View {
     var useSystemCursor
     @AppSettings(\.textEditing.showGutter)
     var showGutter
-    @AppSettings(\.textEditing.showMinimap)
-    var showMinimap
     @AppSettings(\.textEditing.showFoldingRibbon)
     var showFoldingRibbon
     @AppSettings(\.textEditing.reformatAtColumn)
@@ -100,8 +98,8 @@ struct CodeFileView: View {
 
     let isEditable: Bool
 
-    /// Whether this view is a lightweight preview (e.g. in the Command Center / Open Quickly), where editor
-    /// peripherals like the minimap are unnecessary.
+    /// Whether this view is a lightweight preview (e.g. in the Command Center / Open Quickly), where
+    /// heavyweight editor peripherals are unnecessary.
     let isPreview: Bool
 
     /// Native language provider for this file, if one exists (currently PHP). Kept for wiring

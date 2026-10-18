@@ -46,8 +46,7 @@ enum Metrics {
 
     /// Thresholds for large-file code paths.
     enum Performance {
-        /// Documents at/above this size skip expensive per-file extras (e.g. the minimap) and use
-        /// async parsing.
+        /// Documents at/above this size are treated as large and use cheaper per-file code paths.
         static let largeFileCharacterCount = 300_000
     }
 }

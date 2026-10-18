@@ -10,8 +10,6 @@ import SwiftUI
 struct EditorTabBarTrailingAccessories: View {
     @AppSettings(\.textEditing.wrapLinesToEditorWidth)
     var wrapLinesToEditorWidth
-    @AppSettings(\.textEditing.showMinimap)
-    var showMinimap
 
     @Environment(\.splitEditor)
     var splitEditor
@@ -53,9 +51,6 @@ struct EditorTabBarTrailingAccessories: View {
         Button(action: {}, label: { Image(systemName: "slider.horizontal.3") })
             .overlay {
                 Menu {
-                    Toggle("Show Minimap", isOn: $showMinimap)
-                        .keyboardShortcut("M", modifiers: [.command, .shift, .control])
-                    Divider()
                     Toggle(
                         "Wrap Lines",
                         isOn: Binding(
