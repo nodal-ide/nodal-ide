@@ -11,9 +11,6 @@ class FileSystemTableViewCell: StandardTableViewCell {
 
     weak var fileItem: CEWorkspaceFile?
 
-    var changeLabelLargeWidth: NSLayoutConstraint!
-    var changeLabelSmallWidth: NSLayoutConstraint!
-
     private let prefs = AppServices.settings.preferences.general
     private var navigatorFilter: String?
 
@@ -103,21 +100,12 @@ class FileSystemTableViewCell: StandardTableViewCell {
         }
     }
 
-    /// *Not Implemented*
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
-        fatalError("""
-            init(frame: ) isn't implemented on `OutlineTableViewCell`.
-            Please use `.init(frame: NSRect, item: FileSystemClient.FileItem?)
-            """)
     }
 
-    /// *Not Implemented*
     required init?(coder: NSCoder) {
-        fatalError("""
-            init?(coder: NSCoder) isn't implemented on `OutlineTableViewCell`.
-            Please use `.init(frame: NSRect, item: FileSystemClient.FileItem?)
-            """)
+        super.init(coder: coder)
     }
 
     /// Returns the font size for the current row height. Defaults to `13.0`

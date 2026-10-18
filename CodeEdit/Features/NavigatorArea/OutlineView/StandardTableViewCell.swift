@@ -183,12 +183,8 @@ class StandardTableViewCell: NSTableCellView {
         )
     }
 
-    /// *Not Implemented*
     required init?(coder: NSCoder) {
-        fatalError("""
-            init?(coder: NSCoder) isn't implemented on `StandardTableViewCell`.
-            Please use `.init(frame: NSRect, isEditable: Bool)
-            """)
+        super.init(coder: coder)
     }
 
     /// Returns the font size for the current row height. Defaults to `13.0`
