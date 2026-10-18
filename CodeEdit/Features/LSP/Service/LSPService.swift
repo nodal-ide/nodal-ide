@@ -304,11 +304,11 @@ extension LSPService {
         let lspLanguageTitle = lspLanguage.rawValue.capitalized
         let notificationTitle = "Install \(lspLanguageTitle) Language Server"
         // Make sure the user doesn't have the same existing notification
-        guard !NotificationManager.shared.notifications.contains(where: { $0.title == notificationTitle }) else {
+        guard !AppServices.notificationManager.notifications.contains(where: { $0.title == notificationTitle }) else {
             return
         }
 
-        NotificationManager.shared.post(
+        AppServices.notificationManager.post(
             iconSymbol: "arrow.down.circle",
             iconColor: .clear,
             title: notificationTitle,

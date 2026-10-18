@@ -169,7 +169,7 @@ final class PHPAdapterInstaller: ObservableObject {
     }
 
     private static func report(success: Bool, message: String) {
-        _ = NotificationManager.shared.post(
+        _ = AppServices.notificationManager.post(
             iconSymbol: success ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
             iconColor: success ? .green : .orange,
             title: success ? "PHP Debug Adapter" : "PHP Debug Adapter",

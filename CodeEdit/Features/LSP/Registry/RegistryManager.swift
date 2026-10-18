@@ -195,7 +195,7 @@ final class RegistryManager: ObservableObject {
         fail failed: Bool
     ) {
         if failed {
-            NotificationManager.shared.post(
+            AppServices.notificationManager.post(
                 iconSymbol: "xmark.circle",
                 iconColor: .clear,
                 title: "Could not install \(activityName)",

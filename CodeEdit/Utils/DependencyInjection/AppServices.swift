@@ -19,6 +19,9 @@ enum AppServices {
     /// This is the single injection point for preferences: everything (views via ``AppSettings``, and
     /// non-view code) reads and writes through it, so tests/previews can substitute their own store.
     static var settings: any SettingsProviding = Settings.shared
+
+    /// The app-wide notification manager (in-app banners + system notifications).
+    static var notificationManager: NotificationManager = .shared
 }
 
 // MARK: - Environment injection

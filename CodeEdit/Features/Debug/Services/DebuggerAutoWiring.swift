@@ -135,7 +135,7 @@ enum DebuggerAutoWiring {
 
     /// Posts a notification explaining that no debug adapter is available, with a fix action.
     static func reportUnavailable(kind: RuntimeKind) {
-        _ = NotificationManager.shared.post(
+        _ = AppServices.notificationManager.post(
             iconSymbol: "ladybug",
             title: "No \(kind.title) debug adapter found",
             description: "Set one in Settings ▸ Developer ▸ Debug Adapters.",

@@ -26,7 +26,7 @@ final class RuntimeJobCenter: ObservableObject {
         let id = UUID()
         jobs.append(RuntimeJob(id: id, kind: kind, version: version, operation: operation))
 
-        let notification = NotificationManager.shared.post(
+        let notification = AppServices.notificationManager.post(
             iconSymbol: kind.systemImage,
             title: "\(operation.title)ing \(kind.title) \(version)",
             description: "Starting…",
@@ -67,8 +67,8 @@ final class RuntimeJobCenter: ObservableObject {
                 self?.apply(id: id, notification: notification, progress: progress)
             }
             update(id: id, status: .done)
-            NotificationManager.shared.dismissNotification(notification)
-            NotificationManager.shared.post(
+            AppServices.notificationManager.dismissNotification(notification)
+            AppServices.notificationManager.post(
                 iconSymbol: kind.systemImage,
                 title: "\(operation.titlePast) \(kind.title) \(version)",
                 description: "Completed successfully.",
@@ -78,8 +78,8 @@ final class RuntimeJobCenter: ObservableObject {
             )
         } catch is CancellationError {
             update(id: id, status: .cancelled)
-            NotificationManager.shared.dismissNotification(notification)
-            NotificationManager.shared.post(
+            AppServices.notificationManager.dismissNotification(notification)
+            AppServices.notificationManager.post(
                 iconSymbol: "stop.circle.fill",
                 iconColor: Color(nsColor: .systemOrange),
                 title: "Cancelled \(operation.title.lowercased()) \(kind.title) \(version)",
@@ -90,8 +90,8 @@ final class RuntimeJobCenter: ObservableObject {
             )
         } catch {
             update(id: id, status: .failed(error.localizedDescription))
-            NotificationManager.shared.dismissNotification(notification)
-            NotificationManager.shared.post(
+            AppServices.notificationManager.dismissNotification(notification)
+            AppServices.notificationManager.post(
                 iconSymbol: "exclamationmark.triangle.fill",
                 iconColor: Color(nsColor: .systemRed),
                 title: "Failed to \(operation.title.lowercased()) \(kind.title) \(version)",
@@ -107,7 +107,7 @@ final class RuntimeJobCenter: ObservableObject {
         guard let index = jobs.firstIndex(where: { $0.id == id }) else { return }
         jobs[index].phase = progress.phase
         jobs[index].fraction = progress.fraction
-        NotificationManager.shared.updateNotification(
+        AppServices.notificationManager.updateNotification(
             notification,
             description: Self.describe(progress)
         )

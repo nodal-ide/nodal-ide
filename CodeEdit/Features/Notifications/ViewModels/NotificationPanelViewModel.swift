@@ -26,7 +26,7 @@ final class NotificationPanelViewModel: ObservableObject {
     /// Whether notifications are paused
     private var isPaused: Bool = false
 
-    private var notificationManager = NotificationManager.shared
+    private var notificationManager = AppServices.notificationManager
 
     @Published var scrolledToTop: Bool = true
 
@@ -206,8 +206,8 @@ final class NotificationPanelViewModel: ObservableObject {
         if let index = activeNotifications.firstIndex(where: { $0.id == notification.id }) {
             if disableAnimation {
                 self.activeNotifications.removeAll(where: { $0.id == notification.id })
-                NotificationManager.shared.markAsRead(notification)
-                NotificationManager.shared.dismissNotification(notification)
+                AppServices.notificationManager.markAsRead(notification)
+                AppServices.notificationManager.dismissNotification(notification)
                 return
             }
 
@@ -224,8 +224,8 @@ final class NotificationPanelViewModel: ObservableObject {
                     }
                 }
 
-                NotificationManager.shared.markAsRead(notification)
-                NotificationManager.shared.dismissNotification(notification)
+                AppServices.notificationManager.markAsRead(notification)
+                AppServices.notificationManager.dismissNotification(notification)
             }
         }
     }
@@ -236,7 +236,7 @@ final class NotificationPanelViewModel: ObservableObject {
                 guard let toolbar = controller.window?.toolbar else {
                     return
                 }
-                let shouldShow = !self.visibleNotifications.isEmpty || NotificationManager.shared.unreadCount > 0
+                let shouldShow = !self.visibleNotifications.isEmpty || AppServices.notificationManager.unreadCount > 0
                 if shouldShow && toolbar.items.filter({ $0.itemIdentifier == .notificationItem }).first == nil {
                     guard let activityItemIdx = toolbar.items
                         .firstIndex(where: { $0.itemIdentifier == .activityViewer }) else {

@@ -129,7 +129,7 @@ struct InternalDevelopmentNotificationsView: View {
                         let iconSymbol = selectedSymbol ?? availableSymbols.randomElement() ?? "bell.fill"
                         let iconColor = selectedColor ?? availableColors.randomElement()?.1 ?? .blue
 
-                        NotificationManager.shared.post(
+                        AppServices.notificationManager.post(
                             iconSymbol: iconSymbol,
                             iconColor: iconColor,
                             title: notificationTitle,
@@ -143,7 +143,7 @@ struct InternalDevelopmentNotificationsView: View {
                     case .image:
                         let imageName = selectedImage ?? availableImages.randomElement() ?? "GitHubIcon"
 
-                        NotificationManager.shared.post(
+                        AppServices.notificationManager.post(
                             iconImage: Image(imageName),
                             title: notificationTitle,
                             description: notificationDescription,
@@ -157,7 +157,7 @@ struct InternalDevelopmentNotificationsView: View {
                         let text = selectedText ?? randomLetter()
                         let iconColor = selectedColor ?? availableColors.randomElement()?.1 ?? .blue
 
-                        NotificationManager.shared.post(
+                        AppServices.notificationManager.post(
                             iconText: text,
                             iconTextColor: .white,
                             iconColor: iconColor,
@@ -173,7 +173,7 @@ struct InternalDevelopmentNotificationsView: View {
                         let emoji = selectedEmoji ?? availableEmojis.randomElement() ?? "🔔"
                         let iconColor = selectedColor ?? availableColors.randomElement()?.1 ?? .blue
 
-                        NotificationManager.shared.post(
+                        AppServices.notificationManager.post(
                             iconText: emoji,
                             iconTextColor: .white,
                             iconColor: iconColor,
