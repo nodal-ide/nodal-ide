@@ -51,7 +51,7 @@ extension WorkspaceSearchService {
     ///
     /// - Note: This function is creating similar patterns to the
     /// ``WorkspaceSearchService/getSearchTerm(_:)`` function,
-    /// Except its using the word boundary anchor(\b) instead of the asterisk(\*).
+    /// except it uses word-boundary lookarounds (`(?<!\w)` / `(?!\w)`) instead of the asterisk(`\*`).
     /// This is needed to highlight the search results correctly.
     func getRegexPattern(_ query: String) -> String {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)

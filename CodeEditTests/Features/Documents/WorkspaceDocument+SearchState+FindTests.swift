@@ -12,7 +12,7 @@ final class FindTests: XCTestCase {
     private var directory: URL!
     private var files: [CEWorkspaceFile] = []
     private var mockWorkspace: WorkspaceDocument!
-    private var searchState: WorkspaceDocument.SearchState!
+    private var searchState: WorkspaceSearchService!
 
     // MARK: - Setup
     /// A mock WorkspaceDocument is created
@@ -123,18 +123,18 @@ final class FindTests: XCTestCase {
         XCTAssertEqual(searchState.getRegexPattern(query), "@\\(test\\. !\\*#Query")
 
         searchState.selectedMode[2] = .StartingWith
-        XCTAssertEqual(searchState.getRegexPattern(query), "\\b@\\(test\\. !\\*#Query")
+        XCTAssertEqual(searchState.getRegexPattern(query), "(?<!\\w)@\\(test\\. !\\*#Query")
 
         searchState.selectedMode[2] = .EndingWith
-        XCTAssertEqual(searchState.getRegexPattern(query), "@\\(test\\. !\\*#Query\\b")
+        XCTAssertEqual(searchState.getRegexPattern(query), "@\\(test\\. !\\*#Query(?!\\w)")
 
         searchState.selectedMode[2] = .MatchingWord
-        XCTAssertEqual(searchState.getRegexPattern(query), "\\b@\\(test\\. !\\*#Query\\b")
+        XCTAssertEqual(searchState.getRegexPattern(query), "(?<!\\w)@\\(test\\. !\\*#Query(?!\\w)")
 
         // Enabling case sensitivity shouldn't affect the regex pattern because if case sensitivity is enabled,
         // `NSRegularExpression.Options.caseInsensitive` is passed to `NSRegularExpression`.
         searchState.caseSensitive = true
-        XCTAssertEqual(searchState.getRegexPattern(query), "\\b@\\(test\\. !\\*#Query\\b")
+        XCTAssertEqual(searchState.getRegexPattern(query), "(?<!\\w)@\\(test\\. !\\*#Query(?!\\w)")
     }
 
     /// Tests the search functionality of the `WorkspaceDocument.SearchState` and `SearchIndexer`.

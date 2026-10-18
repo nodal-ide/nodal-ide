@@ -15,7 +15,7 @@ final class DocumentsUnitTests: XCTestCase {
     private var hapticFeedbackPerformerMock: NSHapticFeedbackPerformerMock!
     private var navigatorViewModel: NavigatorAreaViewModel!
     private var window: NSWindow!
-    private var workspace = WorkspaceDocument()
+    private var workspace: WorkspaceDocument!
 
     // MARK: - Lifecycle
 
@@ -23,7 +23,10 @@ final class DocumentsUnitTests: XCTestCase {
         super.setUp()
         hapticFeedbackPerformerMock = NSHapticFeedbackPerformerMock()
         navigatorViewModel = .init()
-        workspace.taskManager = TaskManager(workspaceSettings: CEWorkspaceSettingsData(), workspaceURL: nil)
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "CodeEditDocumentsUnitTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        workspace = try? WorkspaceDocument(for: directory, withContentsOf: directory, ofType: "")
         window = NSWindow()
         splitViewController = .init(
             workspace: workspace,
