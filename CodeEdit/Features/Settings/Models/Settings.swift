@@ -16,7 +16,7 @@ import Combine
 /// @StateObject
 /// private var prefs: SettingsModel = .shared
 /// ```
-final class Settings: ObservableObject {
+final class Settings: ObservableObject, SettingsProviding {
 
     /// The publicly available singleton instance of ``SettingsModel``
     static let shared: Settings = .init()

@@ -9,12 +9,18 @@ import SwiftUI
 
 struct SettingsInjector<Content: View>: View {
 
-    @ObservedObject var settings = Settings.shared
+    @StateObject private var settings: AnySettingsStore
 
     @ViewBuilder var content: Content
+
+    init(settings: any SettingsProviding = Settings.shared, @ViewBuilder content: () -> Content) {
+        self._settings = StateObject(wrappedValue: AnySettingsStore(settings))
+        self.content = content()
+    }
 
     var body: some View {
         content
             .environment(\.settings, settings.preferences)
+            .environment(\.settingsStore, settings)
     }
 }
