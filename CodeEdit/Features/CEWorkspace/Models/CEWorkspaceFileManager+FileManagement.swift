@@ -93,10 +93,31 @@ extension CEWorkspaceFileManager {
                 throw FileManagerError.invalidFileName
             }
 
+            let fileContents: Data?
+            if let contents {
+                fileContents = contents
+            } else {
+                let settings = AppServices.settings.preferences.textEditing
+                if settings.enableFileHeader {
+                    let projectSettingsName = fileUrl.findWorkspace()?.workspaceSettingsManager?.settings.project.projectName.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let projectName = (projectSettingsName?.isEmpty == false) ? projectSettingsName! : self.folderUrl.lastPathComponent
+                    let organization = settings.fileHeaderOrganization.isEmpty
+                        ? (projectName.isEmpty ? "CodeEdit" : projectName)
+                        : settings.fileHeaderOrganization
+                    fileContents = FileHeaderGenerator.generateHeaderData(
+                        for: fileUrl,
+                        organization: organization,
+                        author: settings.fileHeaderAuthor
+                    )
+                } else {
+                    fileContents = nil
+                }
+            }
+
             // Create the file
             guard fileManager.createFile(
                 atPath: fileUrl.path,
-                contents: contents,
+                contents: fileContents,
                 attributes: [FileAttributeKey.creationDate: Date()]
             ) else {
                 throw CocoaError.error(.fileWriteUnknown, url: fileUrl)

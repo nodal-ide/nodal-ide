@@ -21,9 +21,23 @@ final class CodeEditDocumentController: NSDocumentController {
     func createAndOpenNewDocument(onCompletion: @escaping () -> Void) {
         guard let newDocumentUrl = self.newDocumentUrl else { return }
 
+        let settings = AppServices.settings.preferences.textEditing
+        let fileContents: Data?
+        if settings.enableFileHeader {
+            let projectSettingsName = newDocumentUrl.findWorkspace()?.workspaceSettingsManager?.settings.project.projectName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let orgFallback = (projectSettingsName?.isEmpty == false) ? projectSettingsName! : "CodeEdit"
+            fileContents = FileHeaderGenerator.generateHeaderData(
+                for: newDocumentUrl,
+                organization: settings.fileHeaderOrganization.isEmpty ? orgFallback : settings.fileHeaderOrganization,
+                author: settings.fileHeaderAuthor
+            )
+        } else {
+            fileContents = nil
+        }
+
         let createdFile = self.fileManager.createFile(
             atPath: newDocumentUrl.path,
-            contents: nil,
+            contents: fileContents,
             attributes: [FileAttributeKey.creationDate: Date()]
         )
 
@@ -40,9 +54,23 @@ final class CodeEditDocumentController: NSDocumentController {
     override func newDocument(_ sender: Any?) {
         guard let newDocumentUrl = self.newDocumentUrl else { return }
 
+        let settings = AppServices.settings.preferences.textEditing
+        let fileContents: Data?
+        if settings.enableFileHeader {
+            let projectSettingsName = newDocumentUrl.findWorkspace()?.workspaceSettingsManager?.settings.project.projectName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let orgFallback = (projectSettingsName?.isEmpty == false) ? projectSettingsName! : "CodeEdit"
+            fileContents = FileHeaderGenerator.generateHeaderData(
+                for: newDocumentUrl,
+                organization: settings.fileHeaderOrganization.isEmpty ? orgFallback : settings.fileHeaderOrganization,
+                author: settings.fileHeaderAuthor
+            )
+        } else {
+            fileContents = nil
+        }
+
         let createdFile = self.fileManager.createFile(
             atPath: newDocumentUrl.path,
-            contents: nil,
+            contents: fileContents,
             attributes: [FileAttributeKey.creationDate: Date()]
         )
         guard createdFile else {

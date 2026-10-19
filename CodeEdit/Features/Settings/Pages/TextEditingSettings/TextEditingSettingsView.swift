@@ -49,6 +49,9 @@ struct TextEditingSettingsView: View {
                 invisibles
                 warningCharacters
             }
+            Section {
+                fileHeaderSection
+            }
         }
     }
 }
@@ -297,6 +300,27 @@ private extension TextEditingSettingsView {
         }
         .sheet(isPresented: $isShowingWarningCharactersSettings) {
             WarningCharactersView(warningCharacters: $textEditing.warningCharacters)
+        }
+    }
+
+    @ViewBuilder private var fileHeaderSection: some View {
+        Group {
+            Toggle("Add file header to new files", isOn: $textEditing.enableFileHeader)
+                .help("Automatically prepends an identity comment block to newly created files.")
+
+            if textEditing.enableFileHeader {
+                TextField(
+                    "Author Name",
+                    text: $textEditing.fileHeaderAuthor,
+                    prompt: Text(NSFullUserName())
+                )
+
+                TextField(
+                    "Organization",
+                    text: $textEditing.fileHeaderOrganization,
+                    prompt: Text("Project Name")
+                )
+            }
         }
     }
 }

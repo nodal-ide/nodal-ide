@@ -32,7 +32,10 @@ extension SettingsData {
                 "Reformat at Column",
                 "Show Reformatting Guide",
                 "Invisibles",
-                "Warning Characters"
+                "Warning Characters",
+                "File Header",
+                "Author",
+                "Organization"
             ]
             if #available(macOS 14.0, *) {
                 keys.append("System Cursor")
@@ -97,6 +100,10 @@ extension SettingsData {
 
         /// Map of unicode character codes to a note about them
         var warningCharacters: WarningCharacters = .default
+
+        var enableFileHeader: Bool = true
+        var fileHeaderAuthor: String = ""
+        var fileHeaderOrganization: String = ""
 
         /// Default initializer
         init() {
@@ -166,6 +173,18 @@ extension SettingsData {
                 WarningCharacters.self,
                 forKey: .warningCharacters
             ) ?? .default
+            self.enableFileHeader = try container.decodeIfPresent(
+                Bool.self,
+                forKey: .enableFileHeader
+            ) ?? true
+            self.fileHeaderAuthor = try container.decodeIfPresent(
+                String.self,
+                forKey: .fileHeaderAuthor
+            ) ?? ""
+            self.fileHeaderOrganization = try container.decodeIfPresent(
+                String.self,
+                forKey: .fileHeaderOrganization
+            ) ?? ""
 
             self.populateCommands()
         }

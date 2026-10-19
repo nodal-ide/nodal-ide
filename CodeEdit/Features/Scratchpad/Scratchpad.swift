@@ -42,7 +42,19 @@ enum Scratchpad {
         guard let fileName = components.last, fileName.isValidFilename else { return }
         let folderComponents = components.dropLast()
 
-        let content = (try? Data(contentsOf: file.url)) ?? Data()
+        let content: Data
+        if let doc = file.fileDocument {
+            let encoding = doc.sourceEncoding ?? FileEncoding.utf8
+            if let text = doc.content?.string {
+                content = (text as NSString).data(using: encoding.nsValue) ?? Data(text.utf8)
+            } else if let docData = try? doc.data(ofType: doc.fileType ?? "public.plain-text") {
+                content = docData
+            } else {
+                content = (try? Data(contentsOf: file.url)) ?? Data()
+            }
+        } else {
+            content = (try? Data(contentsOf: file.url)) ?? Data()
+        }
 
         // Navigate/create the destination folder using the file manager so the tree is indexed
         // consistently (and observers notified), instead of synthesizing detached items.
