@@ -53,77 +53,56 @@ extension CEWorkspaceFileManager {
     }
 
     func handleGitEvents(events: [DirectoryEventStream.Event]) {
-        let notGitChanges = events.filter({ !$0.path.contains(".git/") })
+        guard let coordinator = sourceControlCoordinator else { return }
 
-        let gitFolderChange = events.first(where: {
-            $0.path == "\(self.folderUrl.relativePath)/.git"
-        })
+        let workingTreeChanges = events.filter { !Self.isGitMetadataPath($0.path) }
+        let gitModulesChange = events.contains { $0.path.hasSuffix("/.gitmodules") }
+        let configChange = events.contains { event in
+            event.path.contains("/.git/") && event.path.hasSuffix("/config")
+        }
+        let metadataChange = events.contains { event in
+            guard event.path.contains("/.git/") else { return false }
+            return event.path.contains("/refs/")
+                || event.path.hasSuffix("/HEAD")
+                || event.path.hasSuffix("/packed-refs")
+        }
+        let indexChange = events.contains { event in
+            event.path.contains("/.git/") && event.path.hasSuffix("/index")
+        }
+        let gitDirectoryChange = events.contains { $0.path.hasSuffix("/.git") }
 
-        let gitIndexChange = events.first(where: {
-            $0.path == "\(self.folderUrl.relativePath)/.git/index"
-        })
+        let shouldRescan = gitModulesChange || configChange
+        let shouldRefreshStatus = !workingTreeChanges.isEmpty
+            || gitModulesChange
+            || configChange
+            || metadataChange
+            || indexChange
+            || gitDirectoryChange
+        let shouldRefreshMetadata = configChange || metadataChange
+        let shouldValidate = gitDirectoryChange
 
-        let gitStashChange = events.first(where: {
-            $0.path == "\(self.folderUrl.relativePath)/.git/refs/stash"
-        })
-
-        let gitBranchChange = events.first(where: {
-            $0.path.contains("\(self.folderUrl.relativePath)/.git/refs/heads")
-        })
-
-        let gitHeadChange = events.first(where: {
-            $0.path.contains("\(self.folderUrl.relativePath)/.git/HEAD")
-        })
-
-        let gitConfigChange = events.first(where: {
-            $0.path == "\(self.folderUrl.relativePath)/.git/config"
-        })
-
-        let gitModulesChange = events.first(where: {
-            $0.path == "\(self.folderUrl.relativePath)/.gitmodules"
-        })
-
-        if !notGitChanges.isEmpty || gitIndexChange != nil {
-            Task {
-                await self.sourceControlCoordinator?.refreshAll()
-            }
+        guard shouldRescan || shouldRefreshStatus || shouldRefreshMetadata || shouldValidate else {
+            return
         }
 
-        if gitStashChange != nil {
-            Task {
-                try await self.sourceControlCoordinator?.primaryRepository?.refreshStashEntries()
+        Task {
+            if shouldRescan {
+                await coordinator.rescan()
+            }
+            if shouldRefreshStatus {
+                await coordinator.refreshAll()
+            }
+            if shouldRefreshMetadata {
+                await coordinator.refreshAllMetadata()
+            }
+            if shouldValidate {
+                await coordinator.validateAll()
             }
         }
+    }
 
-        if gitBranchChange != nil {
-            Task {
-                await self.sourceControlCoordinator?.primaryRepository?.refreshBranches()
-            }
-        }
-
-        if gitHeadChange != nil {
-            Task {
-                await self.sourceControlCoordinator?.primaryRepository?.refreshCurrentBranch()
-            }
-        }
-
-        if gitConfigChange != nil {
-            Task {
-                try await self.sourceControlCoordinator?.primaryRepository?.refreshRemotes()
-            }
-        }
-
-        if gitModulesChange != nil {
-            Task {
-                await self.sourceControlCoordinator?.rescan()
-            }
-        }
-
-        if gitFolderChange != nil {
-            Task {
-                try await self.sourceControlCoordinator?.primaryRepository?.validate()
-            }
-        }
+    private static func isGitMetadataPath(_ path: String) -> Bool {
+        path.contains("/.git/") || path.hasSuffix("/.git")
     }
 
     /// Creates or deletes children of the ``CEWorkspaceFile`` so that they are accurate with the file system,

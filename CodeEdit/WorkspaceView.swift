@@ -83,22 +83,6 @@ struct WorkspaceView: View {
 
                     // MARK: - Source Control
 
-                    .task {
-                        // Git repositories are discovered asynchronously; the editor renders
-                        // regardless of whether one exists yet.
-                        guard sourceControlIsEnabled,
-                              let sourceControlManager = workspace.sourceControlManager else { return }
-
-                        do {
-                            try await sourceControlManager.refreshRemotes()
-                            try await sourceControlManager.refreshStashEntries()
-                        } catch {
-                            await sourceControlManager.showAlertForError(
-                                title: "Error refreshing Git data",
-                                error: error
-                            )
-                        }
-                    }
                     .onChange(of: sourceControlIsEnabled) { _, newValue in
                         guard let sourceControlManager = workspace.sourceControlManager else { return }
                         if newValue {
@@ -139,9 +123,8 @@ struct WorkspaceView: View {
             }
             .background(EffectView(.contentBackground))
             .background {
-                if let sourceControlManager = workspace.sourceControlManager {
-                    WorkspaceSheets().environmentObject(sourceControlManager)
-                }
+                WorkspaceSheets()
+                    .environmentObject(workspace)
             }
             .onDrop(of: [.fileURL], isTargeted: nil) { providers in
                 _ = handleDrop(providers: providers)

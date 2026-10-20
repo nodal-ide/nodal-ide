@@ -5,7 +5,6 @@
 //  Created by Austin Condiff on 11/18/23.
 //
 
-import AppKit
 import SwiftUI
 
 struct SourceControlNavigatorChangesList: View {
@@ -25,45 +24,10 @@ struct SourceControlNavigatorChangesList: View {
         .contextMenu(
             forSelectionType: GitChangedFile.self,
             menu: { selectedFiles in
-                if selectedFiles.count == 1,
-                   let file = selectedFiles.first {
-                    Group {
-                        Button("View in Finder") {
-                            NSWorkspace.shared.activateFileViewerSelecting([file.fileURL.absoluteURL])
-                        }
-                        Button("Reveal in Project Navigator") {}
-                            .disabled(true) // TODO: Implementation Needed
-                        Divider()
-                    }
-                    Group {
-                        Button("Open in New Tab") {
-                            openGitFile(file)
-                        }
-                        Button("Open in New Window") {}
-                            .disabled(true) // TODO: Implementation Needed
-                        Divider()
-                        Button("Show Diff") {
-                            AppServices.diffViewerPresenter.show(file: file, manager: sourceControlManager)
-                        }
-                        Button("Show Blame") {
-                            AppServices.blameViewerPresenter.show(url: file.fileURL, manager: sourceControlManager)
-                        }
-                        Button("Resolve Conflicts") {
-                            AppServices.conflictResolverPresenter.show(url: file.fileURL, manager: sourceControlManager)
-                        }
-                    }
-                    if file.anyStatus() != .none {
-                        Group {
-                            Divider()
-                            Button("Discard Changes in \(file.fileURL.lastPathComponent)...") {
-                                sourceControlManager.discardChanges(for: file.fileURL)
-                            }
-                            Divider()
-                        }
-                    }
-                } else {
-                    EmptyView()
-                }
+                SourceControlNavigatorChangesContextMenu(
+                    files: Array(selectedFiles),
+                    sourceControlManager: sourceControlManager
+                )
             },
             // double-click action
             primaryAction: { selectedFiles in

@@ -163,12 +163,18 @@ extension CodeEditWindowController {
             return startTaskSidebarItem()
         case .branchPicker:
             let toolbarItem = NSToolbarItem(itemIdentifier: .branchPicker)
-            let view = NSHostingView(
-                rootView: ToolbarBranchPicker(
-                    workspaceFileManager: workspace?.workspaceFileManager
+            if let workspace,
+               let editorManager = workspace.editorManager,
+               let coordinator = workspace.sourceControlCoordinator {
+                let view = NSHostingView(
+                    rootView: ToolbarBranchPicker(
+                        workspaceFileManager: workspace.workspaceFileManager,
+                        editorManager: editorManager,
+                        coordinator: coordinator
+                    )
                 )
-            )
-            toolbarItem.view = view
+                toolbarItem.view = view
+            }
             toolbarItem.isBordered = false
             return toolbarItem
         case .activityViewer:

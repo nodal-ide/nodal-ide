@@ -22,15 +22,23 @@ struct SourceControlNavigatorView: View {
                     .task {
                         do {
                             while true {
-                                if fetchRefreshServerStatus {
-                                    try await sourceControlManager.fetch()
-                                }
                                 try await Task.sleep(for: .seconds(10))
+                                if fetchRefreshServerStatus {
+                                    await workspace.sourceControlCoordinator?.fetchScheduledRepositories()
+                                }
                             }
                         } catch {
                         }
                     }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            CEContentUnavailableView(
+                "Source Control Unavailable",
+                description: "Repository discovery is not ready yet.",
+                systemImage: "externaldrive.fill"
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

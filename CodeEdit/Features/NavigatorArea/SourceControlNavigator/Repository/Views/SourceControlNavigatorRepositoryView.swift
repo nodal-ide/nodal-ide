@@ -9,10 +9,64 @@ import SwiftUI
 import CodeEditSymbols
 
 struct SourceControlNavigatorRepositoryView: View {
-    @Environment(\.controlActiveState)
-    var controlActiveState
+    @EnvironmentObject private var workspace: WorkspaceDocument
 
-    @EnvironmentObject var sourceControlManager: SourceControlManager
+    private var coordinator: SourceControlCoordinator? {
+        workspace.sourceControlCoordinator
+    }
+
+    var body: some View {
+        if let coordinator, coordinator.repositories.count > 1 {
+            List {
+                ForEach(coordinator.repositories, id: \.workspaceURL) { sourceControlManager in
+                    Section {
+                        SourceControlNavigatorRepositoryContent(
+                            sourceControlManager: sourceControlManager,
+                            style: .section
+                        )
+                    } header: {
+                        RepositorySectionHeader(
+                            sourceControlManager: sourceControlManager
+                        )
+                    }
+                }
+            }
+            .environment(\.defaultMinListRowHeight, 22)
+        } else if let sourceControlManager = coordinator?.primaryRepository {
+            SourceControlNavigatorRepositoryContent(
+                sourceControlManager: sourceControlManager,
+                style: .list
+            )
+        }
+    }
+}
+
+private struct RepositorySectionHeader: View {
+    @ObservedObject var sourceControlManager: SourceControlManager
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: sourceControlManager.isSubmodule ? "arrow.triangle.branch" : "folder.fill")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+            Text(sourceControlManager.repoDisplayName)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .help(sourceControlManager.workspaceURL.path(percentEncoded: false))
+    }
+}
+
+struct SourceControlNavigatorRepositoryContent: View {
+    enum Style {
+        case list
+        case section
+    }
+
+    @ObservedObject var sourceControlManager: SourceControlManager
+    let style: Style
 
     @State var selection = Set<String>()
     @State var showNewBranch: Bool = false
@@ -29,96 +83,68 @@ struct SourceControlNavigatorRepositoryView: View {
     @State var remoteToDelete: GitRemote?
     @State var keepStashAfterApplying: Bool = true
 
-    func findItem(by id: String, in items: [RepoOutlineGroupItem]) -> RepoOutlineGroupItem? {
-        for item in items {
-            if item.id == id {
-                return item
-            } else if let children = item.children, let found = findItem(by: id, in: children) {
-                return found
-            }
-        }
-        return nil
-    }
-
     var body: some View {
-        List(selection: $selection) {
-            ForEach(outlineGroupData, id: \.id) { item in
-                CEOutlineGroup(
-                    item,
-                    id: \.id,
-                    defaultExpanded: true,
-                    expandedIds: $expandedIds,
-                    children: \.children,
-                    content: { item in
-                        SourceControlNavigatorRepositoryItem(item: item)
-                    }
-                )
-                .listRowSeparator(.hidden)
+        content
+            .environmentObject(sourceControlManager)
+            .sheet(isPresented: $showNewBranch) {
+                SourceControlNewBranchView(fromBranch: $fromBranch)
             }
-        }
-        .environment(\.defaultMinListRowHeight, 22)
-        .contextMenu(
-            forSelectionType: RepoOutlineGroupItem.ID.self,
-            menu: { items in
-                if !items.isEmpty,
-                   items.count == 1,
-                   let item = findItem(by: items.first ?? "", in: outlineGroupData),
-                   let branch = item.branch ?? sourceControlManager.currentBranch {
-                    contextMenu(for: item, branch: branch)
-                }
+            .sheet(isPresented: $showRenameBranch) {
+                SourceControlRenameBranchView(fromBranch: $fromBranch)
             }
-        )
-        .sheet(isPresented: $showNewBranch) {
-            SourceControlNewBranchView(
-                fromBranch: $fromBranch
-            )
-        }
-        .sheet(isPresented: $showRenameBranch) {
-            SourceControlRenameBranchView(
-                fromBranch: $fromBranch
-            )
-        }
-        .alert(
-            sourceControlManager.changedFiles.isEmpty
-            ? "Do you want to apply stashed changes?"
-            : "The local repository has uncommitted changes.",
-            isPresented: $applyStashedChangesIsPresented
-        ) {
-            if sourceControlManager.changedFiles.isEmpty {
-                Button("Apply") {
-                    if let stashEntry = stashEntryToApply {
+            .alert(
+                sourceControlManager.changedFiles.isEmpty
+                ? "Do you want to apply stashed changes?"
+                : "The local repository has uncommitted changes.",
+                isPresented: $applyStashedChangesIsPresented
+            ) {
+                if sourceControlManager.changedFiles.isEmpty {
+                    Button("Apply") {
+                        guard let stashEntry = stashEntryToApply else { return }
                         Task {
-                            try await sourceControlManager.applyStashEntry(stashEntry: stashEntry)
+                            do {
+                                try await sourceControlManager.applyStashEntry(stashEntry: stashEntry)
+                            } catch {
+                                await sourceControlManager.showAlertForError(
+                                    title: "Failed to apply stash",
+                                    error: error
+                                )
+                            }
                             applyStashedChangesIsPresented = false
                             stashEntryToApply = nil
                         }
                     }
-                }
-                Button("Apply and Delete") {
-                    if let stashEntry = stashEntryToApply {
+                    Button("Apply and Delete") {
+                        guard let stashEntry = stashEntryToApply else { return }
                         Task {
-                            try await sourceControlManager.applyStashEntry(stashEntry: stashEntry)
-                            try await sourceControlManager.deleteStashEntry(stashEntry: stashEntry)
+                            do {
+                                try await sourceControlManager.applyStashEntry(stashEntry: stashEntry)
+                                try await sourceControlManager.deleteStashEntry(stashEntry: stashEntry)
+                            } catch {
+                                await sourceControlManager.showAlertForError(
+                                    title: "Failed to apply stash",
+                                    error: error
+                                )
+                            }
                             applyStashedChangesIsPresented = false
                             stashEntryToApply = nil
                         }
                     }
+                    Button("Cancel", role: .cancel) {}
+                } else {
+                    Button("Okay", role: .cancel) {}
                 }
-                Button("Cancel", role: .cancel) {}
-            } else {
-                Button("Okay", role: .cancel) {}
+            } message: {
+                sourceControlManager.changedFiles.isEmpty
+                ? Text("Applying the stashed changes will restore modifications to files in your local repository.")
+                : Text("Try committing or discarding the changes.")
             }
-        } message: {
-            sourceControlManager.changedFiles.isEmpty
-            ? Text("Applying the stashed changes will restore modifications to files in your local repository.")
-            : Text("Try committing or discarding the changes.")
-        }
-        .confirmationDialog(
-            "Do you want to delete the branch “\(branchToDelete?.name ?? "")”?",
-            isPresented: $isPresentingConfirmDeleteBranch
-        ) {
-            Button("Delete") {
-                if let branch = branchToDelete {
+            .confirmationDialog(
+                "Do you want to delete the branch “\(branchToDelete?.name ?? "")”?",
+                isPresented: $isPresentingConfirmDeleteBranch
+            ) {
+                Button("Delete") {
+                    guard let branch = branchToDelete else { return }
                     Task {
                         do {
                             try await sourceControlManager.deleteBranch(branch: branch)
@@ -131,16 +157,15 @@ struct SourceControlNavigatorRepositoryView: View {
                         branchToDelete = nil
                     }
                 }
+            } message: {
+                Text("The branch will be removed from the repository. You can’t undo this action.")
             }
-        } message: {
-            Text("The branch will be removed from the repository. You can’t undo this action.")
-        }
-        .confirmationDialog(
-            "Do you want to delete the stash “\(stashEntryToDelete?.message ?? "")”?",
-            isPresented: $isPresentingConfirmDeleteStashEntry
-        ) {
-            Button("Delete") {
-                if let stashEntry = stashEntryToDelete {
+            .confirmationDialog(
+                "Do you want to delete the stash “\(stashEntryToDelete?.message ?? "")”?",
+                isPresented: $isPresentingConfirmDeleteStashEntry
+            ) {
+                Button("Delete") {
+                    guard let stashEntry = stashEntryToDelete else { return }
                     Task {
                         do {
                             try await sourceControlManager.deleteStashEntry(stashEntry: stashEntry)
@@ -153,16 +178,15 @@ struct SourceControlNavigatorRepositoryView: View {
                         stashEntryToDelete = nil
                     }
                 }
+            } message: {
+                Text("The stash will be removed from the repository. You can’t undo this action.")
             }
-        } message: {
-            Text("The stash will be removed from the repository. You can’t undo this action.")
-        }
-        .confirmationDialog(
-            "Do you want to delete the remote “\(remoteToDelete?.name ?? "")”?",
-            isPresented: $isPresentingConfirmDeleteRemote
-        ) {
-            Button("Delete") {
-                if let remote = remoteToDelete {
+            .confirmationDialog(
+                "Do you want to delete the remote “\(remoteToDelete?.name ?? "")”?",
+                isPresented: $isPresentingConfirmDeleteRemote
+            ) {
+                Button("Delete") {
+                    guard let remote = remoteToDelete else { return }
                     Task {
                         do {
                             try await sourceControlManager.deleteRemote(remote: remote)
@@ -175,12 +199,95 @@ struct SourceControlNavigatorRepositoryView: View {
                         remoteToDelete = nil
                     }
                 }
+            } message: {
+                Text("The remote will be removed from the repository. You can’t undo this action.")
             }
-        } message: {
-            Text("The remote will be removed from the repository. You can’t undo this action.")
+            .task {
+                await refreshRepository()
+            }
+    }
+
+    @ViewBuilder private var content: some View {
+        switch style {
+        case .list:
+            List(selection: $selection) {
+                outlineGroups
+                    .listRowSeparator(.hidden)
+            }
+            .environment(\.defaultMinListRowHeight, 22)
+            .contextMenu(
+                forSelectionType: RepoOutlineGroupItem.ID.self,
+                menu: { items in
+                    listContextMenu(for: items)
+                }
+            )
+        case .section:
+            VStack(alignment: .leading, spacing: 0) {
+                outlineGroups
+            }
         }
-        .task {
-            await sourceControlManager.refreshBranches()
+    }
+
+    private var outlineGroups: some View {
+        ForEach(outlineGroupData, id: \.id) { item in
+            CEOutlineGroup(
+                item,
+                id: \.id,
+                defaultExpanded: true,
+                expandedIds: $expandedIds,
+                children: \.children,
+                content: { item in
+                    rowContent(for: item)
+                }
+            )
         }
+    }
+
+    @ViewBuilder
+    private func rowContent(for item: RepoOutlineGroupItem) -> some View {
+        if style == .section {
+            SourceControlNavigatorRepositoryItem(item: item)
+                .contextMenu {
+                    itemContextMenu(for: item)
+                }
+        } else {
+            SourceControlNavigatorRepositoryItem(item: item)
+        }
+    }
+
+    @ViewBuilder
+    private func listContextMenu(for items: Set<RepoOutlineGroupItem.ID>) -> some View {
+        if items.count == 1,
+           let id = items.first,
+           let item = findItem(by: id, in: outlineGroupData) {
+            itemContextMenu(for: item)
+        }
+    }
+
+    @ViewBuilder
+    private func itemContextMenu(for item: RepoOutlineGroupItem) -> some View {
+        if let branch = item.branch ?? sourceControlManager.currentBranch {
+            contextMenu(for: item, branch: branch)
+        } else if sourceControlManager.isSubmodule {
+            submoduleContextMenu()
+        }
+    }
+
+    private func refreshRepository() async {
+        await sourceControlManager.refreshBranches()
+        await sourceControlManager.refreshCurrentBranch()
+        try? await sourceControlManager.refreshRemotes()
+        try? await sourceControlManager.refreshStashEntries()
+    }
+
+    func findItem(by id: String, in items: [RepoOutlineGroupItem]) -> RepoOutlineGroupItem? {
+        for item in items {
+            if item.id == id {
+                return item
+            } else if let children = item.children, let found = findItem(by: id, in: children) {
+                return found
+            }
+        }
+        return nil
     }
 }

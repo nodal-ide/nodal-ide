@@ -46,19 +46,14 @@ struct SourceControlNavigatorChangesView: View {
 
     @ViewBuilder
     private func multiRepoBody(coordinator: SourceControlCoordinator) -> some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: []) {
-                ForEach(coordinator.repositories, id: \.workspaceURL) { manager in
-                    SourceControlNavigatorChangesSection(manager: manager)
-                        .environmentObject(workspace)
-                    Divider()
-                }
+        List {
+            ForEach(coordinator.repositories, id: \.workspaceURL) { manager in
+                SourceControlNavigatorChangesSection(manager: manager)
+                    .environmentObject(workspace)
             }
         }
+        .environment(\.defaultMinListRowHeight, 22)
         .frame(maxHeight: .infinity)
-        .task {
-            await coordinator.refreshAll()
-        }
     }
 
     @ViewBuilder private var singleRepoBody: some View {

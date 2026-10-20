@@ -34,6 +34,12 @@ final class SourceControlManager: ObservableObject {
     /// A list of changed files
     @Published var changedFiles: [GitChangedFile] = []
 
+    /// File identifiers whose project-navigator status was last written by this manager.
+    ///
+    /// Tracking the previous keys lets refreshes clear stale badges in O(changed files)
+    /// instead of scanning every loaded workspace file for every repository.
+    var trackedGitStatusFileIDs: Set<String> = []
+
     /// Current branch
     @Published var currentBranch: GitBranch?
 

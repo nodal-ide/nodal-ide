@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-extension SourceControlNavigatorRepositoryView {
+extension SourceControlNavigatorRepositoryContent {
     func handleDelete(_ item: RepoOutlineGroupItem) {
         if item.branch != nil {
             isPresentingConfirmDeleteBranch = true
@@ -70,5 +70,31 @@ extension SourceControlNavigatorRepositoryView {
             && item.stashEntry == nil
             && item.remote == nil
         )
+        if sourceControlManager.isSubmodule {
+            Divider()
+            submoduleContextMenu()
+        }
+    }
+
+    @ViewBuilder
+    func submoduleContextMenu() -> some View {
+        Button("Update Submodule") {
+            Task {
+                do {
+                    try await sourceControlManager.updateSubmodule()
+                } catch {
+                    await sourceControlManager.showAlertForError(
+                        title: "Failed to update submodule",
+                        error: error
+                    )
+                }
+            }
+        }
+        Button("Open Submodule") {
+            CodeEditDocumentController.shared.openDocument(
+                withContentsOf: sourceControlManager.workspaceURL,
+                display: true
+            ) { _, _, _ in }
+        }
     }
 }

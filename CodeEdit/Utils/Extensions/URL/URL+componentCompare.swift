@@ -29,8 +29,10 @@ extension URL {
     /// - Parameter other: The URL to compare.
     /// - Returns: True, if the other URL is lower in the file system.
     func containsSubPath(_ other: URL) -> Bool {
-        other.absoluteString.starts(with: absoluteString)
-        && other.pathComponents.count > pathComponents.count
+        let rootComponents = pathComponents
+        let otherComponents = other.pathComponents
+        guard otherComponents.count > rootComponents.count else { return false }
+        return otherComponents.prefix(rootComponents.count).elementsEqual(rootComponents)
     }
 
     /// Compares this url with another, counting the number of shared path components. Stops counting once a

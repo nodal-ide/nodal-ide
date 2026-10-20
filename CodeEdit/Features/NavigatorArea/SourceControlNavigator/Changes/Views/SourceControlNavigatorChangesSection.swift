@@ -1,27 +1,43 @@
 import SwiftUI
 
 struct SourceControlNavigatorChangesSection: View {
-    @EnvironmentObject var workspace: WorkspaceDocument
     @ObservedObject var manager: SourceControlManager
-    @State private var isExpanded: Bool = true
+    @State private var isExpanded: Bool
 
-    var hasRemotes: Bool { !manager.remotes.isEmpty }
-    var hasUnsyncedCommits: Bool {
+    init(manager: SourceControlManager) {
+        self.manager = manager
+        _isExpanded = State(initialValue: !manager.changedFiles.isEmpty)
+    }
+
+    private var hasRemotes: Bool { !manager.remotes.isEmpty }
+    private var hasUnsyncedCommits: Bool {
         manager.numberOfUnsyncedCommits.ahead > 0 || manager.numberOfUnsyncedCommits.behind > 0
     }
-    var hasCurrentBranch: Bool { manager.currentBranch != nil && manager.currentBranch?.upstream == nil }
-    var hasChanges: Bool { !manager.changedFiles.isEmpty }
+    private var hasCurrentBranch: Bool {
+        manager.currentBranch != nil && manager.currentBranch?.upstream == nil
+    }
+    private var hasChanges: Bool { !manager.changedFiles.isEmpty }
+    private var showsControls: Bool {
+        hasChanges || !hasRemotes || (hasUnsyncedCommits || hasCurrentBranch)
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            sectionHeader
+        Section {
             if isExpanded {
                 sectionContent
+            }
+        } header: {
+            sectionHeader
+        }
+        .environmentObject(manager)
+        .onChange(of: hasChanges) { _, newValue in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isExpanded = newValue
             }
         }
     }
 
-    @ViewBuilder private var sectionHeader: some View {
+    private var sectionHeader: some View {
         Button {
             withAnimation(.easeInOut(duration: 0.15)) {
                 isExpanded.toggle()
@@ -38,7 +54,8 @@ struct SourceControlNavigatorChangesSection: View {
                 Text(manager.repoDisplayName)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.primary)
-                Spacer()
+                    .lineLimit(1)
+                Spacer(minLength: 6)
                 if hasChanges {
                     Text("\(manager.changedFiles.count)")
                         .font(.system(size: 10, weight: .medium))
@@ -51,37 +68,63 @@ struct SourceControlNavigatorChangesSection: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
+        .help(manager.workspaceURL.path(percentEncoded: false))
     }
 
     @ViewBuilder private var sectionContent: some View {
-        VStack(spacing: 0) {
-            if hasChanges || !hasRemotes || (!hasChanges && (hasUnsyncedCommits || hasCurrentBranch)) {
-                VStack(spacing: 8) {
-                    Divided {
-                        if hasRemotes && (hasUnsyncedCommits || hasCurrentBranch) {
-                            SourceControlNavigatorSyncView(sourceControlManager: manager)
-                        }
-                        if hasChanges {
-                            SourceControlNavigatorChangesCommitView()
-                        }
-                        if !hasRemotes {
-                            SourceControlNavigatorNoRemotesView()
-                        }
+        if showsControls {
+            VStack(spacing: 8) {
+                Divided {
+                    if hasRemotes && (hasUnsyncedCommits || hasCurrentBranch) {
+                        SourceControlNavigatorSyncView(sourceControlManager: manager)
+                    }
+                    if hasChanges {
+                        SourceControlNavigatorChangesCommitView()
+                    }
+                    if !hasRemotes {
+                        SourceControlNavigatorNoRemotesView()
                     }
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                Divider()
             }
-            if hasChanges {
-                SourceControlNavigatorChangesList()
-            } else {
-                CEContentUnavailableView("No Changes")
-                    .frame(minHeight: 60)
-            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
         }
-        .environmentObject(manager)
+
+        if hasChanges {
+            ForEach($manager.changedFiles) { $file in
+                GitChangedFileListView(changedFile: $file)
+                    .listRowSeparator(.hidden)
+                    .padding(.vertical, -1)
+                    .tag(file)
+                    .contextMenu {
+                        SourceControlNavigatorChangesContextMenu(
+                            files: [file],
+                            sourceControlManager: manager
+                        )
+                    }
+                    .onTapGesture(count: 2) {
+                        open(file)
+                    }
+            }
+        } else {
+            Text("No Changes")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .listRowSeparator(.hidden)
+        }
+    }
+
+    private func open(_ file: GitChangedFile) {
+        guard let ceFile = manager.fileManager?.getFile(file.ceFileKey, createIfNotFound: true) else {
+            return
+        }
+        DispatchQueue.main.async {
+            manager.editorManager.openTab(item: ceFile, asTemporary: true)
+        }
     }
 }

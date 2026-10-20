@@ -7,8 +7,26 @@
 
 import SwiftUI
 
+/// Hosts source-control sheets for every repository in the workspace.
+///
+/// Each repository owns its own presentation flags, so a single primary-repository
+/// observer is insufficient once submodules are tracked.
 struct WorkspaceSheets: View {
-    @EnvironmentObject var sourceControlManager: SourceControlManager
+    @EnvironmentObject private var workspace: WorkspaceDocument
+
+    var body: some View {
+        if let coordinator = workspace.sourceControlCoordinator {
+            ForEach(coordinator.repositories, id: \.workspaceURL) { sourceControlManager in
+                RepositorySheets(sourceControlManager: sourceControlManager)
+            }
+        } else if let sourceControlManager = workspace.sourceControlManager {
+            RepositorySheets(sourceControlManager: sourceControlManager)
+        }
+    }
+}
+
+private struct RepositorySheets: View {
+    @ObservedObject var sourceControlManager: SourceControlManager
 
     var body: some View {
         EmptyView()
@@ -81,5 +99,6 @@ struct WorkspaceSheets: View {
             } message: {
                 Text("There are no uncommitted changes in the local repository for this project.")
             }
+            .environmentObject(sourceControlManager)
     }
 }

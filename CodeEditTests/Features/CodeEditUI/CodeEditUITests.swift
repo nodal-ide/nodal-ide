@@ -11,6 +11,7 @@ import SnapshotTesting
 import SwiftUI
 import XCTest
 
+@MainActor
 final class CodeEditUIUnitTests: XCTestCase {
 
     // MARK: Help Button
@@ -86,8 +87,16 @@ final class CodeEditUIUnitTests: XCTestCase {
     // MARK: ToolbarBranchPicker
 
     func testBranchPickerLight() throws {
+        let editorManager = EditorManager()
+        let coordinator = SourceControlCoordinator(
+            workspaceURL: URL(filePath: "/"),
+            editorManager: editorManager,
+            shellClient: .live()
+        )
         let view = ToolbarBranchPicker(
-            workspaceFileManager: nil
+            workspaceFileManager: nil,
+            editorManager: editorManager,
+            coordinator: coordinator
         )
         let hosting = NSHostingView(rootView: view)
         hosting.appearance = .init(named: .aqua)
@@ -96,8 +105,16 @@ final class CodeEditUIUnitTests: XCTestCase {
     }
 
     func testBranchPickerDark() throws {
+        let editorManager = EditorManager()
+        let coordinator = SourceControlCoordinator(
+            workspaceURL: URL(filePath: "/"),
+            editorManager: editorManager,
+            shellClient: .live()
+        )
         let view = ToolbarBranchPicker(
-            workspaceFileManager: nil
+            workspaceFileManager: nil,
+            editorManager: editorManager,
+            coordinator: coordinator
         )
         let hosting = NSHostingView(rootView: view)
         hosting.appearance = .init(named: .darkAqua)

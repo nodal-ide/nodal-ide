@@ -164,22 +164,35 @@ extension SourceControlManager {
             }
         }
 
-        let coordinator = fileManager.sourceControlCoordinator
-        for (_, file) in fileManager.flattenedFileItems
-        where !updatedStatusFor.contains(file) && file.gitStatus != nil {
-            if let coord = coordinator {
-                let owningRepo = coord.repoForFile(file.resolvedURL)
-                guard owningRepo === self else { continue }
-            }
-            file.gitStatus = nil
-            updatedStatusFor.insert(file)
-        }
+        clearStaleGitStatuses(in: fileManager, from: &updatedStatusFor)
+        trackedGitStatusFileIDs = Set(updatedStatusFor.map(\.id))
 
         if updatedStatusFor.isEmpty {
             return
         }
 
         fileManager.notifyObservers(updatedItems: updatedStatusFor, statusOnly: true)
+    }
+
+    /// Clears badges previously written by this manager for files that are no longer changed.
+    @MainActor
+    private func clearStaleGitStatuses(
+        in fileManager: CEWorkspaceFileManager,
+        from updatedStatusFor: inout Set<CEWorkspaceFile>
+    ) {
+        let coordinator = fileManager.sourceControlCoordinator
+        for id in trackedGitStatusFileIDs {
+            guard let file = fileManager.flattenedFileItems[id], !updatedStatusFor.contains(file) else {
+                continue
+            }
+            if let coordinator, coordinator.repoForFile(file.resolvedURL) !== self {
+                continue
+            }
+            if file.gitStatus != nil {
+                file.gitStatus = nil
+                updatedStatusFor.insert(file)
+            }
+        }
     }
 
     /// Refresh all changed files and refresh status in file manager
@@ -245,13 +258,13 @@ extension SourceControlManager {
         try await refreshRemotes()
     }
 
-    /// Get all remotes
-    func refreshRemotes() async throws {
+    /// Get all remotes, optionally loading each remote's branch list.
+    func refreshRemotes(includeRemoteBranches: Bool = true) async throws {
         let remotes = (try? await gitClient.getRemotes()) ?? []
         await MainActor.run {
             self.remotes = remotes
         }
-        if !remotes.isEmpty {
+        if includeRemoteBranches && !remotes.isEmpty {
             try await self.refreshAllRemotesBranches()
         }
     }

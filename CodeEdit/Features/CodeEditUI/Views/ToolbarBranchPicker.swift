@@ -9,33 +9,105 @@ import SwiftUI
 import CodeEditSymbols
 import Combine
 
-/// A view that pops up a branch picker.
+/// A view that pops up a branch picker for the repository that owns the active editor's file.
 struct ToolbarBranchPicker: View {
+    @ObservedObject private var editorManager: EditorManager
+    @ObservedObject private var coordinator: SourceControlCoordinator
+
     private weak var workspaceFileManager: CEWorkspaceFileManager?
-    private weak var sourceControlManager: SourceControlManager?
-    private weak var sourceControlCoordinator: SourceControlCoordinator?
+
+    init(
+        workspaceFileManager: CEWorkspaceFileManager?,
+        editorManager: EditorManager,
+        coordinator: SourceControlCoordinator
+    ) {
+        self.workspaceFileManager = workspaceFileManager
+        self.editorManager = editorManager
+        self.coordinator = coordinator
+    }
+
+    var body: some View {
+        ToolbarBranchPickerContent(
+            editor: editorManager.activeEditor,
+            coordinator: coordinator,
+            workspaceFileManager: workspaceFileManager
+        )
+    }
+}
+
+private struct ToolbarBranchPickerContent: View {
+    @ObservedObject var editor: Editor
+    @ObservedObject var coordinator: SourceControlCoordinator
+
+    @Environment(\.controlActiveState)
+    private var controlActive
+
+    private weak var workspaceFileManager: CEWorkspaceFileManager?
+
+    init(
+        editor: Editor,
+        coordinator: SourceControlCoordinator,
+        workspaceFileManager: CEWorkspaceFileManager?
+    ) {
+        self.editor = editor
+        self.coordinator = coordinator
+        self.workspaceFileManager = workspaceFileManager
+    }
+
+    private var sourceControlManager: SourceControlManager? {
+        guard let fileURL = editor.selectedTab?.file.url else {
+            return coordinator.primaryRepository
+        }
+        return coordinator.repoForFile(fileURL) ?? coordinator.primaryRepository
+    }
+
+    var body: some View {
+        if let sourceControlManager {
+            ActiveBranchPicker(
+                sourceControlManager: sourceControlManager,
+                repositoryCount: coordinator.repositories.count,
+                title: workspaceFileManager?.folderUrl.lastPathComponent ?? "Empty"
+            )
+        } else {
+            HStack(alignment: .center, spacing: 7) {
+                Image(systemName: "folder.fill.badge.gearshape")
+                    .foregroundColor(controlActive == .inactive ? inactiveColor : .secondary)
+                    .font(.system(size: 14))
+                    .imageScale(.medium)
+                    .frame(width: 17, height: 17)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(workspaceFileManager?.folderUrl.lastPathComponent ?? "Empty")
+                        .font(.headline)
+                        .foregroundColor(controlActive == .inactive ? inactiveColor : .primary)
+                        .frame(height: 16)
+                        .help(workspaceFileManager?.folderUrl.lastPathComponent ?? "Empty")
+                }
+            }
+            .if(.tahoe) {
+                $0.padding(.leading, 10).frame(minWidth: 140)
+            }
+        }
+    }
+
+    private var inactiveColor: Color {
+        Color(nsColor: .disabledControlTextColor)
+    }
+}
+
+private struct ActiveBranchPicker: View {
+    @ObservedObject var sourceControlManager: SourceControlManager
+    let repositoryCount: Int
+    let title: String
 
     @Environment(\.controlActiveState)
     private var controlActive
 
     @State private var isHovering: Bool = false
-    @State private var displayPopover: Bool = false
-    @State private var currentBranch: GitBranch?
-
-    /// Initializes the ``ToolbarBranchPicker`` with an instance of a `WorkspaceClient`
-    /// - Parameter workspace: An instance of the current `WorkspaceClient`
-    init(
-        workspaceFileManager: CEWorkspaceFileManager?
-    ) {
-        self.workspaceFileManager = workspaceFileManager
-        self.sourceControlManager = workspaceFileManager?.sourceControlManager
-        self.sourceControlCoordinator = workspaceFileManager?.sourceControlCoordinator
-    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 7) {
             Group {
-                if currentBranch != nil {
+                if sourceControlManager.currentBranch != nil {
                     Image(symbol: "branch")
                 } else {
                     Image(systemName: "folder.fill.badge.gearshape")
@@ -51,11 +123,9 @@ struct ToolbarBranchPicker: View {
                     .foregroundColor(controlActive == .inactive ? inactiveColor : .primary)
                     .frame(height: 16)
                     .help(title)
-                if let currentBranch {
+                if let currentBranch = sourceControlManager.currentBranch {
                     Menu(content: {
-                        if let sourceControlManager = workspaceFileManager?.sourceControlManager {
-                            PopoverView(sourceControlManager: sourceControlManager)
-                        }
+                        PopoverView(sourceControlManager: sourceControlManager)
                     }, label: {
                         Text(branchLabel(branch: currentBranch))
                             .font(.subheadline)
@@ -72,24 +142,15 @@ struct ToolbarBranchPicker: View {
         .onHover { active in
             isHovering = active
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { (_) in
-            if self.currentBranch != nil {
-                Task {
-                    await sourceControlManager?.refreshCurrentBranch()
-                }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            Task {
+                await sourceControlManager.refreshCurrentBranch()
             }
         }
-        .onReceive(
-            self.sourceControlManager?.$currentBranch.eraseToAnyPublisher() ??
-            Empty().eraseToAnyPublisher()
-        ) { branch in
-            self.currentBranch = branch
-        }
-        .task {
-            if AppServices.settings.preferences.sourceControl.general.sourceControlIsEnabled {
-                await self.sourceControlManager?.refreshCurrentBranch()
-                await self.sourceControlManager?.refreshBranches()
-            }
+        .task(id: sourceControlManager.workspaceURL) {
+            guard AppServices.settings.preferences.sourceControl.general.sourceControlIsEnabled else { return }
+            await sourceControlManager.refreshCurrentBranch()
+            await sourceControlManager.refreshBranches()
         }
         .if(.tahoe) {
             $0.padding(.leading, 10).frame(minWidth: 140)
@@ -100,16 +161,11 @@ struct ToolbarBranchPicker: View {
         Color(nsColor: .disabledControlTextColor)
     }
 
-    private var title: String {
-        workspaceFileManager?.folderUrl.lastPathComponent ?? "Empty"
-    }
-
     private func branchLabel(branch: GitBranch) -> String {
-        let isMultiRepo = (sourceControlCoordinator?.repositories.count ?? 0) > 1
-        guard isMultiRepo, let repoName = sourceControlManager?.repoDisplayName else {
+        guard repositoryCount > 1 else {
             return branch.name
         }
-        return "\(repoName) · \(branch.name)"
+        return "\(sourceControlManager.repoDisplayName) · \(branch.name)"
     }
 
     // MARK: Popover View

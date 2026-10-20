@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-extension SourceControlNavigatorRepositoryView {
+extension SourceControlNavigatorRepositoryContent {
     var outlineGroupData: [RepoOutlineGroupItem] {
         [
             .init(
