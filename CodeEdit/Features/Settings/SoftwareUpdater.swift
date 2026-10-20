@@ -9,12 +9,11 @@ import Foundation
 import Sparkle
 
 class SoftwareUpdater: NSObject, ObservableObject, SPUUpdaterDelegate {
+    private static let feedURLString = "https://github.com/upperdo/CodeEdit/releases/latest/download/appcast.xml"
+
     private var updater: SPUUpdater?
     private var automaticallyChecksForUpdatesObservation: NSKeyValueObservation?
     private var lastUpdateCheckDateObservation: NSKeyValueObservation?
-    private var appcastURL = URL(
-        string: "https://github.com/upperdo/CodeEdit/releases/download/latest/appcast.xml"
-    )!
 
     @Published var automaticallyChecksForUpdates = false {
         didSet {
@@ -30,37 +29,15 @@ class SoftwareUpdater: NSObject, ObservableObject, SPUUpdaterDelegate {
         }
     }
 
-    private var feedURLTask: Task<(), Never>?
-
-    private func setFeedURL() async {
-        let url = URL(string: "https://api.github.com/repos/upperdo/CodeEdit/releases/latest")!
-        let request = URLRequest(url: url)
-        guard let data = try? await URLSession.shared.data(for: request),
-              let result = try? JSONDecoder().decode(GHAPIResult.self, from: data.0) else {
-            await MainActor.run {
-                self.updater?.setFeedURL(nil)
-            }
-            return
-        }
-        await MainActor.run {
-            appcastURL = URL(
-                string: "https://github.com/upperdo/CodeEdit/releases/download/\(result.tagName)/appcast.xml"
-            )!
-            self.updater?.setFeedURL(appcastURL)
-        }
-    }
-
     override init() {
         super.init()
+        UserDefaults.standard.removeObject(forKey: "SUFeedURL")
+
         updater = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: self,
             userDriverDelegate: nil
         ).updater
-
-        feedURLTask = Task {
-            await setFeedURL()
-        }
 
         automaticallyChecksForUpdatesObservation = updater?.observe(
             \.automaticallyChecksForUpdates,
@@ -82,8 +59,8 @@ class SoftwareUpdater: NSObject, ObservableObject, SPUUpdaterDelegate {
         includePrereleaseVersions = UserDefaults.standard.bool(forKey: "includePrereleaseVersions")
     }
 
-    deinit {
-        feedURLTask?.cancel()
+    func feedURLString(for updater: SPUUpdater) -> String? {
+        Self.feedURLString
     }
 
     func allowedChannels(for updater: SPUUpdater) -> Set<String> {
@@ -98,11 +75,4 @@ class SoftwareUpdater: NSObject, ObservableObject, SPUUpdaterDelegate {
         updater?.checkForUpdates()
     }
 
-    private struct GHAPIResult: Codable {
-        enum CodingKeys: String, CodingKey {
-            case tagName = "tag_name"
-        }
-
-        var tagName: String
-    }
 }
