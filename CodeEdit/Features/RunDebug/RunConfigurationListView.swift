@@ -11,6 +11,7 @@ struct RunConfigurationListView: View {
     @ObservedObject var store: RunConfigurationStore
     @Binding var selectedID: UUID?
     @Binding var showEditor: Bool
+    var site: LocalSiteSettings?
 
     var body: some View {
         if store.configurations.isEmpty {
@@ -25,7 +26,7 @@ struct RunConfigurationListView: View {
                         .frame(width: 16)
                     Text(configuration.name)
                     Spacer()
-                    Text(configuration.command)
+                    Text(subtitle(for: configuration))
                         .font(.system(.body, design: .monospaced))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -48,6 +49,14 @@ struct RunConfigurationListView: View {
             }
         }
     }
+
+    private func subtitle(for configuration: RunConfiguration) -> String {
+        guard configuration.kind == .site else {
+            return configuration.command
+        }
+        let domain = site?.domain.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return domain.isEmpty ? "Local domain" : domain
+    }
 }
 
 struct RunConfigurationEditorSheet: View {
@@ -58,17 +67,35 @@ struct RunConfigurationEditorSheet: View {
     @State private var configuration: RunConfiguration
     private let isNew: Bool
     private let taskNames: [String]
+    private let site: LocalSiteSettings?
+    private let onEditLocalDomain: (() -> Void)?
 
-    init(store: RunConfigurationStore, configuration: RunConfiguration?, taskNames: [String]) {
+    init(
+        store: RunConfigurationStore,
+        configuration: RunConfiguration?,
+        taskNames: [String],
+        site: LocalSiteSettings? = nil,
+        onEditLocalDomain: (() -> Void)? = nil
+    ) {
         self.store = store
         self.isNew = configuration == nil
         self._configuration = State(initialValue: configuration ?? RunConfiguration())
         self.taskNames = taskNames
+        self.site = site
+        self.onEditLocalDomain = onEditLocalDomain
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            RunConfigurationFormView(configuration: $configuration, taskNames: taskNames)
+            RunConfigurationFormView(
+                configuration: $configuration,
+                taskNames: taskNames,
+                site: site,
+                onEditLocalDomain: {
+                    dismiss()
+                    onEditLocalDomain?()
+                }
+            )
             Divider()
             HStack {
                 Button("Cancel") {

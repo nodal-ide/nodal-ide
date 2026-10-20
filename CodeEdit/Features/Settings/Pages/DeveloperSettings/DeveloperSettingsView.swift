@@ -109,6 +109,8 @@ struct DeveloperSettingsView: View {
                 Text("PHP Debugging")
                 Text("Xdebug is enabled per session (XDEBUG_MODE=debug) — your php.ini isn't modified.")
             }
+
+            LocalDomainsSettingsSection()
         }
     }
 }

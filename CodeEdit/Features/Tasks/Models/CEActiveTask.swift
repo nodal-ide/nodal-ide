@@ -194,6 +194,17 @@ class CEActiveTask: ObservableObject, Identifiable, Hashable {
         }
     }
 
+    /// Stops the shell and any children it spawned (e.g. a dev server started by the task).
+    func terminateProcessTree() {
+        guard let shellPID = output?.runningPID() else {
+            return
+        }
+        // The shell usually leads its own process group. Fall back to the single PID if not.
+        if kill(-shellPID, SIGTERM) != 0 {
+            kill(shellPID, SIGTERM)
+        }
+    }
+
     func interrupt() {
         if let shellPID = output?.runningPID() {
             kill(shellPID, SIGINT)

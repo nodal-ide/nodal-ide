@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct WorkspaceSettingsRunConfigurationsView: View {
+    var onEditLocalDomain: (() -> Void)?
+
     @EnvironmentObject private var workspaceSettingsManager: CEWorkspaceSettings
     @EnvironmentObject private var workspace: WorkspaceDocument
 
@@ -21,7 +23,8 @@ struct WorkspaceSettingsRunConfigurationsView: View {
                     RunConfigurationListView(
                         store: store,
                         selectedID: $selectedID,
-                        showEditor: $showEditor
+                        showEditor: $showEditor,
+                        site: workspaceSettingsManager.settings.site
                     )
                 } header: {
                     Text("Run Configurations")
@@ -49,9 +52,21 @@ struct WorkspaceSettingsRunConfigurationsView: View {
             if let store = workspace.runConfigurationStore {
                 let taskNames = workspaceSettingsManager.settings.tasks.map(\.name)
                 if let id = selectedID, let configuration = store.configurations.first(where: { $0.id == id }) {
-                    RunConfigurationEditorSheet(store: store, configuration: configuration, taskNames: taskNames)
+                    RunConfigurationEditorSheet(
+                        store: store,
+                        configuration: configuration,
+                        taskNames: taskNames,
+                        site: workspaceSettingsManager.settings.site,
+                        onEditLocalDomain: onEditLocalDomain
+                    )
                 } else {
-                    RunConfigurationEditorSheet(store: store, configuration: nil, taskNames: taskNames)
+                    RunConfigurationEditorSheet(
+                        store: store,
+                        configuration: nil,
+                        taskNames: taskNames,
+                        site: workspaceSettingsManager.settings.site,
+                        onEditLocalDomain: onEditLocalDomain
+                    )
                 }
             }
         }

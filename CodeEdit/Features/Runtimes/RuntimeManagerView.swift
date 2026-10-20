@@ -203,6 +203,11 @@ struct RuntimeVersionRowView: View {
                     if model.isDefault(row) {
                         RuntimeBadge(text: "Default", color: .blue)
                     }
+                    if let status = model.fpmStatus(for: row) {
+                        RuntimeBadge(text: status.badgeText, color: status.isAvailable ? .green : .orange)
+                            .help(status.detail)
+                            .accessibilityLabel(status.detail)
+                    }
                 }
                 Text(subtitle).font(.caption).foregroundStyle(.secondary)
             }

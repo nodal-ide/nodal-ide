@@ -10,7 +10,7 @@ import Foundation
 
 @MainActor
 final class RunController: ObservableObject {
-    private weak var workspace: WorkspaceDocument?
+    weak var workspace: WorkspaceDocument?
 
     /// The configuration to run by default.
     @Published var selectedConfigurationID: UUID?
@@ -18,6 +18,8 @@ final class RunController: ObservableObject {
     @Published var runningConfigurationID: UUID?
 
     private var runningTaskID: UUID?
+    var runningSiteConfigurationID: UUID?
+    var siteStateCancellable: AnyCancellable?
 
     init(workspace: WorkspaceDocument) {
         self.workspace = workspace
@@ -52,6 +54,10 @@ final class RunController: ObservableObject {
     }
 
     private func performRun(_ configuration: RunConfiguration) {
+        if configuration.kind == .site {
+            performSiteRun(configuration)
+            return
+        }
         if configuration.kind == .debug {
             startDebug(configuration)
             return
@@ -258,6 +264,13 @@ final class RunController: ObservableObject {
 
     func stop() {
         workspace?.debugController?.stop()
+        if runningSiteConfigurationID != nil {
+            clearRunningSite()
+            Task { [weak self] in
+                await self?.workspace?.localSiteCoordinator?.stopSite()
+            }
+            return
+        }
         guard let taskManager = workspace?.taskManager, let runningTaskID else {
             runningConfigurationID = nil
             return

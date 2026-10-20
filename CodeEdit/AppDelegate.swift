@@ -251,9 +251,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         }
     }
 
-    /// Terminates running language servers. Used during app termination to ensure resources are freed.
+    /// Terminates running language servers and the app-scoped local proxy. Used during app
+    /// termination to ensure resources are freed, then replies to the terminate request.
     private func terminateLanguageServers() {
         Task { @MainActor in
+            await terminateLocalDomains()
+
             let task = TaskNotificationModel(
                 id: "appdelegate.terminate_language_servers",
                 title: "Stopping Language Servers",
@@ -279,6 +282,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             TaskNotificationHandler.postTask(action: .delete, model: task)
             NSApplication.shared.reply(toApplicationShouldTerminate: true)
         }
+    }
+
+    /// Releases the app-scoped local proxy (single-instance lock, registry). Called from the
+    /// deferred termination path before the app replies to the terminate request.
+    private func terminateLocalDomains() async {
+        await AppServices.localProxy.terminate()
     }
 
     /// Terminates all running tasks. Used during app termination to ensure resources are freed.

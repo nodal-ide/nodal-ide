@@ -10,15 +10,19 @@
 		2816F594280CF50500DD548B /* CodeEditSymbols in Frameworks */ = {isa = PBXBuildFile; productRef = 2816F593280CF50500DD548B /* CodeEditSymbols */; };
 		283BDCBD2972EEBD002AFF81 /* Package.resolved in Resources */ = {isa = PBXBuildFile; fileRef = 283BDCBC2972EEBD002AFF81 /* Package.resolved */; };
 		284DC8512978BA2600BF2770 /* .all-contributorsrc in Resources */ = {isa = PBXBuildFile; fileRef = 284DC8502978BA2600BF2770 /* .all-contributorsrc */; };
+		292B80F8D3209E321EA90D87 /* RelayConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 175C8A1BC7EE241F83E69FBA /* RelayConfiguration.swift */; };
 		2BE487F428245162003F3F64 /* OpenWithCodeEdit.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2BE487EC28245162003F3F64 /* OpenWithCodeEdit.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		302AD7FF2D8054D500231E16 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 30818CB42D4E563900967860 /* ZIPFoundation */; };
 		30CB64912C16CA8100CC8A9E /* LanguageServerProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = 30CB64902C16CA8100CC8A9E /* LanguageServerProtocol */; };
 		30CB64942C16CA9100CC8A9E /* LanguageClient in Frameworks */ = {isa = PBXBuildFile; productRef = 30CB64932C16CA9100CC8A9E /* LanguageClient */; };
+		4F372785A60CECCC99E74987 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DBFA37FB6DE1F60DB2391619 /* Cocoa.framework */; };
 		583E529C29361BAB001AB554 /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 583E529B29361BAB001AB554 /* SnapshotTesting */; };
 		58F2EB03292FB2B0004A9BDE /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = 58F2EACE292FB2B0004A9BDE /* Documentation.docc */; };
 		58F2EB1E292FB954004A9BDE /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 58F2EB1D292FB954004A9BDE /* Sparkle */; };
+		5D01A1294F3DA46719076056 /* RelayConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 175C8A1BC7EE241F83E69FBA /* RelayConfiguration.swift */; };
 		5E4485612DF600D9008BBE69 /* AboutWindow in Frameworks */ = {isa = PBXBuildFile; productRef = 5E4485602DF600D9008BBE69 /* AboutWindow */; };
 		5EACE6222DF4BF08005E08B8 /* WelcomeWindow in Frameworks */ = {isa = PBXBuildFile; productRef = 5EACE6212DF4BF08005E08B8 /* WelcomeWindow */; };
+		600843C07F72A29998570838 /* CodeEditRelay in Embed Relay */ = {isa = PBXBuildFile; fileRef = EF8E057199C1A6A2CF959776 /* CodeEditRelay */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		6C0617D62BDB4432008C9C42 /* LogStream in Frameworks */ = {isa = PBXBuildFile; productRef = 6C0617D52BDB4432008C9C42 /* LogStream */; };
 		6C0824A12C5C0C9700A0751E /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 6C0824A02C5C0C9700A0751E /* SwiftTerm */; };
 		6C147C4529A329350089B630 /* OrderedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 6C147C4429A329350089B630 /* OrderedCollections */; };
@@ -45,7 +49,10 @@
 		6CCF73D02E26DE3200B94F75 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 6CCF73CF2E26DE3200B94F75 /* SwiftTerm */; };
 		6CD3CA552C8B508200D83DCD /* CodeEditSourceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 6CD3CA542C8B508200D83DCD /* CodeEditSourceEditor */; };
 		6CE21E872C650D2C0031B056 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 6CE21E862C650D2C0031B056 /* SwiftTerm */; };
+		A6E832FA4ECCA59F96915DA0 /* RelayEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A485376FB22F9587AA9B96AF /* RelayEngine.swift */; };
 		B6FF04782B6C08AC002C2C78 /* DefaultThemes in Resources */ = {isa = PBXBuildFile; fileRef = B6FF04772B6C08AC002C2C78 /* DefaultThemes */; };
+		BA000F2B501A8F93F40D343E /* RelayEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A485376FB22F9587AA9B96AF /* RelayEngine.swift */; };
+		C2EDE1596DD38EF5C3DCC9E7 /* RelayMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D1632782DC99BE59FE88F6C /* RelayMain.swift */; };
 		F363BC01307F154F002ED9A7 /* CodeEditLang in Frameworks */ = {isa = PBXBuildFile; productRef = CE1A0000000000000000C1D2 /* CodeEditLang */; };
 		F363BC02307F154F002ED9A7 /* CodeEditLangPHP in Frameworks */ = {isa = PBXBuildFile; productRef = CE1A0000000000000000C3D4 /* CodeEditLangPHP */; };
 /* End PBXBuildFile section */
@@ -57,6 +64,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 2BE487EB28245162003F3F64;
 			remoteInfo = OpenWithCodeEdit;
+		};
+		4B64C4DEE8A59B69F5AA5507 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B658FB2427DA9E0F00EA4DBD /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A90EFD9574D067718FA3BC03;
+			remoteInfo = CodeEditRelay;
 		};
 		B658FB3E27DA9E1000EA4DBD /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -107,9 +121,22 @@
 			name = "Embed ExtensionKit ExtensionPoint";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9952EABBB49704B7DB3451A4 /* Embed Relay */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Helpers;
+			dstSubfolderSpec = 1;
+			files = (
+				600843C07F72A29998570838 /* CodeEditRelay in Embed Relay */,
+			);
+			name = "Embed Relay";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0D1632782DC99BE59FE88F6C /* RelayMain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RelayMain.swift; sourceTree = "<group>"; };
+		175C8A1BC7EE241F83E69FBA /* RelayConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RelayConfiguration.swift; sourceTree = "<group>"; };
 		283BDCBC2972EEBD002AFF81 /* Package.resolved */ = {isa = PBXFileReference; lastKnownFileType = text; name = Package.resolved; path = CodeEdit.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved; sourceTree = "<group>"; };
 		284DC8502978BA2600BF2770 /* .all-contributorsrc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ".all-contributorsrc"; sourceTree = "<group>"; };
 		2BE487EC28245162003F3F64 /* OpenWithCodeEdit.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OpenWithCodeEdit.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -118,10 +145,13 @@
 		6C67413D2C44A28C00AABDF5 /* ProjectNavigatorViewController+DataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectNavigatorViewController+DataSource.swift"; sourceTree = "<group>"; };
 		6C67413F2C44A2A200AABDF5 /* ProjectNavigatorViewController+Delegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectNavigatorViewController+Delegate.swift"; sourceTree = "<group>"; };
 		6C9619262C3F285C009733CE /* CodeEditTestPlan.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = CodeEditTestPlan.xctestplan; sourceTree = "<group>"; };
+		A485376FB22F9587AA9B96AF /* RelayEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RelayEngine.swift; sourceTree = "<group>"; };
 		B658FB2C27DA9E0F00EA4DBD /* CodeEdit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CodeEdit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B658FB3D27DA9E1000EA4DBD /* CodeEditTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CodeEditTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B658FB4727DA9E1000EA4DBD /* CodeEditUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CodeEditUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B6FF04772B6C08AC002C2C78 /* DefaultThemes */ = {isa = PBXFileReference; lastKnownFileType = folder; path = DefaultThemes; sourceTree = "<group>"; };
+		DBFA37FB6DE1F60DB2391619 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		EF8E057199C1A6A2CF959776 /* CodeEditRelay */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CodeEditRelay; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -220,6 +250,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BB801AA2256ECA091EB234F8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F372785A60CECCC99E74987 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -227,6 +265,7 @@
 			isa = PBXGroup;
 			children = (
 				589F3E342936185400E1A4DA /* XCTest.framework */,
+				B188CFDAC5FF5CEE1A3DA00E /* OS X */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -238,6 +277,14 @@
 				6C67413F2C44A2A200AABDF5 /* ProjectNavigatorViewController+Delegate.swift */,
 			);
 			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		B188CFDAC5FF5CEE1A3DA00E /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				DBFA37FB6DE1F60DB2391619 /* Cocoa.framework */,
+			);
+			name = "OS X";
 			sourceTree = "<group>";
 		};
 		B658FB2327DA9E0F00EA4DBD = {
@@ -256,6 +303,7 @@
 				B658FB2D27DA9E0F00EA4DBD /* Products */,
 				5C403B8D27E20F8000788241 /* Frameworks */,
 				6C01F25D2C4820B600AA951B /* Recovered References */,
+				FAB664F42DEDAC40210039C3 /* CodeEditRelay */,
 			);
 			indentWidth = 4;
 			sourceTree = "<group>";
@@ -268,8 +316,19 @@
 				B658FB3D27DA9E1000EA4DBD /* CodeEditTests.xctest */,
 				B658FB4727DA9E1000EA4DBD /* CodeEditUITests.xctest */,
 				2BE487EC28245162003F3F64 /* OpenWithCodeEdit.appex */,
+				EF8E057199C1A6A2CF959776 /* CodeEditRelay */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		FAB664F42DEDAC40210039C3 /* CodeEditRelay */ = {
+			isa = PBXGroup;
+			children = (
+				A485376FB22F9587AA9B96AF /* RelayEngine.swift */,
+				0D1632782DC99BE59FE88F6C /* RelayMain.swift */,
+				175C8A1BC7EE241F83E69FBA /* RelayConfiguration.swift */,
+			);
+			path = CodeEditRelay;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -292,6 +351,22 @@
 			productReference = 2BE487EC28245162003F3F64 /* OpenWithCodeEdit.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		A90EFD9574D067718FA3BC03 /* CodeEditRelay */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 46679C864E6EBABC1D0DBE46 /* Build configuration list for PBXNativeTarget "CodeEditRelay" */;
+			buildPhases = (
+				D3E622B6717C460318D52B14 /* Sources */,
+				BB801AA2256ECA091EB234F8 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CodeEditRelay;
+			productName = CodeEditRelay;
+			productReference = EF8E057199C1A6A2CF959776 /* CodeEditRelay */;
+			productType = "com.apple.product-type.tool";
+		};
 		B658FB2B27DA9E0F00EA4DBD /* CodeEdit */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = B658FB5127DA9E1000EA4DBD /* Build configuration list for PBXNativeTarget "CodeEdit" */;
@@ -304,12 +379,14 @@
 				04C3255A2801B43A00C8DA2D /* Embed Frameworks */,
 				2BE487F528245162003F3F64 /* Embed Foundation Extensions */,
 				6C6BD6FD29CD154900235D17 /* Embed ExtensionKit ExtensionPoint */,
+				9952EABBB49704B7DB3451A4 /* Embed Relay */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				6C7B1C762A1D57CE005CBBFC /* PBXTargetDependency */,
 				2BE487F328245162003F3F64 /* PBXTargetDependency */,
+				793951439C9721A45B9ABC5E /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				B624520B2D78A3CC009A86D1 /* CodeEdit */,
@@ -389,8 +466,6 @@
 				B62454602D78A3D4009A86D1 /* CodeEditUITests */,
 			);
 			name = CodeEditUITests;
-			packageProductDependencies = (
-			);
 			productName = CodeEditUITests;
 			productReference = B658FB4727DA9E1000EA4DBD /* CodeEditUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -460,6 +535,7 @@
 				B658FB3C27DA9E1000EA4DBD /* CodeEditTests */,
 				B658FB4627DA9E1000EA4DBD /* CodeEditUITests */,
 				2BE487EB28245162003F3F64 /* OpenWithCodeEdit */,
+				A90EFD9574D067718FA3BC03 /* CodeEditRelay */,
 			);
 		};
 /* End PBXProject section */
@@ -556,6 +632,8 @@
 				6CB9144B29BEC7F100BC47F2 /* (null) in Sources */,
 				6CAAF69229BCC71C00A1F48A /* (null) in Sources */,
 				6CAAF68A29BC9C2300A1F48A /* (null) in Sources */,
+				A6E832FA4ECCA59F96915DA0 /* RelayEngine.swift in Sources */,
+				292B80F8D3209E321EA90D87 /* RelayConfiguration.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -573,6 +651,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3E622B6717C460318D52B14 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BA000F2B501A8F93F40D343E /* RelayEngine.swift in Sources */,
+				C2EDE1596DD38EF5C3DCC9E7 /* RelayMain.swift in Sources */,
+				5D01A1294F3DA46719076056 /* RelayConfiguration.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -584,6 +672,11 @@
 		6C7B1C762A1D57CE005CBBFC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			productRef = 6C7B1C752A1D57CE005CBBFC /* SwiftLint */;
+		};
+		793951439C9721A45B9ABC5E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A90EFD9574D067718FA3BC03 /* CodeEditRelay */;
+			targetProxy = 4B64C4DEE8A59B69F5AA5507 /* PBXContainerItemProxy */;
 		};
 		B658FB3F27DA9E1000EA4DBD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -598,6 +691,60 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		05514C240C5C65D0BD0F9629 /* Beta */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VB4CYT2C72;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = do.upper.codeedit.relay;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Beta;
+		};
+		1314EAA8AF03244B3C753E78 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VB4CYT2C72;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = do.upper.codeedit.relay;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		2132C538AB9F44A9EC6F5DDD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VB4CYT2C72;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = do.upper.codeedit.relay;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		28052DEA2973045200F4F90A /* Alpha */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = B624544F2D78A3D3009A86D1 /* Configs */;
@@ -1072,6 +1219,24 @@
 			};
 			name = Release;
 		};
+		434CBF56DA9297B4646BDA83 /* Alpha */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VB4CYT2C72;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = do.upper.codeedit.relay;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Alpha;
+		};
 		8B9A0E112B9FE7D7007E2DBF /* Pre */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = B624544F2D78A3D3009A86D1 /* Configs */;
@@ -1273,6 +1438,24 @@
 				REGISTER_APP_GROUPS = YES;
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Pre;
+		};
+		943916992E2F25C237796A29 /* Pre */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = VB4CYT2C72;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = do.upper.codeedit.relay;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Pre;
@@ -1629,6 +1812,18 @@
 				28052DEE2973045200F4F90A /* Alpha */,
 				8B9A0E152B9FE7D7007E2DBF /* Pre */,
 				28052DF32973045C00F4F90A /* Beta */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		46679C864E6EBABC1D0DBE46 /* Build configuration list for PBXNativeTarget "CodeEditRelay" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2132C538AB9F44A9EC6F5DDD /* Release */,
+				1314EAA8AF03244B3C753E78 /* Debug */,
+				434CBF56DA9297B4646BDA83 /* Alpha */,
+				943916992E2F25C237796A29 /* Pre */,
+				05514C240C5C65D0BD0F9629 /* Beta */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

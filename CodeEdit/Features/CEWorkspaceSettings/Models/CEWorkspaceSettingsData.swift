@@ -14,11 +14,12 @@ class CEWorkspaceSettingsData: ObservableObject, Codable {
     @Published var project: ProjectSettings = .init()
     @Published var tasks: [CETask] = []
     @Published var runtimes: WorkspaceRuntimes = .init()
+    @Published var site: LocalSiteSettings = .init()
 
     init() { }
 
     enum CodingKeys: CodingKey {
-        case project, tasks, runtimes
+        case project, tasks, runtimes, site
     }
 
     /// Explicit decoder init for setting default values when key is not present in `JSON`
@@ -27,6 +28,7 @@ class CEWorkspaceSettingsData: ObservableObject, Codable {
         self.project = try container.decodeIfPresent(ProjectSettings.self, forKey: .project) ?? .init()
         self.tasks = try container.decodeIfPresent([CETask].self, forKey: .tasks) ?? []
         self.runtimes = try container.decodeIfPresent(WorkspaceRuntimes.self, forKey: .runtimes) ?? .init()
+        self.site = try container.decodeIfPresent(LocalSiteSettings.self, forKey: .site) ?? .init()
     }
 
     /// Encode the instance into the encoder
@@ -41,9 +43,12 @@ class CEWorkspaceSettingsData: ObservableObject, Codable {
         if !runtimes.isEmpty {
             try container.encode(runtimes, forKey: .runtimes)
         }
+        if !site.isEmpty() {
+            try container.encode(site, forKey: .site)
+        }
     }
 
     func isEmpty() -> Bool {
-        project.isEmpty() && tasks.isEmpty && runtimes.isEmpty
+        project.isEmpty() && tasks.isEmpty && runtimes.isEmpty && site.isEmpty()
     }
 }

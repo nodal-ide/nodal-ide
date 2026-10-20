@@ -33,6 +33,11 @@ struct RunCommands: Commands {
             }
             .disabled(!(runController?.isRunning ?? false))
 
+            Button("Open Local Site", systemImage: "globe") {
+                runController?.openLocalSite()
+            }
+            .disabled(runController?.selectedConfiguration?.kind != .site)
+
             Divider()
 
             Button("Debug Current File", systemImage: "ladybug") {

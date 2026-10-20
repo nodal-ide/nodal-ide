@@ -24,6 +24,17 @@ struct InstalledRuntime: Identifiable, Hashable {
     var isRemovable: Bool {
         isManaged || (source == .brew && installIdentifier != nil)
     }
+
+    /// The runtime's install root (the parent of its `bin` directory).
+    var runtimeRoot: URL {
+        executableDirectory.deletingLastPathComponent()
+    }
+
+    /// Locates a fixed executable inside this runtime's install (e.g. `sbin/php-fpm`), which keeps
+    /// companion tools pinned to the same install as the interpreter instead of the global `PATH`.
+    func executable(relativePath: String) -> URL {
+        runtimeRoot.appending(path: relativePath)
+    }
 }
 
 /// A version offered by a provider's catalog (may or may not be installed).

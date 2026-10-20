@@ -23,6 +23,7 @@ struct StatusBarView: View {
     private var controlActive
 
     @EnvironmentObject private var utilityAreaViewModel: UtilityAreaViewModel
+    @EnvironmentObject private var workspace: WorkspaceDocument
 
     static var height: CGFloat {
         Metrics.Bar.statusBarHeight
@@ -56,6 +57,10 @@ struct StatusBarView: View {
                 .help(tab.title)
             }
             StatusBarBreakpointButton()
+            if let coordinator = workspace.localSiteCoordinator,
+               let settingsManager = workspace.workspaceSettingsManager {
+                StatusBarLocalSiteView(coordinator: coordinator, settingsManager: settingsManager)
+            }
             StatusBarDivider()
             Spacer()
             StatusBarFileInfoView()

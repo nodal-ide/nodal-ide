@@ -133,8 +133,13 @@ final class TaskNotificationHandler: ObservableObject {
     ///   - action: The action being taken on the task.
     ///   - model: The task contents.
     @MainActor
-    static func postTask(toWorkspace: URL? = nil, action: Action, model: TaskNotificationModel) {
-        NotificationCenter.default.post(name: .taskNotification, object: nil, userInfo: [
+    static func postTask(
+        toWorkspace: URL? = nil,
+        action: Action,
+        model: TaskNotificationModel,
+        delay: TimeInterval? = nil
+    ) {
+        var userInfo: [String: Any] = [
             "id": model.id,
             "title": model.title,
             "message": model.message as Any,
@@ -142,7 +147,11 @@ final class TaskNotificationHandler: ObservableObject {
             "isLoading": model.isLoading,
             "action": action.rawValue,
             "workspace": toWorkspace as Any
-        ])
+        ]
+        if let delay {
+            userInfo["delay"] = delay
+        }
+        NotificationCenter.default.post(name: .taskNotification, object: nil, userInfo: userInfo)
     }
 
     /// Initialises a new `TaskNotificationHandler` and starts observing for task notifications.

@@ -62,6 +62,9 @@ struct SettingsData: Codable, Hashable {
     /// Native PHP diagnostics (code-quality rules)
     var phpDiagnostics: PHPDiagnosticsSettings = .init()
 
+    /// Global preferences for local development domains
+    var localDomains: LocalDomainsSettings = .init()
+
     /// Default initializer
     init() {}
 
@@ -96,6 +99,10 @@ struct SettingsData: Codable, Hashable {
         self.phpDiagnostics = try container.decodeIfPresent(
             PHPDiagnosticsSettings.self,
             forKey: .phpDiagnostics
+        ) ?? .init()
+        self.localDomains = try container.decodeIfPresent(
+            LocalDomainsSettings.self,
+            forKey: .localDomains
         ) ?? .init()
     }
     // swiftlint:disable cyclomatic_complexity

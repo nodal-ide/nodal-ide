@@ -52,9 +52,13 @@ struct CEWorkspaceSettingsView: View {
             case .tasks:
                 WorkspaceSettingsTasksView()
             case .runConfigurations:
-                WorkspaceSettingsRunConfigurationsView()
+                WorkspaceSettingsRunConfigurationsView {
+                    selection = .localDomain
+                }
             case .runtimes:
                 WorkspaceSettingsRuntimesView()
+            case .localDomain:
+                WorkspaceSettingsLocalDomainView(site: workspaceSettingsManager.settings.site)
             }
         }
     }

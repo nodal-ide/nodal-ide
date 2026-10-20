@@ -38,6 +38,9 @@ enum AppServices {
     /// The app-wide runtime manager.
     @MainActor static var runtimeManager: RuntimeManager = .shared
 
+    /// The app-wide local proxy service (single-instance lock, domain registry, nginx/certs later).
+    @MainActor static var localProxy: LocalProxyService = .shared
+
     /// The app-wide resolved runtime environment.
     @MainActor static var runtimeEnvironment: RuntimeEnvironment = .shared
 

@@ -34,6 +34,7 @@ final class WorkspaceServices {
     private(set) var stateStore = WorkspaceStateStore(fileURL: nil)
     private let launchCoordinator = WorkspaceLaunchCoordinator()
     private var runtimeCoordinator: WorkspaceRuntimeCoordinator?
+    private(set) var localSiteCoordinator: WorkspaceLocalSiteCoordinator?
 
     // MARK: Created when the workspace is configured
 
@@ -85,6 +86,18 @@ final class WorkspaceServices {
         runtimeCoordinator = WorkspaceRuntimeCoordinator(workspace: workspace)
         runtimeCoordinator?.start(settingsManager: settingsManager)
 
+        // Keep the project's local site in sync with its `site` + `runtimes` settings.
+        let siteRunner = LocalSiteRunner(
+            operations: AppServices.localProxy.makeOperations(
+                workspaceURL: url,
+                site: { [weak settingsManager] in settingsManager?.settings.site ?? LocalSiteSettings() },
+                taskManager: taskManager
+            )
+        )
+        let siteCoordinator = WorkspaceLocalSiteCoordinator(workspaceURL: url, runner: siteRunner)
+        siteCoordinator.start(settingsManager: settingsManager)
+        localSiteCoordinator = siteCoordinator
+
         // Kick off a background project scan (symbols + code-quality diagnostics) shortly after launch
         // so the Problems panel isn't limited to open files. Only for PHP projects.
         launchCoordinator.scheduleProjectScan(
@@ -96,6 +109,10 @@ final class WorkspaceServices {
     /// Releases the workspace-dependent services (keeping the eagerly-created ones).
     func tearDown() {
         runtimeCoordinator = nil
+        if let siteCoordinator = localSiteCoordinator {
+            Task { await siteCoordinator.shutdown() }
+        }
+        localSiteCoordinator = nil
         workspaceFileManager?.cleanUp()
         workspaceSettingsManager?.cleanUp()
         workspaceSettingsManager = nil

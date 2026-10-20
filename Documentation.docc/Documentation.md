@@ -10,6 +10,10 @@
 
 - ``Settings``
 
+### Local Domains
+
+- <doc:LocalDomains>
+
 ### App Window
 
 - <doc:App-Window>

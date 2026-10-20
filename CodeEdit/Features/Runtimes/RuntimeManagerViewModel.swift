@@ -36,16 +36,32 @@ final class RuntimeManagerViewModel: ObservableObject {
     @Published private(set) var isLoadingPackages = false
     @Published var packageManagerInput = ""
     @Published private(set) var jobs: [RuntimeJob] = []
+    /// php-fpm availability for installed PHP runtimes, keyed by ``InstalledRuntime/id``.
+    @Published private(set) var fpmStatuses: [String: PHPFPMStatus] = [:]
 
     private let manager = AppServices.runtimeManager
+    private let fpmCatalog: PHPFPMRuntimeCatalog
     private var cancellables = Set<AnyCancellable>()
 
-    init() {
+    init(detector: (any PHPFPMDetecting)? = nil) {
+        self.fpmCatalog = PHPFPMRuntimeCatalog(detector: detector ?? PHPFPMDetector())
         loadDefaults()
         manager.jobs.$jobs
             .receive(on: RunLoop.main)
             .sink { [weak self] jobs in self?.jobs = jobs }
             .store(in: &cancellables)
+    }
+
+    /// The FPM status for an installed PHP row, once detection finishes.
+    func fpmStatus(for row: Row) -> PHPFPMStatus? {
+        guard let installed = row.installed, selectedKind == .php else {
+            return nil
+        }
+        return fpmStatuses[installed.id]
+    }
+
+    func loadFPMStatuses(for runtimes: [InstalledRuntime]) async {
+        fpmStatuses = await fpmCatalog.statuses(for: runtimes)
     }
 
     /// The running install/uninstall job for a version (in the selected kind), if any.
@@ -102,6 +118,9 @@ final class RuntimeManagerViewModel: ObservableObject {
         async let available = provider.availableVersions()
         let (installedList, availableList) = await (installed, available)
         rows[kind] = Self.merge(available: availableList, installed: installedList)
+        if kind == .php {
+            await loadFPMStatuses(for: installedList)
+        }
         loading.remove(kind)
         await loadDiskUsage(for: installedList)
     }

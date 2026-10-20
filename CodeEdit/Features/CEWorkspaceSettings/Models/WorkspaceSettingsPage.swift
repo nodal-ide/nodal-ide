@@ -12,6 +12,7 @@ enum WorkspaceSettingsPage: String, CaseIterable, Identifiable {
     case tasks
     case runConfigurations
     case runtimes
+    case localDomain
 
     var id: String { rawValue }
 
@@ -21,6 +22,7 @@ enum WorkspaceSettingsPage: String, CaseIterable, Identifiable {
         case .tasks: return "Tasks"
         case .runConfigurations: return "Run & Debug"
         case .runtimes: return "Runtimes"
+        case .localDomain: return "Local Domain"
         }
     }
 
@@ -30,6 +32,7 @@ enum WorkspaceSettingsPage: String, CaseIterable, Identifiable {
         case .tasks: return "hammer"
         case .runConfigurations: return "play.circle"
         case .runtimes: return "shippingbox"
+        case .localDomain: return "globe"
         }
     }
 
@@ -39,6 +42,7 @@ enum WorkspaceSettingsPage: String, CaseIterable, Identifiable {
         case .tasks: return .orange
         case .runConfigurations: return .green
         case .runtimes: return .purple
+        case .localDomain: return .cyan
         }
     }
 }

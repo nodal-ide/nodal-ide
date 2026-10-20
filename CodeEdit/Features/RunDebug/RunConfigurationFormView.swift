@@ -11,6 +11,10 @@ struct RunConfigurationFormView: View {
     @Binding var configuration: RunConfiguration
     /// Names of workspace tasks, offered as pre-launch tasks.
     var taskNames: [String] = []
+    /// The project's Local Domain settings, summarized for site configurations.
+    var site: LocalSiteSettings?
+    /// Reveals Project Settings ▸ Local Domain (site configurations only).
+    var onEditLocalDomain: (() -> Void)?
 
     @State private var showAdvanced = false
 
@@ -28,7 +32,11 @@ struct RunConfigurationFormView: View {
                 }
             }
 
-            commandSection
+            if configuration.kind == .site {
+                siteSection
+            } else {
+                commandSection
+            }
 
             if configuration.kind == .debug {
                 programSection
@@ -47,6 +55,46 @@ struct RunConfigurationFormView: View {
     }
 
     // MARK: - Sections
+
+    private var siteSection: some View {
+        Section {
+            if let site, site.enabled {
+                LabeledContent("Domain") {
+                    Text(domainText(for: site))
+                        .font(.system(.body, design: .monospaced))
+                }
+                LabeledContent("Handler") {
+                    Text(site.handler.title)
+                        .foregroundStyle(.secondary)
+                }
+                LabeledContent("Document Root") {
+                    Text(site.documentRoot.isEmpty ? "Project root" : site.documentRoot)
+                        .foregroundStyle(.secondary)
+                }
+                LabeledContent("HTTPS") {
+                    Text(site.https ? "On" : "Off")
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Text("Local domains are disabled for this project.")
+                    .foregroundStyle(.secondary)
+            }
+
+            if let onEditLocalDomain {
+                Button("Edit Local Domain Settings…") {
+                    onEditLocalDomain()
+                }
+            }
+        } header: {
+            Text("Site")
+        } footer: {
+            Text(
+                "Serving a local domain uses the project's Local Domain settings. Domain, document root, "
+                + "handler, routing, and HTTPS are edited in Project Settings ▸ Local Domain."
+            )
+            .font(.caption)
+        }
+    }
 
     private var commandSection: some View {
         Section {
@@ -170,6 +218,11 @@ struct RunConfigurationFormView: View {
     }
 
     // MARK: - Helpers
+
+    private func domainText(for site: LocalSiteSettings) -> String {
+        let domain = site.domain.trimmingCharacters(in: .whitespacesAndNewlines)
+        return domain.isEmpty ? "Not configured" : domain
+    }
 
     /// Expands the advanced section when the configuration already uses advanced settings.
     private func configureDefaults() {

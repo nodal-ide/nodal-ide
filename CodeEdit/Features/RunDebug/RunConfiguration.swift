@@ -12,12 +12,14 @@ struct RunConfiguration: Identifiable, Codable, Hashable {
         case run
         case debug
         case test
+        case site
 
         var title: String {
             switch self {
             case .run: return "Run"
             case .debug: return "Debug"
             case .test: return "Test"
+            case .site: return "Site"
             }
         }
 
@@ -26,6 +28,7 @@ struct RunConfiguration: Identifiable, Codable, Hashable {
             case .run: return "play"
             case .debug: return "ladybug"
             case .test: return "checkmark.diamond"
+            case .site: return "globe"
             }
         }
     }
@@ -68,9 +71,11 @@ struct RunConfiguration: Identifiable, Codable, Hashable {
 
     /// A configuration is usable when it has a name and something to run.
     ///
-    /// Debug configurations may launch a program or run a command (with Xdebug injected).
+    /// Debug configurations may launch a program or run a command (with Xdebug injected). Site
+    /// configurations serve the project's Local Domain, so they never require a command.
     var isInvalid: Bool {
         if name.isEmpty { return true }
+        if kind == .site { return false }
         guard kind == .debug else { return command.isEmpty }
         return (program ?? "").isEmpty && command.isEmpty
     }
