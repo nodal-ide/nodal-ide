@@ -20,6 +20,9 @@ struct GeneralSettingsView: View {
     var settings
 
     @State private var openInCodeEdit: Bool = true
+    @State private var shellCommandInstalled = false
+    @State private var installingShellCommand = false
+    @State private var shellCommandError: String?
 
     init() {
         self.openInCodeEdit = UserDefaults.appGroup.bool(forKey: "enableOpenInCE")
@@ -64,6 +67,22 @@ struct GeneralSettingsView: View {
                 // TODO: Uncomment when production build is released.
                 // prereleaseToggle
             }
+        }
+        .onAppear {
+            shellCommandInstalled = ShellCommandInstaller.isInstalled()
+        }
+        .alert(
+            "Could Not Install Shell Command",
+            isPresented: Binding(
+                get: { shellCommandError != nil },
+                set: { if !$0 { shellCommandError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {
+                shellCommandError = nil
+            }
+        } message: {
+            Text(shellCommandError ?? "")
         }
     }
 }
@@ -241,11 +260,36 @@ private extension GeneralSettingsView {
 
     var shellCommand: some View {
         LabeledContent("'codeedit' Shell Command") {
-            Button(action: ShellCommandInstaller.install, label: {
-                Text("Install")
-            })
-            .disabled(true)
-            .buttonStyle(.bordered)
+            HStack(spacing: 8) {
+                if shellCommandInstalled {
+                    Text("Installed")
+                        .foregroundStyle(.secondary)
+                }
+                if installingShellCommand {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+                Button(shellCommandInstalled ? "Reinstall" : "Install") {
+                    installShellCommand()
+                }
+                .disabled(installingShellCommand)
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+
+    @MainActor
+    private func installShellCommand() {
+        installingShellCommand = true
+        Task {
+            let result = await ShellCommandInstaller.install()
+            installingShellCommand = false
+            switch result {
+            case .success:
+                shellCommandInstalled = true
+            case .failure(let error):
+                shellCommandError = error.localizedDescription
+            }
         }
     }
 

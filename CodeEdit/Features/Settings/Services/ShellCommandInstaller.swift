@@ -3,58 +3,125 @@
 //  CodeEdit
 //
 
-import AppKit
 import Foundation
 
-/// Installs the bundled `codeedit` shim into `/usr/local/bin` as a symbolic link, falling back to an
-/// elevated `osascript` install when the sandbox refuses to create the link directly.
-///
-/// Extracted from `GeneralSettingsView` so the settings UI stays declarative.
-enum ShellCommandInstaller {
-    static let destinationPath = "/usr/local/bin/codeedit"
+enum ShellCommandInstallError: LocalizedError {
+    case writeFailed(String)
+    case authorizationFailed(String)
 
-    static func install() {
-        guard let commandPath = Bundle.main
-            .url(forResource: "codeedit", withExtension: nil, subdirectory: "Resources")?.path else {
-            return
+    var errorDescription: String? {
+        switch self {
+        case .writeFailed(let message):
+            "Could not install the shell command: \(message)"
+        case .authorizationFailed(let message):
+            "Could not install the shell command with administrator privileges: \(message)"
         }
+    }
+}
+
+@MainActor
+enum ShellCommandInstaller {
+    static let commandName = "codeedit"
+    static let installationURL = URL(fileURLWithPath: "/usr/local/bin/codeedit")
+
+    static func isInstalled(
+        appPath: String = Bundle.main.bundlePath,
+        at destination: URL = installationURL
+    ) -> Bool {
+        guard let contents = try? String(contentsOf: destination, encoding: .utf8) else {
+            return false
+        }
+        return contents == wrapperScript(appPath: appPath)
+    }
+
+    static func install(
+        appPath: String = Bundle.main.bundlePath,
+        at destination: URL = installationURL
+    ) async -> Result<Void, Error> {
+        let script = wrapperScript(appPath: appPath)
 
         do {
-            if FileManager.default.fileExists(atPath: destinationPath) {
-                try FileManager.default.removeItem(atPath: destinationPath)
+            try write(script, to: destination)
+            guard isInstalled(appPath: appPath, at: destination) else {
+                throw ShellCommandInstallError.writeFailed("The installed file could not be verified.")
             }
+            return .success(())
         } catch {
-            return
-        }
-
-        NSWorkspace.shared.requestAuthorization(to: .createSymbolicLink) { auth, error in
-            guard let auth, error == nil else {
-                elevateAndLink(commandPath: commandPath, destinationPath: destinationPath)
-                return
-            }
-            do {
-                try FileManager(authorization: auth).createSymbolicLink(
-                    atPath: destinationPath, withDestinationPath: commandPath
+            let command = elevatedInstallCommand(script: script, destination: destination)
+            let result = await AppleScriptElevatedShellRunner().run(command)
+            guard result.succeeded, isInstalled(appPath: appPath, at: destination) else {
+                return .failure(
+                    ShellCommandInstallError.authorizationFailed(
+                        result.output.isEmpty ? "The installation was cancelled." : result.output
+                    )
                 )
-            } catch {
-                elevateAndLink(commandPath: commandPath, destinationPath: destinationPath)
             }
+            return .success(())
         }
     }
 
-    private static func elevateAndLink(commandPath: String, destinationPath: String) {
-        let script = [
-            "osascript", "-e",
-            "\"do shell script \\\"mkdir -p /usr/local/bin && ln -sf '\(commandPath)' '\(destinationPath)'\\\"\"",
-            "with administrator privileges"
-        ].joined(separator: " ")
+    static func wrapperScript(appPath: String) -> String {
+        let app = shellQuote(appPath)
+        return """
+        #!/bin/sh
+        APP=\(app)
 
-        let task = Process()
-        task.standardOutput = Pipe()
-        task.standardError = Pipe()
-        task.arguments = ["-c", script]
-        task.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        task.standardInput = nil
-        try? task.run()
+        if [ "$#" -eq 0 ]; then
+            exec /usr/bin/open -a "$APP"
+        fi
+
+        case "$1" in
+            -h|--help)
+                printf '%s\\n' 'Usage: codeedit [path ...]' '' \\
+                    'Opens files or folders in CodeEdit. With no paths, activates CodeEdit.'
+                exit 0
+                ;;
+            -v|--version)
+                VERSION=$(/usr/bin/defaults read "$APP/Contents/Info" CFBundleShortVersionString 2>/dev/null)
+                printf '%s\\n' "${VERSION:-unknown}"
+                exit 0
+                ;;
+            --)
+                shift
+                ;;
+        esac
+
+        if [ "$#" -eq 0 ]; then
+            exec /usr/bin/open -a "$APP"
+        fi
+
+        exec /usr/bin/open -a "$APP" -- "$@"
+        """
+    }
+
+    static func elevatedInstallCommand(script: String, destination: URL) -> String {
+        let encoded = Data(script.utf8).base64EncodedString()
+        let directory = destination.deletingLastPathComponent().path
+        let path = shellQuote(destination.path)
+        return [
+            "/bin/mkdir -p \(shellQuote(directory))",
+            "printf %s \(shellQuote(encoded)) | /usr/bin/base64 -D > \(path)",
+            "/bin/chmod 755 \(path)"
+        ].joined(separator: " && ")
+    }
+
+    static func shellQuote(_ value: String) -> String {
+        "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
+    private static func write(
+        _ script: String,
+        to destination: URL,
+        fileManager: FileManager = .default
+    ) throws {
+        do {
+            try script.write(to: destination, atomically: true, encoding: .utf8)
+            try fileManager.setAttributes(
+                [.posixPermissions: 0o755],
+                ofItemAtPath: destination.path
+            )
+        } catch {
+            throw ShellCommandInstallError.writeFailed(error.localizedDescription)
+        }
     }
 }
