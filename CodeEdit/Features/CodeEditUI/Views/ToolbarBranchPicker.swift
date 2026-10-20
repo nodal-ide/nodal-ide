@@ -13,6 +13,7 @@ import Combine
 struct ToolbarBranchPicker: View {
     private weak var workspaceFileManager: CEWorkspaceFileManager?
     private weak var sourceControlManager: SourceControlManager?
+    private weak var sourceControlCoordinator: SourceControlCoordinator?
 
     @Environment(\.controlActiveState)
     private var controlActive
@@ -28,6 +29,7 @@ struct ToolbarBranchPicker: View {
     ) {
         self.workspaceFileManager = workspaceFileManager
         self.sourceControlManager = workspaceFileManager?.sourceControlManager
+        self.sourceControlCoordinator = workspaceFileManager?.sourceControlCoordinator
     }
 
     var body: some View {
@@ -55,7 +57,7 @@ struct ToolbarBranchPicker: View {
                             PopoverView(sourceControlManager: sourceControlManager)
                         }
                     }, label: {
-                        Text(currentBranch.name)
+                        Text(branchLabel(branch: currentBranch))
                             .font(.subheadline)
                             .foregroundColor(controlActive == .inactive ? inactiveColor : .gray)
                             .frame(height: 11)
@@ -100,6 +102,14 @@ struct ToolbarBranchPicker: View {
 
     private var title: String {
         workspaceFileManager?.folderUrl.lastPathComponent ?? "Empty"
+    }
+
+    private func branchLabel(branch: GitBranch) -> String {
+        let isMultiRepo = (sourceControlCoordinator?.repositories.count ?? 0) > 1
+        guard isMultiRepo, let repoName = sourceControlManager?.repoDisplayName else {
+            return branch.name
+        }
+        return "\(repoName) · \(branch.name)"
     }
 
     // MARK: Popover View

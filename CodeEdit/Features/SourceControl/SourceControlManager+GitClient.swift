@@ -164,8 +164,13 @@ extension SourceControlManager {
             }
         }
 
+        let coordinator = fileManager.sourceControlCoordinator
         for (_, file) in fileManager.flattenedFileItems
         where !updatedStatusFor.contains(file) && file.gitStatus != nil {
+            if let coord = coordinator {
+                let owningRepo = coord.repoForFile(file.resolvedURL)
+                guard owningRepo === self else { continue }
+            }
             file.gitStatus = nil
             updatedStatusFor.insert(file)
         }

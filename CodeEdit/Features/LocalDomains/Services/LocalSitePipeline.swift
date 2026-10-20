@@ -66,6 +66,8 @@ final class LocalSitePipeline {
     let tempDirectory: URL
     let httpPort: Int
     let httpsPort: Int
+    let relay: any RelayStarting
+    let portMode: () -> SettingsData.LocalDomainsSettings.PortMode
 
     var activeSites: [String: ActiveSite] = [:]
 
@@ -80,7 +82,9 @@ final class LocalSitePipeline {
         fileManager: FileManager = .default,
         tempDirectory: URL = URL(filePath: "/tmp", directoryHint: .isDirectory),
         httpPort: Int = LocalSiteAddress.httpPort,
-        httpsPort: Int = LocalSiteAddress.httpsPort
+        httpsPort: Int = LocalSiteAddress.httpsPort,
+        relay: (any RelayStarting)? = nil,
+        portMode: @escaping () -> SettingsData.LocalDomainsSettings.PortMode = { .highPorts }
     ) {
         self.tooling = tooling
         self.authority = authority
@@ -98,6 +102,12 @@ final class LocalSitePipeline {
         self.tempDirectory = tempDirectory
         self.httpPort = httpPort
         self.httpsPort = httpsPort
+        self.relay = relay ?? PrivilegedRelayController()
+        self.portMode = portMode
+    }
+
+    var externalHTTPSPort: Int {
+        portMode() == .privilegedRelay ? 443 : httpsPort
     }
 
     var runningSiteCount: Int {

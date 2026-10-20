@@ -1,8 +1,8 @@
 import Foundation
 
 struct RelayConfiguration: Equatable, Sendable {
-    static let httpInternalPort = 18080
-    static let httpsInternalPort = 18443
+    static let httpInternalPort = 8080
+    static let httpsInternalPort = 8443
 
     static let standard = RelayConfiguration(
         httpListenPort: 80,

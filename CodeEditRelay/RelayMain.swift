@@ -6,6 +6,7 @@ enum RelayMain {
         let engine = RelayEngine(configuration: .standard)
         do {
             try await engine.start()
+            FileHandle.standardOutput.write(Data("CodeEditRelay: ready\n".utf8))
         } catch {
             writeToStandardError("CodeEditRelay: \(error.localizedDescription)\n")
             exit(EXIT_FAILURE)

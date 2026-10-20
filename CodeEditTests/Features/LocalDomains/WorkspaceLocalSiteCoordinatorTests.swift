@@ -120,6 +120,33 @@ struct WorkspaceLocalSiteCoordinatorTests {
     }
 
     @Test
+    func autoStartOnOpenHonorsThePreferenceAndEnabledState() async throws {
+        try await withTempDir { directory in
+            let manager = CEWorkspaceSettings(workspaceURL: directory)
+            manager.settings.site = enabled()
+            let (coordinator, operations) = makeCoordinator()
+            coordinator.start(settingsManager: manager)
+
+            await coordinator.startIfEnabledOnOpen(autoStart: false)
+            #expect(operations.startCalls == 0)
+
+            await coordinator.startIfEnabledOnOpen(autoStart: true)
+            #expect(operations.startCalls == 1)
+            #expect(coordinator.state == .running)
+        }
+    }
+
+    @Test
+    func autoStartOnOpenIgnoresDisabledSites() async {
+        let (coordinator, operations) = makeCoordinator()
+
+        await coordinator.startIfEnabledOnOpen(autoStart: true)
+
+        #expect(operations.startCalls == 0)
+        #expect(coordinator.state == .idle)
+    }
+
+    @Test
     func shutdownStopsTheSite() async {
         let (coordinator, operations) = makeCoordinator()
 

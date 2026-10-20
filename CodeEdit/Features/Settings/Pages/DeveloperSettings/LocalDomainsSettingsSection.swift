@@ -7,6 +7,9 @@ struct LocalDomainsSettingsSection: View {
     @AppSettings(\.localDomains.portMode)
     private var portMode
 
+    @AppSettings(\.localDomains.autoStartSitesOnOpen)
+    private var autoStartSitesOnOpen
+
     @StateObject private var model = LocalDomainsSettingsViewModel()
     @State private var confirmReset = false
     @State private var confirmStateReset = false
@@ -16,6 +19,7 @@ struct LocalDomainsSettingsSection: View {
         Group {
             toolsSection
             portModeSection
+            startupSection
             authoritySection
             diagnosticsSection
         }
@@ -68,6 +72,19 @@ struct LocalDomainsSettingsSection: View {
             Text("Ports")
         } footer: {
             Text("Portless mode uses a credential-prompted relay for 80/443; high ports never ask for a password.")
+        }
+    }
+
+    private var startupSection: some View {
+        Section {
+            Toggle("Start enabled sites when a workspace opens", isOn: $autoStartSitesOnOpen)
+        } header: {
+            Text("Startup")
+        } footer: {
+            Text(
+                "When enabled, projects whose local domain is enabled start their site as soon as "
+                + "the workspace opens."
+            )
         }
     }
 

@@ -9,15 +9,15 @@ struct RelayEngineTests {
         let configuration = RelayConfiguration.standard
         #expect(configuration.httpListenPort == 80)
         #expect(configuration.httpsListenPort == 443)
-        #expect(configuration.httpTargetPort == 18080)
-        #expect(configuration.httpsTargetPort == 18443)
+        #expect(configuration.httpTargetPort == 8080)
+        #expect(configuration.httpsTargetPort == 8443)
     }
 
     @Test
     func rejectsOutOfRangePorts() {
         let configuration = RelayConfiguration(
             httpListenPort: 0,
-            httpTargetPort: 18080,
+            httpTargetPort: 8080,
             httpsListenPort: 443,
             httpsTargetPort: 70000
         )

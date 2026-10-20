@@ -16,10 +16,15 @@ final class RunController: ObservableObject {
     @Published var selectedConfigurationID: UUID?
     /// The currently running configuration, if any.
     @Published var runningConfigurationID: UUID?
+    /// Live state of the project's local site, mirrored so Run-menu commands stay in sync no matter
+    /// where the site was started (Run menu, status bar, Project Settings, or auto-start).
+    @Published var localSiteState: LocalSiteState = .idle
 
     private var runningTaskID: UUID?
     var runningSiteConfigurationID: UUID?
     var siteStateCancellable: AnyCancellable?
+    var siteSettingsCancellable: AnyCancellable?
+    weak var boundSiteCoordinator: WorkspaceLocalSiteCoordinator?
 
     init(workspace: WorkspaceDocument) {
         self.workspace = workspace
@@ -33,7 +38,7 @@ final class RunController: ObservableObject {
         configurations.first { $0.id == selectedConfigurationID } ?? configurations.first
     }
 
-    var isRunning: Bool { runningConfigurationID != nil }
+    var isRunning: Bool { runningConfigurationID != nil || localSiteState.isRunning }
 
     /// Whether there's an editor file to debug.
     var hasActiveEditorFile: Bool {
@@ -264,7 +269,7 @@ final class RunController: ObservableObject {
 
     func stop() {
         workspace?.debugController?.stop()
-        if runningSiteConfigurationID != nil {
+        if runningSiteConfigurationID != nil || localSiteState.isRunning || localSiteState.failure != nil {
             clearRunningSite()
             Task { [weak self] in
                 await self?.workspace?.localSiteCoordinator?.stopSite()

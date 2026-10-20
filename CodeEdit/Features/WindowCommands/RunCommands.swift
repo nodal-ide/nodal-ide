@@ -33,10 +33,22 @@ struct RunCommands: Commands {
             }
             .disabled(!(runController?.isRunning ?? false))
 
-            Button("Open Local Site", systemImage: "globe") {
+            Divider()
+
+            Button("Run Local Site", systemImage: "globe") {
+                runController?.runLocalSite()
+            }
+            .disabled(!(runController?.canRunLocalSite ?? false))
+
+            Button("Stop Local Site", systemImage: "stop.circle") {
+                runController?.stopLocalSite()
+            }
+            .disabled(!(runController?.canStopLocalSite ?? false))
+
+            Button("Open Local Site", systemImage: "safari") {
                 runController?.openLocalSite()
             }
-            .disabled(runController?.selectedConfiguration?.kind != .site)
+            .disabled(!(runController?.isLocalSiteEnabled ?? false))
 
             Divider()
 

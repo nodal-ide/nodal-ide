@@ -9,6 +9,15 @@ import SwiftUI
 
 struct SourceControlNavigatorChangesView: View {
     @EnvironmentObject var sourceControlManager: SourceControlManager
+    @EnvironmentObject var workspace: WorkspaceDocument
+
+    private var coordinator: SourceControlCoordinator? {
+        workspace.sourceControlCoordinator
+    }
+
+    private var isMultiRepo: Bool {
+        (coordinator?.repositories.count ?? 0) > 1
+    }
 
     var hasRemotes: Bool {
         !sourceControlManager.remotes.isEmpty
@@ -28,6 +37,31 @@ struct SourceControlNavigatorChangesView: View {
     }
 
     var body: some View {
+        if isMultiRepo, let coordinator {
+            multiRepoBody(coordinator: coordinator)
+        } else {
+            singleRepoBody
+        }
+    }
+
+    @ViewBuilder
+    private func multiRepoBody(coordinator: SourceControlCoordinator) -> some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: []) {
+                ForEach(coordinator.repositories, id: \.workspaceURL) { manager in
+                    SourceControlNavigatorChangesSection(manager: manager)
+                        .environmentObject(workspace)
+                    Divider()
+                }
+            }
+        }
+        .frame(maxHeight: .infinity)
+        .task {
+            await coordinator.refreshAll()
+        }
+    }
+
+    @ViewBuilder private var singleRepoBody: some View {
         VStack(alignment: .center, spacing: 0) {
             if hasChanges || !hasRemotes || (!hasChanges && (hasUnsyncedCommits || hasCurrentBranch)) {
                 VStack(spacing: 8) {

@@ -19,6 +19,15 @@ final class SourceControlManager: ObservableObject {
     /// The base URL of the workspace
     let workspaceURL: URL
 
+    /// Human-readable name derived from the repository root directory.
+    var repoDisplayName: String { workspaceURL.lastPathComponent }
+
+    /// Whether this repository is a git submodule of another repo.
+    var isSubmodule: Bool
+
+    /// The root URL of the parent repository when `isSubmodule` is `true`.
+    var parentRepoURL: URL?
+
     let editorManager: EditorManager
     weak var fileManager: CEWorkspaceFileManager?
 
@@ -115,10 +124,14 @@ final class SourceControlManager: ObservableObject {
 
     init(
         workspaceURL: URL,
-        editorManager: EditorManager
+        editorManager: EditorManager,
+        isSubmodule: Bool = false,
+        parentRepoURL: URL? = nil
     ) {
         self.workspaceURL = workspaceURL
         self.editorManager = editorManager
+        self.isSubmodule = isSubmodule
+        self.parentRepoURL = parentRepoURL
         gitClient = GitClient(directoryURL: workspaceURL, shellClient: currentWorld.shellClient)
     }
 

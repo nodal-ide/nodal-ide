@@ -61,7 +61,12 @@ final class CEWorkspaceFileManager {
 
     let folderUrl: URL
     let workspaceItem: CEWorkspaceFile
-    weak var sourceControlManager: SourceControlManager?
+    weak var sourceControlCoordinator: SourceControlCoordinator?
+
+    @MainActor
+    var sourceControlManager: SourceControlManager? {
+        sourceControlCoordinator?.primaryRepository
+    }
 
     /// Create a file  manager object with a root and a set of files to ignore.
     /// - Parameters:
@@ -79,7 +84,6 @@ final class CEWorkspaceFileManager {
 
         self.workspaceItem = CEWorkspaceFile(url: folderUrl)
         self.flattenedFileItems = [workspaceItem.id: workspaceItem]
-        self.sourceControlManager = sourceControlManager
         self.fileManager = fileManager
 
         self.loadChildrenForFile(self.workspaceItem)
@@ -88,8 +92,8 @@ final class CEWorkspaceFileManager {
             self?.fileSystemEventReceived(events: events)
         }
 
-        Task {
-            try await self.sourceControlManager?.validate()
+        Task { @MainActor in
+            try await self.sourceControlCoordinator?.primaryRepository?.validate()
         }
     }
 
@@ -181,7 +185,7 @@ final class CEWorkspaceFileManager {
         }
         childrenMap[file.id] = addedChildrenUrls
         Task {
-            await sourceControlManager?.refreshAllChangedFiles()
+            await sourceControlCoordinator?.refreshAll()
         }
     }
 

@@ -25,7 +25,8 @@ final class LocalProxyService {
             tooling: tooling,
             authority: authority,
             nginx: nginx,
-            registry: registry
+            registry: registry,
+            portMode: { AppServices.settings.preferences.localDomains.portMode }
         )
     }
 

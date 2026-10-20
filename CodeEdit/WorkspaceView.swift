@@ -39,7 +39,7 @@ struct WorkspaceView: View {
     private var keybindings: KeybindingManager =  .shared
 
     var body: some View {
-        if workspace.workspaceFileManager != nil, let sourceControlManager = workspace.sourceControlManager {
+        if workspace.workspaceFileManager != nil {
             VStack {
                 SplitViewReader { proxy in
                     SplitView(axis: .vertical) {
@@ -84,8 +84,10 @@ struct WorkspaceView: View {
                     // MARK: - Source Control
 
                     .task {
-                        // Only refresh git data if source control is enabled
-                        guard sourceControlIsEnabled else { return }
+                        // Git repositories are discovered asynchronously; the editor renders
+                        // regardless of whether one exists yet.
+                        guard sourceControlIsEnabled,
+                              let sourceControlManager = workspace.sourceControlManager else { return }
 
                         do {
                             try await sourceControlManager.refreshRemotes()
@@ -98,6 +100,7 @@ struct WorkspaceView: View {
                         }
                     }
                     .onChange(of: sourceControlIsEnabled) { _, newValue in
+                        guard let sourceControlManager = workspace.sourceControlManager else { return }
                         if newValue {
                             Task {
                                 await sourceControlManager.refreshCurrentBranch()
@@ -135,7 +138,11 @@ struct WorkspaceView: View {
                 }
             }
             .background(EffectView(.contentBackground))
-            .background(WorkspaceSheets().environmentObject(sourceControlManager))
+            .background {
+                if let sourceControlManager = workspace.sourceControlManager {
+                    WorkspaceSheets().environmentObject(sourceControlManager)
+                }
+            }
             .onDrop(of: [.fileURL], isTargeted: nil) { providers in
                 _ = handleDrop(providers: providers)
                 return true

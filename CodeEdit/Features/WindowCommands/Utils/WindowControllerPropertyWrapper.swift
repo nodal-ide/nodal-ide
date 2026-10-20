@@ -78,6 +78,11 @@ struct UpdatingWindowController: DynamicProperty {
             }
             .store(in: &cancellables)
 
+            controller?.workspace?.runController?.objectWillChange.sink { [weak self] in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
             self.objectWillChange.send()
         }
     }

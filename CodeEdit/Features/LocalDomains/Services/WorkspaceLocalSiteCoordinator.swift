@@ -79,6 +79,14 @@ final class WorkspaceLocalSiteCoordinator: ObservableObject {
         await perform(action)
     }
 
+    /// Starts an enabled site when the workspace opens, according to the user's preference.
+    func startIfEnabledOnOpen(autoStart: Bool) async {
+        guard autoStart, currentSite.enabled else {
+            return
+        }
+        await startSite()
+    }
+
     /// Starts the site on demand (status card) and returns once the start sequence settles.
     @discardableResult
     func startSite() async -> LocalSiteRunner.StartResult {

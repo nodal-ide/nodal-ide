@@ -143,7 +143,7 @@ extension LocalSitePipeline {
             privateKeyPath: certificate.privateKeyURL.path(percentEncoded: false),
             httpsListenPort: httpsPort,
             httpListenPort: httpPort,
-            externalHTTPSPort: httpsPort
+            externalHTTPSPort: externalHTTPSPort
         )
     }
 

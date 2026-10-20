@@ -59,4 +59,55 @@ struct RunConfigurationTests {
         #expect(decoded.name == "Site")
         #expect(!decoded.isInvalid)
     }
+
+    @Test
+    @MainActor
+    func ensureSiteConfigurationCreatesAndPersistsOneConfiguration() async throws {
+        try await withTempDir { directory in
+            let store = RunConfigurationStore(workspaceURL: directory)
+
+            let configuration = store.ensureSiteConfiguration()
+
+            #expect(configuration.kind == .site)
+            #expect(configuration.name == "Site")
+            #expect(store.configurations.count == 1)
+
+            let reloaded = RunConfigurationStore(workspaceURL: directory)
+            #expect(reloaded.configurations.map(\.id) == [configuration.id])
+        }
+    }
+
+    @Test
+    @MainActor
+    func ensureSiteConfigurationReusesAnExistingSiteConfiguration() async throws {
+        try await withTempDir { directory in
+            let store = RunConfigurationStore(workspaceURL: directory)
+            var existing = RunConfiguration()
+            existing.name = "My Site"
+            existing.kind = .site
+            store.add(existing)
+
+            let configuration = store.ensureSiteConfiguration()
+
+            #expect(configuration.id == existing.id)
+            #expect(store.configurations.count == 1)
+        }
+    }
+
+    @Test
+    @MainActor
+    func ensureSiteConfigurationUsesAUniqueName() async throws {
+        try await withTempDir { directory in
+            let store = RunConfigurationStore(workspaceURL: directory)
+            var run = RunConfiguration()
+            run.name = "Site"
+            run.command = "php -S 127.0.0.1:9000"
+            store.add(run)
+
+            let configuration = store.ensureSiteConfiguration()
+
+            #expect(configuration.name == "Site 2")
+            #expect(store.configurations.count == 2)
+        }
+    }
 }

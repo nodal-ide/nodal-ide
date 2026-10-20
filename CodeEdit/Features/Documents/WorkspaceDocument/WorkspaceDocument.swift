@@ -52,6 +52,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     // Workspace-dependent services (created once the URL is known).
     var workspaceFileManager: CEWorkspaceFileManager? { services.workspaceFileManager }
     var sourceControlManager: SourceControlManager? { services.sourceControlManager }
+    var sourceControlCoordinator: SourceControlCoordinator? { services.sourceControlCoordinator }
     var workspaceSettingsManager: CEWorkspaceSettings? { services.workspaceSettingsManager }
     var searchState: WorkspaceSearchService? { services.searchState }
     var openQuicklyViewModel: OpenQuicklyViewModel? { services.openQuicklyViewModel }
@@ -159,6 +160,20 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
         self.displayName = url.lastPathComponent
 
         services.configure(workspace: self, url: url)
+        observeSourceControlCoordinator()
+    }
+
+    /// `WorkspaceView` reads the coordinator's primary repository through a computed property, so
+    /// re-publish coordinator changes as document changes. Without this the editor stays empty until
+    /// an unrelated update happens after asynchronous repository discovery.
+    private func observeSourceControlCoordinator() {
+        guard let coordinator = sourceControlCoordinator else { return }
+        coordinator.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 
     override func read(from url: URL, ofType typeName: String) throws {

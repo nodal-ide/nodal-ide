@@ -49,6 +49,36 @@ final class RunConfigurationStore: ObservableObject {
         save()
     }
 
+    /// Returns the project's Site configuration, creating a default one when the local domain has none.
+    ///
+    /// The configuration is intentionally persisted: it is the stable handle the Run menu, command
+    /// palette, and shortcuts use to start the local site.
+    @discardableResult
+    func ensureSiteConfiguration() -> RunConfiguration {
+        if let existing = configurations.first(where: { $0.kind == .site }) {
+            return existing
+        }
+
+        var configuration = RunConfiguration()
+        configuration.name = uniqueConfigurationName(base: "Site")
+        configuration.kind = .site
+        add(configuration)
+        return configuration
+    }
+
+    private func uniqueConfigurationName(base: String) -> String {
+        let existingNames = Set(configurations.map(\.name))
+        guard existingNames.contains(base) else {
+            return base
+        }
+
+        var suffix = 2
+        while existingNames.contains("\(base) \(suffix)") {
+            suffix += 1
+        }
+        return "\(base) \(suffix)"
+    }
+
     /// Suggested configurations derived from the workspace's tasks.
     func configurationsFromTasks(_ tasks: [CETask]) -> [RunConfiguration] {
         tasks

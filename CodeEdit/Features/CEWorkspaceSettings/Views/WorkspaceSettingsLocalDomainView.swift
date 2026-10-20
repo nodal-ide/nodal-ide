@@ -11,6 +11,9 @@ struct WorkspaceSettingsLocalDomainView: View {
     @AppSettings(\.localDomains.portMode)
     private var portMode
 
+    @AppSettings(\.localDomains.autoStartSitesOnOpen)
+    private var autoStartSitesOnOpen
+
     @EnvironmentObject private var workspaceSettingsManager: CEWorkspaceSettings
     @EnvironmentObject private var workspace: WorkspaceDocument
 
@@ -89,10 +92,11 @@ extension WorkspaceSettingsLocalDomainView {
     private var availabilitySection: some View {
         Section {
             Toggle("Enable local domain", isOn: enabledBinding)
+            Toggle("Start automatically when this project opens", isOn: $autoStartSitesOnOpen)
         } header: {
             Text("Availability")
         } footer: {
-            Text("The domain is available while the local proxy is running. Nothing is exposed to the network.")
+            Text("The domain runs only while the proxy is running. Auto-start applies to every project.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

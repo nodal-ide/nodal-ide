@@ -18,6 +18,7 @@ struct SourceControlNavigatorView: View {
             VStack(spacing: 0) {
                 SourceControlNavigatorTabs()
                     .environmentObject(sourceControlManager)
+                    .environmentObject(workspace)
                     .task {
                         do {
                             while true {
@@ -27,7 +28,6 @@ struct SourceControlNavigatorView: View {
                                 try await Task.sleep(for: .seconds(10))
                             }
                         } catch {
-                            // TODO: if source fetching fails, display message
                         }
                     }
             }

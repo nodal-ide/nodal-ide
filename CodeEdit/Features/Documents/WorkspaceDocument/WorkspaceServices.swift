@@ -42,7 +42,7 @@ final class WorkspaceServices {
     private(set) var searchState: WorkspaceSearchService?
     private(set) var openQuicklyViewModel: OpenQuicklyViewModel?
     private(set) var commandsPaletteState: QuickActionsViewModel?
-    private(set) var sourceControlManager: SourceControlManager?
+    private(set) var sourceControlCoordinator: SourceControlCoordinator?
     private(set) var workspaceFileManager: CEWorkspaceFileManager?
     private(set) var taskManager: TaskManager?
     private(set) var runConfigurationStore: RunConfigurationStore?
@@ -50,6 +50,8 @@ final class WorkspaceServices {
     private(set) var testRunner: TestRunner?
     private(set) var breakpointStore: BreakpointStore?
     private(set) var debugController: DebugController?
+
+    var sourceControlManager: SourceControlManager? { sourceControlCoordinator?.primaryRepository }
 
     /// Constructs the workspace-dependent services. Called once a workspace URL is known.
     func configure(workspace: WorkspaceDocument, url: URL) {
@@ -59,15 +61,22 @@ final class WorkspaceServices {
         openQuicklyViewModel = OpenQuicklyViewModel(fileURL: url)
         commandsPaletteState = QuickActionsViewModel()
 
-        let sourceControlManager = SourceControlManager(workspaceURL: url, editorManager: editorManager)
+        let coordinator = SourceControlCoordinator(
+            workspaceURL: url,
+            editorManager: editorManager,
+            shellClient: currentWorld.shellClient
+        )
         let workspaceFileManager = CEWorkspaceFileManager(
             folderUrl: url,
             ignoredFilesAndFolders: Self.ignoredFilesAndDirectory,
-            sourceControlManager: sourceControlManager
+            sourceControlManager: nil
         )
-        sourceControlManager.fileManager = workspaceFileManager
-        self.sourceControlManager = sourceControlManager
+        workspaceFileManager.sourceControlCoordinator = coordinator
+        coordinator.fileManager = workspaceFileManager
+        self.sourceControlCoordinator = coordinator
         self.workspaceFileManager = workspaceFileManager
+
+        Task { await coordinator.setup() }
 
         taskManager = TaskManager(workspaceSettings: settingsManager.settings, workspaceURL: url)
         runConfigurationStore = RunConfigurationStore(workspaceURL: url)
@@ -97,6 +106,10 @@ final class WorkspaceServices {
         let siteCoordinator = WorkspaceLocalSiteCoordinator(workspaceURL: url, runner: siteRunner)
         siteCoordinator.start(settingsManager: settingsManager)
         localSiteCoordinator = siteCoordinator
+        runController?.bindLocalSite(siteCoordinator, settingsManager: settingsManager)
+
+        let autoStart = AppServices.settings.preferences.localDomains.autoStartSitesOnOpen
+        Task { await siteCoordinator.startIfEnabledOnOpen(autoStart: autoStart) }
 
         // Kick off a background project scan (symbols + code-quality diagnostics) shortly after launch
         // so the Problems panel isn't limited to open files. Only for PHP projects.
@@ -119,7 +132,7 @@ final class WorkspaceServices {
         searchState = nil
         openQuicklyViewModel = nil
         commandsPaletteState = nil
-        sourceControlManager = nil
+        sourceControlCoordinator = nil
         workspaceFileManager = nil
         taskManager = nil
         runConfigurationStore = nil

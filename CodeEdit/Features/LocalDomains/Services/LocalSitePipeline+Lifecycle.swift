@@ -17,6 +17,9 @@ extension LocalSitePipeline {
         try registerSite(siteID: siteID, domain: domain, workspaceURL: workspaceURL, rollback: rollback)
 
         await tooling.refresh()
+        if portMode() == .privilegedRelay {
+            try await relay.start()
+        }
 
         let safeRoot = try makeSafeRoot(siteID: siteID, documentRoot: documentRoot)
         rollback.register("remove document root link") { [weak self] in
@@ -73,6 +76,7 @@ extension LocalSitePipeline {
             removeSafeRoot(site.safeRoot)
         }
         await nginx.stop()
+        await relay.stop()
         registry.removeAll()
     }
 
@@ -114,6 +118,9 @@ extension LocalSitePipeline {
     func reconcile() async throws {
         guard !activeSites.isEmpty else {
             await nginx.stop()
+            if portMode() == .privilegedRelay {
+                await relay.stop()
+            }
             return
         }
 
