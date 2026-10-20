@@ -13,13 +13,19 @@ import AppKit
 extension ProjectNavigatorViewController: OutlineTableViewCellDelegate {
     func moveFile(file: CEWorkspaceFile, to destination: URL) {
         do {
+            if !file.isFolder {
+                guard workspace?.editorManager?.editorLayout.closeAllTabs(of: file) ?? true else { return }
+            }
             guard let newFile = try workspace?.workspaceFileManager?.move(file: file, to: destination),
                   !newFile.isFolder else {
                 return
             }
             outlineView.reloadItem(file.parent, reloadChildren: true)
-            if !file.isFolder {
-                workspace?.editorManager?.editorLayout.closeAllTabs(of: file)
+            if !newFile.url.pathExtension.isEmpty {
+                UserDefaults.standard.set(
+                    newFile.url.pathExtension,
+                    forKey: ProjectNavigatorMenu.lastFileExtensionDefaultsKey
+                )
             }
             workspace?.listenerModel.highlightedFileItem = newFile
             workspace?.editorManager?.openTab(item: newFile)

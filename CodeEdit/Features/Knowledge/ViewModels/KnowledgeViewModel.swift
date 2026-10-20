@@ -20,6 +20,7 @@ final class KnowledgeViewModel: ObservableObject {
     private(set) var history: [String] = []
     private var historyIndex = -1
     private var openObserver: NSObjectProtocol?
+    private var extensionObserver: NSObjectProtocol?
 
     init() {
         reload()
@@ -37,6 +38,16 @@ final class KnowledgeViewModel: ObservableObject {
             }
         }
 
+        extensionObserver = NotificationCenter.default.addObserver(
+            forName: LanguageExtensionManager.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.reload()
+            }
+        }
+
         // If this window was created in response to a request, honor it.
         if let pending = AppServices.knowledgeRouter.consumePending() {
             apply(pending)
@@ -47,6 +58,9 @@ final class KnowledgeViewModel: ObservableObject {
         if let openObserver {
             NotificationCenter.default.removeObserver(openObserver)
         }
+        if let extensionObserver {
+            NotificationCenter.default.removeObserver(extensionObserver)
+        }
     }
 
     func reload() {
@@ -56,6 +70,7 @@ final class KnowledgeViewModel: ObservableObject {
         } else if let first = sources.first {
             selectSource(first)
         }
+        recomputeSearch()
     }
 
     var selectedSource: KnowledgeSource? {

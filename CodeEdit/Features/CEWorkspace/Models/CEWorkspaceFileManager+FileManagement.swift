@@ -93,26 +93,10 @@ extension CEWorkspaceFileManager {
                 throw FileManagerError.invalidFileName
             }
 
-            let fileContents: Data?
-            if let contents {
-                fileContents = contents
-            } else {
-                let settings = AppServices.settings.preferences.textEditing
-                if settings.enableFileHeader {
-                    let projectSettingsName = fileUrl.findWorkspace()?.workspaceSettingsManager?.settings.project.projectName.trimmingCharacters(in: .whitespacesAndNewlines)
-                    let projectName = (projectSettingsName?.isEmpty == false) ? projectSettingsName! : self.folderUrl.lastPathComponent
-                    let organization = settings.fileHeaderOrganization.isEmpty
-                        ? (projectName.isEmpty ? "CodeEdit" : projectName)
-                        : settings.fileHeaderOrganization
-                    fileContents = FileHeaderGenerator.generateHeaderData(
-                        for: fileUrl,
-                        organization: organization,
-                        author: settings.fileHeaderAuthor
-                    )
-                } else {
-                    fileContents = nil
-                }
-            }
+            let fileContents = contents ?? defaultFileContents(
+                for: fileUrl,
+                fallbackProjectName: folderUrl.lastPathComponent
+            )
 
             // Create the file
             guard fileManager.createFile(
@@ -136,6 +120,31 @@ extension CEWorkspaceFileManager {
             logger.error("Failed to add file: \(error, privacy: .auto)")
             throw error
         }
+    }
+
+    private func defaultFileContents(for fileURL: URL, fallbackProjectName: String) -> Data? {
+        let settings = AppServices.settings.preferences.textEditing
+        guard settings.enableFileHeader else { return nil }
+
+        let configuredName = fileURL.findWorkspace()?
+            .workspaceSettingsManager?
+            .settings.project.projectName
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let projectName = configuredName.flatMap { $0.isEmpty ? nil : $0 } ?? fallbackProjectName
+        let organization = settings.fileHeaderOrganization.isEmpty
+            ? (projectName.isEmpty ? "CodeEdit" : projectName)
+            : settings.fileHeaderOrganization
+        return FileHeaderGenerator.generateHeaderData(
+            for: fileURL,
+            organization: organization,
+            author: settings.fileHeaderAuthor
+        )
+    }
+
+    /// Returns a file extension suitable for a new file next to `file`, without a leading dot.
+    /// - Parameter file: The file used to find nearby extensions.
+    func suggestedFileExtension(for file: CEWorkspaceFile) -> String {
+        findCommonFileExtension(for: file).trimmingCharacters(in: CharacterSet(charactersIn: "."))
     }
 
     /// Finds a common file extension in the same directory as a file. Defaults to `txt` if no better alternatives

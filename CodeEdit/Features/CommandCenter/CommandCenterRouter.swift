@@ -72,7 +72,13 @@ enum CommandCenterRouter {
                 return
             }
             Task { await manager.runTask(task: task) }
+        } else if route.hasPrefix("knowledge:") {
+            let destination = route.dropFirst("knowledge:".count)
+            guard let separator = destination.firstIndex(of: ":") else { return }
+            let sourceID = String(destination[..<separator])
+            let path = String(destination[destination.index(after: separator)...])
+            AppServices.knowledgeRouter.requestOpen(sourceID: sourceID, path: path)
+            NSApp.sendAction(#selector(AppDelegate.openKnowledge(_:)), to: nil, from: nil)
         }
-        // `knowledge:` routes are handled by the Knowledge window (opened separately).
     }
 }

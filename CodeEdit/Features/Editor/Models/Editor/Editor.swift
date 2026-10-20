@@ -81,11 +81,12 @@ final class Editor: ObservableObject, Identifiable {
     ) {
         self.parent = parent
         self.workspace = workspace
+        let limitedFiles = files.prefix(Editor.configuredMaximumOpenTabs)
         // If we open the files without a valid workspace, we risk creating a file we lose track of but stays in memory
         if workspace != nil {
-            files.forEach { openTab(file: $0) }
+            limitedFiles.forEach { openTab(file: $0) }
         } else {
-            self.tabs = OrderedSet(files.map { EditorInstance(workspace: workspace, file: $0) })
+            self.tabs = OrderedSet(limitedFiles.map { EditorInstance(workspace: workspace, file: $0) })
         }
         self.selectedTab = selectedTab ?? (files.isEmpty ? nil : Tab(workspace: workspace, file: files.first!))
         self.temporaryTab = temporaryTab
@@ -101,7 +102,7 @@ final class Editor: ObservableObject, Identifiable {
         self.tabs = []
         self.parent = parent
         self.workspace = workspace
-        files.forEach { openTab(file: $0.file) }
+        files.prefix(Editor.configuredMaximumOpenTabs).forEach { openTab(file: $0.file) }
         self.selectedTab = selectedTab ?? tabs.first
         self.temporaryTab = temporaryTab
     }
@@ -143,8 +144,9 @@ final class Editor: ObservableObject, Identifiable {
     ///   - fromHistory: If `true`, does not clear tabs ahead of the ``historyOffset``
     ///                  Used when opening tabs from the history queue where tabs ahead of the ``historyOffset`` should
     ///                  not be removed.
-    func closeTab(file: CEWorkspaceFile, fromHistory: Bool = false) {
-        guard canCloseTab(file: file) else { return }
+    @discardableResult
+    func closeTab(file: CEWorkspaceFile, fromHistory: Bool = false) -> Bool {
+        guard canCloseTab(file: file) else { return false }
 
         if temporaryTab?.file == file {
             temporaryTab = nil
@@ -166,6 +168,8 @@ final class Editor: ObservableObject, Identifiable {
         }
         // remove file from memory
         file.fileDocument = nil
+        workspace?.editorManager?.releaseUndoManagers(for: [file])
+        return true
     }
 
     /// Closes a collection of tabs in a single batch operation, minimizing state invalidation cascades.
@@ -175,10 +179,8 @@ final class Editor: ObservableObject, Identifiable {
         guard !fileSet.isEmpty else { return }
 
         var closableFiles: [CEWorkspaceFile] = []
-        for file in fileSet {
-            if canCloseTab(file: file) {
-                closableFiles.append(file)
-            }
+        for file in fileSet where canCloseTab(file: file) {
+            closableFiles.append(file)
         }
         guard !closableFiles.isEmpty else { return }
         let closableSet = Set(closableFiles)
@@ -188,10 +190,8 @@ final class Editor: ObservableObject, Identifiable {
         }
         clearFuture()
 
-        for file in closableFiles {
-            if file != selectedTab?.file {
-                addToHistory(EditorInstance(workspace: workspace, file: file))
-            }
+        for file in closableFiles where file != selectedTab?.file {
+            addToHistory(EditorInstance(workspace: workspace, file: file))
         }
 
         tabs.removeAll(where: { closableSet.contains($0.file) })
@@ -207,6 +207,7 @@ final class Editor: ObservableObject, Identifiable {
             }
             file.fileDocument = nil
         }
+        workspace?.editorManager?.releaseUndoManagers(for: closableFiles)
     }
 
     /// Closes the currently opened tab in the tab group.
@@ -225,6 +226,11 @@ final class Editor: ObservableObject, Identifiable {
     ///   - asTemporary: indicates whether the tab should be opened as a temporary tab or a permanent tab.
     func openTab(file: CEWorkspaceFile, asTemporary: Bool) {
         let item = EditorInstance(workspace: workspace, file: file)
+        let replacesTemporaryTab = asTemporary && temporaryTab != nil
+        if !tabs.contains(item), !replacesTemporaryTab, tabs.count >= maximumOpenTabs {
+            presentTabLimit()
+            return
+        }
         // Item is already opened in a tab.
         guard !tabs.contains(item) || !asTemporary else {
             selectedTab = item
@@ -282,6 +288,10 @@ final class Editor: ObservableObject, Identifiable {
     ///   - index: Index where the tab needs to be added. If nil, it is added to the back.
     ///   - fromHistory: Indicates whether the tab has been opened from going back in history.
     func openTab(file: CEWorkspaceFile, at index: Int? = nil, fromHistory: Bool = false) {
+        if !tabs.contains(where: { $0.file == file }), tabs.count >= maximumOpenTabs {
+            presentTabLimit()
+            return
+        }
         let item = Tab(workspace: workspace, file: file)
         if let index {
             tabs.insert(item, at: index)
@@ -333,6 +343,28 @@ final class Editor: ObservableObject, Identifiable {
         if temporaryTab?.file == file {
             temporaryTab = nil
         }
+    }
+}
+
+extension Editor {
+    private static var configuredMaximumOpenTabs: Int {
+        AppServices.settings.preferences.general.effectiveMaximumOpenTabs
+    }
+
+    private var maximumOpenTabs: Int {
+        Self.configuredMaximumOpenTabs
+    }
+
+    /// Informs the user that the configured tab limit has been reached.
+    private func presentTabLimit() {
+        NSSound.beep()
+        NotificationManager.shared.post(
+            iconSymbol: "rectangle.stack.badge.minus",
+            title: "Tab Limit Reached",
+            description: "Close a tab or increase the limit in Settings › General.",
+            actionButtonTitle: "OK",
+            action: {}
+        )
     }
 }
 

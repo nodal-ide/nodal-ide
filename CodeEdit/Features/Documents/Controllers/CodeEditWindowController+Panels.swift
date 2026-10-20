@@ -13,6 +13,15 @@ extension CodeEditWindowController {
         toggleFirstPanel(shouldAnimate: true)
     }
 
+    /// Shows the Project navigator and reveals `file`, expanding its parent folders.
+    func revealInProjectNavigator(_ file: CEWorkspaceFile) {
+        if splitViewController?.splitViewItems.first?.isCollapsed == true {
+            toggleFirstPanel(shouldAnimate: false)
+        }
+        navigatorSidebarViewModel?.setNavigatorTab(tab: .project)
+        workspace?.listenerModel.highlightedFileItem = file
+    }
+
     /// Toggles the navigator pane, optionally without animation.
     func toggleFirstPanel(shouldAnimate: Bool = true) {
         guard let firstSplitView = splitViewController?.splitViewItems.first else { return }

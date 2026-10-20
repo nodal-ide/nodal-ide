@@ -11,6 +11,7 @@ import SwiftUI
 @MainActor
 final class LanguageExtensionManager: ObservableObject {
     static let shared = LanguageExtensionManager()
+    static let didChangeNotification = Notification.Name("CodeEdit.LanguageExtensionsDidChange")
 
     /// Globally installed packs (Application Support/CodeEdit/Extensions).
     @Published var extensions: [InstalledLanguageExtension] = []
@@ -28,7 +29,10 @@ final class LanguageExtensionManager: ObservableObject {
     func reloadAll() {
         AppServices.languageExtensionStore.reload()
         AppServices.languageProviderRegistry.reloadAllExtensions()
+        AppServices.knowledgeSearchIndex.invalidate()
+        AppServices.knowledgeRegistry.reload()
         reload()
+        NotificationCenter.default.post(name: Self.didChangeNotification, object: nil)
     }
 
     func install(fromFolder folder: URL) throws {

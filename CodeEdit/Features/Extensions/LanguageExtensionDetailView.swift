@@ -88,7 +88,7 @@ struct LanguageExtensionDetailView: View {
                 list.append(ext.id)
             }
             disabledExtensions = list
-            AppServices.languageProviderRegistry.reloadAllExtensions()
+            AppServices.languageExtensionManager.reloadAll()
         }
     }
 

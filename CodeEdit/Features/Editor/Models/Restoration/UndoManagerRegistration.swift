@@ -46,6 +46,12 @@ final class UndoManagerRegistration: ObservableObject {
     func managerIfExists(forFile path: URL) -> CEUndoManager? {
         managerMap[path.absolutePath]
     }
+
+    /// Releases the undo manager for a file once it is no longer open in any editor.
+    /// - Parameter path: The path of the file to release.
+    func removeManager(forFile path: URL) {
+        managerMap.removeValue(forKey: path.absolutePath)
+    }
 }
 
 extension UndoManagerRegistration: CEWorkspaceFileManagerObserver {

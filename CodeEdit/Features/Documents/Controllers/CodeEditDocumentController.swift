@@ -24,11 +24,16 @@ final class CodeEditDocumentController: NSDocumentController {
         let settings = AppServices.settings.preferences.textEditing
         let fileContents: Data?
         if settings.enableFileHeader {
-            let projectSettingsName = newDocumentUrl.findWorkspace()?.workspaceSettingsManager?.settings.project.projectName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let orgFallback = (projectSettingsName?.isEmpty == false) ? projectSettingsName! : "CodeEdit"
+            let projectSettingsName = newDocumentUrl.findWorkspace()?
+                .workspaceSettingsManager?
+                .settings.project.projectName
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let orgFallback = projectSettingsName.flatMap { $0.isEmpty ? nil : $0 } ?? "CodeEdit"
             fileContents = FileHeaderGenerator.generateHeaderData(
                 for: newDocumentUrl,
-                organization: settings.fileHeaderOrganization.isEmpty ? orgFallback : settings.fileHeaderOrganization,
+                organization: settings.fileHeaderOrganization.isEmpty
+                    ? orgFallback
+                    : settings.fileHeaderOrganization,
                 author: settings.fileHeaderAuthor
             )
         } else {
@@ -57,11 +62,16 @@ final class CodeEditDocumentController: NSDocumentController {
         let settings = AppServices.settings.preferences.textEditing
         let fileContents: Data?
         if settings.enableFileHeader {
-            let projectSettingsName = newDocumentUrl.findWorkspace()?.workspaceSettingsManager?.settings.project.projectName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let orgFallback = (projectSettingsName?.isEmpty == false) ? projectSettingsName! : "CodeEdit"
+            let projectSettingsName = newDocumentUrl.findWorkspace()?
+                .workspaceSettingsManager?
+                .settings.project.projectName
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let orgFallback = projectSettingsName.flatMap { $0.isEmpty ? nil : $0 } ?? "CodeEdit"
             fileContents = FileHeaderGenerator.generateHeaderData(
                 for: newDocumentUrl,
-                organization: settings.fileHeaderOrganization.isEmpty ? orgFallback : settings.fileHeaderOrganization,
+                organization: settings.fileHeaderOrganization.isEmpty
+                    ? orgFallback
+                    : settings.fileHeaderOrganization,
                 author: settings.fileHeaderAuthor
             )
         } else {
@@ -146,6 +156,11 @@ final class CodeEditDocumentController: NSDocumentController {
             if let newFile = workspace.workspaceFileManager?.getFile(url.absolutePath, createIfNotFound: true) {
                 workspace.editorManager?.openTab(item: newFile)
                 workspace.showWindows()
+                if let windowController = workspace.windowControllers.first as? CodeEditWindowController {
+                    windowController.revealInProjectNavigator(newFile)
+                } else {
+                    workspace.listenerModel.highlightedFileItem = newFile
+                }
                 return true
             }
         }

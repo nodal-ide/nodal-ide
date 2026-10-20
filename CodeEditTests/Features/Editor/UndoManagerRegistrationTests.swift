@@ -33,4 +33,17 @@ struct UndoManagerRegistrationTests {
         #expect(manager === sameManager)
         #expect(sameManager.canUndo)
     }
+
+    @Test
+    func removeUndoManager() {
+        let manager = registrar.manager(forFile: file)
+        textView.setUndoManager(manager)
+        manager.registerMutation(.init(insert: "hello", at: 0, limit: 11))
+
+        registrar.removeManager(forFile: file.url)
+
+        let newManager = registrar.manager(forFile: file)
+        #expect(manager !== newManager)
+        #expect(newManager.canUndo == false)
+    }
 }

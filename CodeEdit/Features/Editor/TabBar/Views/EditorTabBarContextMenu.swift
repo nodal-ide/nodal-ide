@@ -39,7 +39,7 @@ struct EditorTabBarContextMenu: ViewModifier {
             Group {
                 Button("Close Tab") {
                     withAnimation {
-                        tabs.closeTab(file: item)
+                        _ = tabs.closeTab(file: item)
                     }
                 }
                 .keyboardShortcut("w", modifiers: [.command])

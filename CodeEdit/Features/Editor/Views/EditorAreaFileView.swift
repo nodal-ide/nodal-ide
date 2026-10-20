@@ -8,6 +8,7 @@
 import AppKit
 import AVKit
 import CodeEditSourceEditor
+import Combine
 import SwiftUI
 
 struct EditorAreaFileView: View {
@@ -22,12 +23,15 @@ struct EditorAreaFileView: View {
     var editorInstance: EditorInstance
     var codeFile: CodeFileDocument
 
+    @State private var languageExtensionRevision = 0
+
     @ViewBuilder var editorAreaFileView: some View {
         if let utType = codeFile.utType, utType.conforms(to: .text) {
             CodeFileView(
                 editorInstance: editorInstance,
                 codeFile: codeFile
             )
+            .id(languageExtensionRevision)
         } else {
             NonTextFileView(fileDocument: codeFile)
                 .padding(.top, edgeInsets.top - 1.74)
@@ -43,5 +47,8 @@ struct EditorAreaFileView: View {
     var body: some View {
         editorAreaFileView
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onReceive(NotificationCenter.default.publisher(for: LanguageExtensionManager.didChangeNotification)) { _ in
+                languageExtensionRevision &+= 1
+            }
     }
 }

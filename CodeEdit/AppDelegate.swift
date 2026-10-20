@@ -174,6 +174,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         openWindow(sceneID: .about)
     }
 
+    @IBAction func openKnowledge(_ sender: Any) {
+        openWindow(sceneID: .knowledge)
+    }
+
     @IBAction func openFeedback(_ sender: Any) {
         if tryFocusWindow(of: FeedbackView.self) { return }
 

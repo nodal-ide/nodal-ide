@@ -120,22 +120,11 @@ extension ProjectNavigatorMenu {
         try? process.run()
     }
 
-    // TODO: allow custom file names
-    /// Action that creates a new untitled file
+    /// Action that creates a new file with a user-provided name.
     @objc
     func newFile() {
         guard let item else { return }
-        do {
-            if let newFile = try workspace?.workspaceFileManager?.addFile(fileName: "untitled", toFile: item) {
-                workspace?.listenerModel.highlightedFileItem = newFile
-                workspace?.editorManager?.openTab(item: newFile)
-                startRename(newFile)
-            }
-        } catch {
-            let alert = NSAlert(error: error)
-            alert.addButton(withTitle: "Dismiss")
-            alert.runModal()
-        }
+        createNewFile(in: item, contents: nil)
     }
 
     /// Opens the rename file dialogue on the cell this was presented from.
@@ -185,28 +174,65 @@ extension ProjectNavigatorMenu {
         }
     }
 
-    // TODO: Automatically identified the file type
     /// Action that creates a new file with clipboard content
     @objc
     func newFileFromClipboard() {
-        guard let item else { return }
+        guard let item,
+              let clipBoardContent = NSPasteboard.general.string(forType: .string)?.data(using: .utf8),
+              !clipBoardContent.isEmpty else {
+            return
+        }
+        createNewFile(in: item, contents: clipBoardContent)
+    }
+
+    static let lastFileExtensionDefaultsKey = "ProjectNavigator.lastNewFileExtension"
+
+    private func createNewFile(in item: CEWorkspaceFile, contents: Data?) {
+        guard let workspace, let workspaceFileManager = workspace.workspaceFileManager else { return }
+
+        let lastExtension = UserDefaults.standard.string(forKey: Self.lastFileExtensionDefaultsKey)
+        let fileExtension = lastExtension ?? workspaceFileManager.suggestedFileExtension(for: item)
+        let defaultName = fileExtension.isEmpty ? "untitled" : "untitled.\(fileExtension)"
+
+        guard let fileName = promptForFileName(defaultName: defaultName) else { return }
+
         do {
-            let clipBoardContent = NSPasteboard.general.string(forType: .string)?.data(using: .utf8)
-            if let clipBoardContent, !clipBoardContent.isEmpty, let newFile = try workspace?
-                .workspaceFileManager?
-                .addFile(
-                    fileName: "untitled",
-                    toFile: item,
-                    contents: clipBoardContent
-                ) {
-                workspace?.listenerModel.highlightedFileItem = newFile
-                workspace?.editorManager?.openTab(item: newFile)
-                startRename(newFile)
-            }
+            let newFile = try workspaceFileManager.addFile(
+                fileName: fileName,
+                toFile: item,
+                useExtension: fileExtension,
+                contents: contents
+            )
+            UserDefaults.standard.set(newFile.url.pathExtension, forKey: Self.lastFileExtensionDefaultsKey)
+            workspace.listenerModel.highlightedFileItem = newFile
+            workspace.editorManager?.openTab(item: newFile)
         } catch {
             let alert = NSAlert(error: error)
             alert.addButton(withTitle: "Dismiss")
             alert.runModal()
+        }
+    }
+
+    private func promptForFileName(defaultName: String) -> String? {
+        let alert = NSAlert()
+        alert.messageText = "New File"
+        alert.informativeText = "Enter a name for the new file."
+        alert.addButton(withTitle: "Create")
+        alert.addButton(withTitle: "Cancel")
+
+        let field = NSTextField(string: defaultName)
+        field.frame = NSRect(x: 0, y: 0, width: 320, height: 24)
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+
+        while true {
+            guard alert.runModal() == .alertFirstButtonReturn else { return nil }
+            let fileName = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            if fileName.isValidFilename, !fileName.contains("/"), fileName != ".", fileName != ".." {
+                return fileName
+            }
+            alert.informativeText = "Enter a valid file name."
+            NSSound.beep()
         }
     }
 
@@ -262,7 +288,7 @@ extension ProjectNavigatorMenu {
         do {
             try selectedItems().forEach { item in
                 withAnimation {
-                    sender.editor?.closeTab(file: item)
+                    _ = sender.editor?.closeTab(file: item)
                 }
                 guard FileManager.default.fileExists(atPath: item.url.path) else {
                     // Was likely already trashed (eg selecting files in a folder and deleting the folder and files)
@@ -293,7 +319,7 @@ extension ProjectNavigatorMenu {
 
             withAnimation {
                 selectedItems.forEach { item in
-                    sender.editor?.closeTab(file: item)
+                    _ = sender.editor?.closeTab(file: item)
                 }
             }
 

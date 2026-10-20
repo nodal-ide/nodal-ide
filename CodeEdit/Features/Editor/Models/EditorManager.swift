@@ -99,6 +99,16 @@ class EditorManager: ObservableObject {
         editor.openTab(file: item, asTemporary: asTemporary)
     }
 
+    /// Releases undo managers for files that are no longer open in any editor.
+    /// - Parameter files: The files that were just removed from an editor.
+    func releaseUndoManagers(for files: some Sequence<CEWorkspaceFile>) {
+        guard let workspace = activeEditor.workspace else { return }
+        let openFiles = editorLayout.gatherOpenFiles()
+        for file in files where !openFiles.contains(file) {
+            workspace.undoRegistration.removeManager(forFile: file.url)
+        }
+    }
+
     /// Selects the open tab showing `url` and scrolls it to `line`/`column`. Returns `false` when the
     /// file isn't open (or its editor isn't ready yet), so callers can fall back to opening it.
     @discardableResult

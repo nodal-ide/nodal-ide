@@ -63,8 +63,7 @@ final class CEWorkspaceFileManager {
     let workspaceItem: CEWorkspaceFile
     weak var sourceControlCoordinator: SourceControlCoordinator?
 
-    @MainActor
-    var sourceControlManager: SourceControlManager? {
+    @MainActor var sourceControlManager: SourceControlManager? {
         sourceControlCoordinator?.primaryRepository
     }
 

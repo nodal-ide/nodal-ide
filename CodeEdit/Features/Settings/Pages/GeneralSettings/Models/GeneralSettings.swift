@@ -39,6 +39,7 @@ extension SettingsData {
                 "After the last window is closed",
                 "File Extensions",
                 "Project Navigator Size",
+                "Maximum Open Tabs",
                 "Find Navigator Detail",
                 "Issue Navigator Detail",
                 "Show “Open With CodeEdit“ option in Finder",
@@ -83,6 +84,14 @@ extension SettingsData {
 
         /// The size of the project navigator
         var projectNavigatorSize: ProjectNavigatorSize = .medium
+
+        /// The maximum number of tabs that may be open in a single editor.
+        var maximumOpenTabs: Int = 50
+
+        /// The effective tab limit, clamped to the supported range.
+        var effectiveMaximumOpenTabs: Int {
+            min(max(maximumOpenTabs, 5), 200)
+        }
 
         /// The Find Navigator Detail line limit
         var findNavigatorDetail: NavigatorDetail = .upTo3
@@ -159,6 +168,10 @@ extension SettingsData {
                 ProjectNavigatorSize.self,
                 forKey: .projectNavigatorSize
             ) ?? .medium
+            self.maximumOpenTabs = try container.decodeIfPresent(
+                Int.self,
+                forKey: .maximumOpenTabs
+            ) ?? 50
             self.findNavigatorDetail = try container.decodeIfPresent(
                 NavigatorDetail.self,
                 forKey: .findNavigatorDetail

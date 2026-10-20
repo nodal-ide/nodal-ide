@@ -81,8 +81,7 @@ extension CodeEditWindowController {
     }
 
     @IBAction func openWorkspaceSettings(_ sender: Any) {
-        guard let window = window,
-              let workspace = workspace,
+        guard let workspace = workspace,
               let workspaceSettingsManager = workspace.workspaceSettingsManager,
               let taskManager = workspace.taskManager
         else { return }
@@ -90,24 +89,30 @@ extension CodeEditWindowController {
         if let workspaceSettingsWindow, workspaceSettingsWindow.isVisible {
             workspaceSettingsWindow.makeKeyAndOrderFront(self)
         } else {
-            let settingsWindow = NSWindow()
+            let settingsWindow = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 760, height: 560),
+                styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+                backing: .buffered,
+                defer: false
+            )
             self.workspaceSettingsWindow = settingsWindow
             let contentView = CEWorkspaceSettingsView(
-                dismiss: { [weak self, weak settingsWindow] in
-                    guard let settingsWindow else { return }
-                    self?.window?.endSheet(settingsWindow)
-                 }
+                dismiss: { [weak settingsWindow] in
+                    settingsWindow?.close()
+                }
             )
             .environmentObject(workspaceSettingsManager)
             .environmentObject(workspace)
             .environmentObject(taskManager)
 
             settingsWindow.contentView = NSHostingView(rootView: contentView)
+            settingsWindow.title = "Project Settings"
             settingsWindow.titlebarAppearsTransparent = true
-            settingsWindow.setContentSize(NSSize(width: 760, height: 560))
+            settingsWindow.toolbarStyle = .unified
+            settingsWindow.isReleasedWhenClosed = false
             settingsWindow.setAccessibilityTitle("Project Settings")
-
-            window.beginSheet(settingsWindow, completionHandler: nil)
+            settingsWindow.center()
+            settingsWindow.makeKeyAndOrderFront(self)
         }
     }
 }

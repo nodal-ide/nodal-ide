@@ -228,7 +228,7 @@ struct EditorTabView: View {
             keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .otherMouseDown) { event in
                 if self.isHovering && event.type == .otherMouseDown && event.buttonNumber == 2 {
                     DispatchQueue.main.async {
-                        editor.closeTab(file: tabFile)
+                        _ = editor.closeTab(file: tabFile)
                     }
                 }
                 return event

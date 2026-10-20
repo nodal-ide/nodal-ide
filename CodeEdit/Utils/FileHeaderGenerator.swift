@@ -19,8 +19,9 @@ enum FileHeaderGenerator {
         let resolvedAuthor = author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? NSFullUserName()
             : author.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parentName = fileURL.deletingLastPathComponent().lastPathComponent
         let resolvedOrg = organization.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? (fileURL.deletingLastPathComponent().lastPathComponent.isEmpty ? "CodeEdit" : fileURL.deletingLastPathComponent().lastPathComponent)
+            ? (parentName.isEmpty ? "CodeEdit" : parentName)
             : organization.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let language = CodeLanguage.detectLanguageFrom(url: fileURL)

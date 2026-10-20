@@ -48,6 +48,7 @@ struct GeneralSettingsView: View {
             }
             Section {
                 projectNavigatorSize
+                maximumOpenTabs
                 findNavigatorDetail
                 issueNavigatorDetail
             }
@@ -198,6 +199,14 @@ private extension GeneralSettingsView {
             Text("Large")
                 .tag(SettingsData.ProjectNavigatorSize.large)
         }
+    }
+
+    var maximumOpenTabs: some View {
+        Stepper(
+            "Maximum Open Tabs: \(settings.effectiveMaximumOpenTabs)",
+            value: $settings.maximumOpenTabs,
+            in: 5...200
+        )
     }
 
     var findNavigatorDetail: some View {

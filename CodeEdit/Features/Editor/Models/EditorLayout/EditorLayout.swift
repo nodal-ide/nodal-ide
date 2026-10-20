@@ -15,14 +15,18 @@ enum EditorLayout: Equatable {
 
     /// Closes all tabs which present the given file
     /// - Parameter file: a file.
-    func closeAllTabs(of file: CEWorkspaceFile) {
+    /// - Returns: `false` if the user cancelled closing an edited document.
+    @discardableResult
+    func closeAllTabs(of file: CEWorkspaceFile) -> Bool {
         switch self {
         case .one(let editor):
-            editor.removeTab(file)
+            guard editor.tabs.contains(where: { $0.file == file }) else { return true }
+            return editor.closeTab(file: file)
         case .vertical(let data), .horizontal(let data):
-            data.editorLayouts.forEach {
-                $0.closeAllTabs(of: file)
+            for layout in data.editorLayouts where !layout.closeAllTabs(of: file) {
+                return false
             }
+            return true
         }
     }
 

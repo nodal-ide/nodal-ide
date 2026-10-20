@@ -45,6 +45,10 @@ final class SearchPanel: NSPanel, NSWindowDelegate {
             panel.close()
         }
     }
+
+    func addAsCenteredChild(of parent: NSWindow) {
+        parent.addCenteredChildWindow(self, over: parent)
+    }
 }
 
 private extension NSView {
