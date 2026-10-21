@@ -179,6 +179,10 @@ class LanguageServer<DocumentType: LanguageServerDocument> {
                         itemDefaults: ["default1", "default2"]
                     )
                 ),
+                hover: HoverClientCapabilities(
+                    dynamicRegistration: false,
+                    contentFormat: [.markdown, .plaintext]
+                ),
                 documentHighlight: DocumentHighlightClientCapabilities(dynamicRegistration: false),
                 codeAction: CodeActionClientCapabilities(
                     dynamicRegistration: false,

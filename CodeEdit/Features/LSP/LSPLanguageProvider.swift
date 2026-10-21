@@ -115,10 +115,9 @@ final class LSPLanguageProvider: LanguageProvider {
         guard let server = server,
 
               let position = textView.textView.lspRangeFrom(nsRange: range)?.start else { return nil }
-        guard let hover = try? await server.requestHover(for: documentURI, position) else { return nil }
-        let contents = Self.cleanedMarkdown(Self.hoverText(hover.contents))
-        guard !contents.isEmpty else { return nil }
-        return HoverInfo(contents: contents, range: range)
+        guard let hover = try? await server.requestHover(for: documentURI, position),
+              let content = LSPHoverMapper.content(hover.contents) else { return nil }
+        return HoverInfo(content: content, range: range)
     }
 
     // MARK: - Diagnostics
@@ -272,26 +271,6 @@ final class LSPLanguageProvider: LanguageProvider {
         case .optionA(let string): return string
         case .optionB(let offsets): return offsets.map(String.init).joined(separator: "-")
         }
-    }
-
-    private static func hoverText(_ contents: ThreeTypeOption<MarkedString, [MarkedString], MarkupContent>) -> String {
-        switch contents {
-        case .optionA(let marked): return marked.value
-        case .optionB(let markedArray): return markedArray.map(\.value).joined(separator: "\n\n")
-        case .optionC(let content): return content.value
-        }
-    }
-
-    /// Strips markdown syntax (code fences, inline ticks) since the hover UI renders plain text.
-    private static func cleanedMarkdown(_ text: String) -> String {
-        var result = text
-        // Opening fences with an optional language identifier (e.g. "```typescript\n").
-        result = result.replacingOccurrences(of: "```[a-zA-Z0-9_+-]*\\n?", with: "", options: .regularExpression)
-        // Remaining closing fences.
-        result = result.replacingOccurrences(of: "```", with: "")
-        // Inline code ticks.
-        result = result.replacingOccurrences(of: "`", with: "")
-        return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private static func severity(_ severity: DiagnosticSeverity?) -> EditorDiagnosticSeverity {
