@@ -70,7 +70,7 @@ enum RuntimeCatalog {
 
     /// Fetches the stable version for each Homebrew-core PHP formula.
     private static func fetchPHPCore() async -> [RuntimeVersion] {
-        let formulae = ["php", "php@8.4", "php@8.3", "php@8.2", "php@8.1", "php@8.0"]
+        let formulae = ["php", "php@8.5", "php@8.4", "php@8.3", "php@8.2", "php@8.1", "php@8.0"]
         var versions: [RuntimeVersion] = []
 
         for formula in formulae {
