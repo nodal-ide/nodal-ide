@@ -46,7 +46,7 @@ language provider benefits from the same layout, typography, interaction, and ac
 - ✅ **HX7 — Provider integration.** Advertise LSP Markdown hover support, preserve `MarkupContent.kind`,
   map language-tagged `MarkedString` values to code blocks, and keep extension/diagnostic hovers on their
   contract paths. Added mapping and capability tests.
-- **HX8 — Interaction and accessibility.** Keep the panel open while the pointer is inside it, add a
+- ✅ **HX8 — Interaction and accessibility.** Keeps the panel open while the pointer is inside it, adds a
   dismissal grace period, Escape-to-close, selection/copy, safe link opening, VoiceOver labels, and
   high-contrast checks.
 - **HX9 — Validation and rollout.** Run unit tests, provider tests, performance checks, and the manual QA
@@ -302,7 +302,9 @@ The initial implementation must cover:
 - ✅ **HX6** — structured PHP hover mapping wired into `PHPProvider`; 49 package tests and the app
   Debug build pass.
 - ✅ **HX7** — LSP Markdown/content-kind mapping and hover capability advertisement; targeted tests pass.
-- ⬜ **HX8** — next: interaction, dismissal, links, selection/copy, and accessibility.
+- ✅ **HX8** — pointer containment, dismissal grace, Escape/focus dismissal, safe links, and accessibility;
+  92 package tests and the app Debug build pass.
+- ⬜ **HX9** — next: full validation and rollout.
 
 ## Notes / decisions
 
