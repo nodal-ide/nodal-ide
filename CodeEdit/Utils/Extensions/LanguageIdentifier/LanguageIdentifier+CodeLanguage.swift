@@ -81,6 +81,8 @@ extension CodeLanguage {
             return .typescript
         case .yaml:
             return .yaml
+        default:
+            return nil
         }
     }
 }

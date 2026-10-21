@@ -21,7 +21,7 @@ struct EditorAreaFileView: View {
     private var edgeInsets
 
     var editorInstance: EditorInstance
-    var codeFile: CodeFileDocument
+    @ObservedObject var codeFile: CodeFileDocument
 
     @State private var languageExtensionRevision = 0
 
@@ -31,7 +31,11 @@ struct EditorAreaFileView: View {
                 editorInstance: editorInstance,
                 codeFile: codeFile
             )
-            .id(languageExtensionRevision)
+            .id(
+                "\(ObjectIdentifier(codeFile))-" +
+                "\(codeFile.getLanguage().fingerprint.rawValue)-" +
+                "\(languageExtensionRevision)"
+            )
         } else {
             NonTextFileView(fileDocument: codeFile)
                 .padding(.top, edgeInsets.top - 1.74)

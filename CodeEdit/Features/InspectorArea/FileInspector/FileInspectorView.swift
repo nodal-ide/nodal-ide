@@ -122,7 +122,7 @@ struct FileInspectorView: View {
         ) {
             Text("Default - Detected").tag(nil as CodeLanguage?)
             Divider()
-            ForEach(CodeLanguage.allLanguages, id: \.id) { language in
+            ForEach(LanguageCatalog.builtIn.languages, id: \.id) { language in
                 Text(language.id.rawValue.capitalized).tag(language as CodeLanguage?)
             }
         }
