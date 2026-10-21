@@ -304,7 +304,11 @@ The initial implementation must cover:
 - ✅ **HX7** — LSP Markdown/content-kind mapping and hover capability advertisement; targeted tests pass.
 - ✅ **HX8** — pointer containment, dismissal grace, Escape/focus dismissal, safe links, and accessibility;
   92 package tests and the app Debug build pass.
-- ⬜ **HX9** — next: full validation and rollout.
+- ⬜ **HX9** — validation in progress: hover suites pass (CodeEditLang 49, CodeEditSourceEditor 92,
+  LSPHoverMapper 7); app Debug build and SwiftLint pass. The full app suite still has unrelated failures
+  in language-server fixtures, relay/registry tests, indexing timeout, and nginx port tests. A performance
+  probe measured 1–4KB hovers under 9ms, but 16KB/32KB maximum content at ~20ms/~39ms, over the 16ms
+  target. Manual QA and PR rollout remain.
 
 ## Notes / decisions
 
