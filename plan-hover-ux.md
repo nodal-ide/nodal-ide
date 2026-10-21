@@ -33,8 +33,8 @@ language provider benefits from the same layout, typography, interaction, and ac
   accessibility, fallbacks, limits, and acceptance criteria are frozen below.
 - ✅ **HX2 — Rich hover model.** Added `HoverContent`, semantic blocks, and `HoverInfo.content` in
   `CodeEditSourceEditor`; kept the plain-string initializer as a compatibility path. Added model tests.
-- **HX3 — Renderer shell.** Replace the single label with a stack-based card, scrollable prose area,
-  header, badges, separators, dimensions, and dynamic system colors. Add attributed-output tests.
+- ✅ **HX3 — Renderer shell.** Replaced the single label with a stack-based card, scrollable prose area,
+  header, badges, separators, dimensions, and dynamic system colors. Added attributed-output tests.
 - **HX4 — Markdown renderer.** Parse and style headings, paragraphs, emphasis, inline code, lists, quotes,
   links, and fenced code blocks. Highlight code with the editor theme when a language hint is known.
 - **HX5 — PHPDoc parser.** Parse summary, description, and supported tags into a semantic model with
@@ -290,7 +290,9 @@ The initial implementation must cover:
 
 - ✅ **HX1** — UX contract frozen in this document. No production code changed.
 - ✅ **HX2** — rich hover model in `CodeEditSourceEditor`; 69 package tests and the app Debug build pass.
-- ⬜ **HX3** — next: renderer shell in `CodeEditSourceEditor`.
+- ✅ **HX3** — stack-based card, header/badges, scrollable content, and attributed renderer; 80 package tests
+  and the app Debug build pass.
+- ⬜ **HX4** — next: Markdown renderer in `CodeEditSourceEditor`.
 
 ## Notes / decisions
 
