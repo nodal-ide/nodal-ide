@@ -37,8 +37,9 @@ language provider benefits from the same layout, typography, interaction, and ac
   header, badges, separators, dimensions, and dynamic system colors. Added attributed-output tests.
 - ✅ **HX4 — Markdown renderer.** Parses and styles headings, paragraphs, emphasis, inline code, lists,
   quotes, links, and fenced code blocks. Highlights code with the editor theme when a language hint is known.
-- **HX5 — PHPDoc parser.** Parse summary, description, and supported tags into a semantic model with
-  multiline support and a raw fallback. Add parser tests.
+- ✅ **HX5 — PHPDoc parser.** Added `PHPDocBlock`/`PHPDocTag` and `PHPDocParser` in `CodeEditLang`;
+  parses summary, description, typed/prefixed tags, multiline content, references, variadics, and
+  callable return types with a raw fallback. Preserves example indentation. Added parser tests.
 - **HX6 — PHP hover mapping.** Build rich hover documents from `SymbolInfo` + `PHPDocBlock`: header,
   signature, summary, parameters, returns, throws, examples, and metadata. Add provider tests.
 - **HX7 — Provider integration.** Enable LSP Markdown hover support, preserve `MarkupContent.kind`, update
@@ -294,7 +295,9 @@ The initial implementation must cover:
   and the app Debug build pass.
 - ✅ **HX4** — Markdown styling, safe links, and theme-aware fenced code; 90 package tests and the app Debug
   build pass.
-- ⬜ **HX5** — next: PHPDoc parser in `CodeEditLang`.
+- ✅ **HX5** — semantic PHPDoc parsing and indentation-preserving docblock cleanup in `CodeEditLang`;
+  36 package tests and SwiftLint pass.
+- ⬜ **HX6** — next: map `SymbolInfo` + `PHPDocBlock` to rich PHP hover documents.
 
 ## Notes / decisions
 
@@ -303,6 +306,8 @@ The initial implementation must cover:
 - Keep `HoverInfo(contents:)` as a compatibility bridge so existing providers do not break during the
   migration.
 - Use Foundation's Markdown parser and the existing Tree-sitter quick-highlight path; no new dependency.
+- PHPDoc parsing accepts cleaned text and raw `/** ... */` comments; prefixed tags (`@psalm-param`,
+  `@phpstan-return`, ...) are exposed through the same semantic fields.
 - Use system semantic colors and editor theme colors; do not hard-code appearance-specific colors.
 - Ship in small slices, one repository at a time: `CodeEditSourceEditor` model → renderer → Markdown,
   `CodeEditLang` PHPDoc + PHP mapping, then `CodeEdit` provider integration and polish.
