@@ -40,8 +40,9 @@ language provider benefits from the same layout, typography, interaction, and ac
 - ✅ **HX5 — PHPDoc parser.** Added `PHPDocBlock`/`PHPDocTag` and `PHPDocParser` in `CodeEditLang`;
   parses summary, description, typed/prefixed tags, multiline content, references, variadics, and
   callable return types with a raw fallback. Preserves example indentation. Added parser tests.
-- **HX6 — PHP hover mapping.** Build rich hover documents from `SymbolInfo` + `PHPDocBlock`: header,
-  signature, summary, parameters, returns, throws, examples, and metadata. Add provider tests.
+- ✅ **HX6 — PHP hover mapping.** Added `PHPHoverMapper` in `CodeEditLangPHP`; maps `SymbolInfo` +
+  `PHPDocBlock` to header, signature, summary, parameters, returns, throws, examples, links, and
+  metadata. `PHPProvider.hoverInfo` now returns structured content. Added mapper and parsed-symbol tests.
 - **HX7 — Provider integration.** Enable LSP Markdown hover support, preserve `MarkupContent.kind`, update
   extension and diagnostic hovers, and add mapping/capability tests.
 - **HX8 — Interaction and accessibility.** Keep the panel open while the pointer is inside it, add a
@@ -297,7 +298,9 @@ The initial implementation must cover:
   build pass.
 - ✅ **HX5** — semantic PHPDoc parsing and indentation-preserving docblock cleanup in `CodeEditLang`;
   36 package tests and SwiftLint pass.
-- ⬜ **HX6** — next: map `SymbolInfo` + `PHPDocBlock` to rich PHP hover documents.
+- ✅ **HX6** — structured PHP hover mapping wired into `PHPProvider`; 49 package tests and the app
+  Debug build pass.
+- ⬜ **HX7** — next: LSP, extension, and diagnostic provider integration.
 
 ## Notes / decisions
 
