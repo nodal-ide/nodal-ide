@@ -43,8 +43,9 @@ language provider benefits from the same layout, typography, interaction, and ac
 - ✅ **HX6 — PHP hover mapping.** Added `PHPHoverMapper` in `CodeEditLangPHP`; maps `SymbolInfo` +
   `PHPDocBlock` to header, signature, summary, parameters, returns, throws, examples, links, and
   metadata. `PHPProvider.hoverInfo` now returns structured content. Added mapper and parsed-symbol tests.
-- **HX7 — Provider integration.** Enable LSP Markdown hover support, preserve `MarkupContent.kind`, update
-  extension and diagnostic hovers, and add mapping/capability tests.
+- ✅ **HX7 — Provider integration.** Advertise LSP Markdown hover support, preserve `MarkupContent.kind`,
+  map language-tagged `MarkedString` values to code blocks, and keep extension/diagnostic hovers on their
+  contract paths. Added mapping and capability tests.
 - **HX8 — Interaction and accessibility.** Keep the panel open while the pointer is inside it, add a
   dismissal grace period, Escape-to-close, selection/copy, safe link opening, VoiceOver labels, and
   high-contrast checks.
@@ -300,7 +301,8 @@ The initial implementation must cover:
   36 package tests and SwiftLint pass.
 - ✅ **HX6** — structured PHP hover mapping wired into `PHPProvider`; 49 package tests and the app
   Debug build pass.
-- ⬜ **HX7** — next: LSP, extension, and diagnostic provider integration.
+- ✅ **HX7** — LSP Markdown/content-kind mapping and hover capability advertisement; targeted tests pass.
+- ⬜ **HX8** — next: interaction, dismissal, links, selection/copy, and accessibility.
 
 ## Notes / decisions
 
