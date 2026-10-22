@@ -74,13 +74,14 @@ final class LanguageCatalogStore: ObservableObject {
 
     /// Rebuilds the catalog from the workspace's currently enabled packs.
     ///
-    /// PERF: this runs synchronously on the main actor. It is driven by user-initiated extension
-    /// changes, and the work is bounded by the number of packs and languages in this workspace. If
-    /// pack counts grow, move validation and query compilation to a background task and publish the
-    /// finished catalog on the main actor.
+    /// PERF: this runs synchronously on the main actor and is bounded by the packs and languages in this
+    /// workspace. Native grammars are not loaded while building the catalog; validation occurs when the
+    /// extension detail is opened, and parsing loads the grammar on first use.
     func rebuild() {
         let packs = enabledPacks()
-        let outcomes = SyntaxContributionLoader.resolveConflicts(loader.load(packs, base: base))
+        let outcomes = SyntaxContributionLoader.resolveConflicts(
+            loader.load(packs, base: base, consent: .current)
+        )
 
         var languages = base.languages
         for outcome in outcomes {

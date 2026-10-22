@@ -18,10 +18,15 @@ private let syntaxLoaderLogger = Logger(
 
 /// Turns `contributes.syntax` entries into ``CodeLanguage`` values.
 ///
-/// The loader is pure: it reads manifests and query files and returns languages plus diagnostics. It
-/// never mutates a registry — ``LanguageCatalogStore`` owns caching and the merge into a workspace
-/// catalog.
+/// Builds language descriptors and diagnostics. ``LanguageCatalogStore`` owns caching and catalog merges.
 struct SyntaxContributionLoader {
+    struct BuildContext {
+        let pack: InstalledLanguageExtension
+        let base: LanguageCatalog
+        let consent: NativeGrammarConsent
+        let validatesNativeGrammar: Bool
+    }
+
     /// What one pack contributed, and everything that stopped it from contributing more.
     struct PackOutcome {
         let extensionID: String
@@ -44,12 +49,18 @@ struct SyntaxContributionLoader {
     ///     order. A built-in language always wins over a contributed one with the same id.
     ///   - base: The catalog contributed languages are built on top of. It supplies the built-in
     ///     grammars a pack may reuse and the built-in identifiers conflicts are checked against.
-    func load(_ extensions: [InstalledLanguageExtension], base: LanguageCatalog) -> [PackOutcome] {
-        let context = LanguageExtensionValidationContext(
-            known: Self.knownLanguages(in: base),
-            allowsNativeGrammars: false,
-            hostVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-        )
+    ///   - consent: The native grammars the user has trusted. A native grammar without recorded consent
+    ///     contributes nothing but an actionable error.
+    ///   - validateNativeGrammarsFor: Pack IDs whose native grammar and queries should be loaded and
+    ///     compiled now. Catalog builds leave this empty to keep native loading lazy.
+    func load(
+        _ extensions: [InstalledLanguageExtension],
+        base: LanguageCatalog,
+        consent: NativeGrammarConsent = .none,
+        validateNativeGrammarsFor: Set<String> = []
+    ) -> [PackOutcome] {
+        let known = Self.knownLanguages(in: base)
+        let hostVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
 
         return extensions.map { ext in
             var outcome = PackOutcome(
@@ -59,7 +70,14 @@ struct SyntaxContributionLoader {
             )
 
             let validation = LanguageExtensionValidator.validate(
-                manifest: ext.manifest, root: ext.root, context: context
+                manifest: ext.manifest,
+                root: ext.root,
+                context: LanguageExtensionValidationContext(
+                    known: known,
+                    allowsNativeGrammars: true,
+                    scope: ext.scope,
+                    hostVersion: hostVersion
+                )
             )
             outcome.issues.append(contentsOf: validation.issues)
 
@@ -73,10 +91,17 @@ struct SyntaxContributionLoader {
                 return outcome
             }
 
+            let context = BuildContext(
+                pack: ext,
+                base: base,
+                consent: consent,
+                validatesNativeGrammar: validateNativeGrammarsFor.contains(ext.id)
+            )
+
             for (index, syntax) in (ext.manifest.contributes?.syntax ?? []).enumerated() {
                 let location = "contributes.syntax[\(index)]"
                 guard let language = makeLanguage(
-                    syntax, packRoot: ext.root, location: location, base: base, into: &outcome.issues
+                    syntax, context: context, location: location, into: &outcome.issues
                 ) else {
                     continue
                 }
@@ -170,199 +195,4 @@ struct SyntaxContributionLoader {
         )
     }
 
-    // MARK: - One contribution
-
-    private func makeLanguage(
-        _ syntax: LanguageExtensionManifest.Contributes.Syntax,
-        packRoot: URL,
-        location: String,
-        base: LanguageCatalog,
-        into issues: inout [LanguageExtensionIssue]
-    ) -> CodeLanguage? {
-        guard let baseLanguage = baseLanguage(
-            for: syntax.grammar, location: location, base: base, into: &issues
-        ), let treeSitterLanguage = baseLanguage.grammar.builtInLanguage else {
-            return nil
-        }
-
-        guard let queries = resolveQueries(syntax.queries, packRoot: packRoot, location: location, into: &issues),
-              let queryURLs = compileQueries(
-                  queries, using: baseLanguage, location: location, into: &issues
-              ) else {
-            return nil
-        }
-
-        // `parent` becomes the inherited highlights query; every other auxiliary query is merged into
-        // the highlights query at runtime, matching the built-in language convention.
-        let extraQueries = Set(queryURLs.keys).subtracting(["highlights", "parent"])
-        let id = syntax.id.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        return CodeLanguage(
-            id: LanguageID(rawValue: id),
-            tsName: syntax.displayName?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? id,
-            extensions: detectionExtensions(syntax),
-            lineCommentString: baseLanguage.lineCommentString,
-            rangeCommentStrings: baseLanguage.rangeCommentStrings,
-            documentationCommentStrings: baseLanguage.documentationCommentStrings,
-            grammar: GrammarReference(identifier: treeSitterLanguage.rawValue, builtInLanguage: treeSitterLanguage),
-            highlights: extraQueries.isEmpty ? nil : extraQueries,
-            additionalIdentifiers: detectionIdentifiers(syntax),
-            queryURLs: queryURLs,
-            firstLinePatterns: syntax.firstLinePatterns ?? []
-        )
-    }
-
-    /// The built-in language whose grammar a pack reuses, or `nil` with a diagnostic.
-    private func baseLanguage(
-        for grammar: LanguageExtensionManifest.Contributes.Syntax.Grammar,
-        location: String,
-        base: LanguageCatalog,
-        into issues: inout [LanguageExtensionIssue]
-    ) -> CodeLanguage? {
-        guard grammar.kind == "builtin" else {
-            issues.append(.error(
-                "Grammar kind '\(grammar.kind)' cannot be loaded in this version of CodeEdit.",
-                at: "\(location).grammar"
-            ))
-            return nil
-        }
-
-        let name = grammar.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !name.isEmpty else {
-            issues.append(.error("Built-in grammar requires `name`.", at: "\(location).grammar"))
-            return nil
-        }
-
-        guard let language = base.language(forIdentifier: name), language.grammar.builtInLanguage != nil else {
-            issues.append(.error("Unknown built-in grammar '\(name)'.", at: "\(location).grammar"))
-            return nil
-        }
-
-        return language
-    }
-
-    /// Resolves every declared query inside the pack root.
-    ///
-    /// Existence and type are already checked by ``LanguageExtensionValidator``; this only re-asserts
-    /// containment because a query is read straight from disk here.
-    private func resolveQueries(
-        _ queries: LanguageExtensionManifest.Contributes.Syntax.Queries,
-        packRoot: URL,
-        location: String,
-        into issues: inout [LanguageExtensionIssue]
-    ) -> [(name: String, url: URL)]? {
-        var resolved: [(name: String, url: URL)] = []
-
-        for (name, path) in queries.namedPaths {
-            guard let url = LanguageExtensionPaths.resolve(path, in: packRoot),
-                  LanguageExtensionPaths.isContained(url, in: packRoot) else {
-                issues.append(.error(
-                    "\(name.capitalized) query escapes the pack: \(path)",
-                    at: "\(location).queries.\(name)"
-                ))
-                return nil
-            }
-            resolved.append((name: name, url: url))
-        }
-
-        return resolved
-    }
-
-    /// Compiles every query, dropping the ones that are malformed.
-    ///
-    /// A broken highlights query returns `nil`: the language would have nothing to highlight. A broken
-    /// auxiliary query is dropped instead — it is merged into the highlights query at runtime, so
-    /// keeping it would take the language's highlighting down with it.
-    ///
-    /// - Returns: The compiled query URLs keyed by query name, or `nil` when the highlights query is
-    ///   malformed.
-    private func compileQueries(
-        _ queries: [(name: String, url: URL)],
-        using baseLanguage: CodeLanguage,
-        location: String,
-        into issues: inout [LanguageExtensionIssue]
-    ) -> [String: URL]? {
-        var urls: [String: URL] = [:]
-        var highlightCaptures = Set<String>()
-        var failures: [String: String] = [:]
-
-        for (name, url) in queries {
-            do {
-                let captures = try baseLanguage.compileQuery(at: url)
-                urls[name] = url
-                // Only the highlights query renders captures. Fold/indent/local/tag queries have their
-                // own capture vocabularies that the highlighter legitimately ignores.
-                if name == "highlights" {
-                    highlightCaptures.formUnion(captures)
-                }
-            } catch {
-                failures[name] = String(describing: error)
-            }
-        }
-
-        if let message = failures["highlights"] {
-            issues.append(.error(
-                "Highlights query failed to compile: \(message)", at: "\(location).queries.highlights"
-            ))
-            return nil
-        }
-
-        for name in failures.keys.sorted() {
-            issues.append(.error(
-                "\(name.capitalized) query failed to compile and was dropped: \(failures[name] ?? "")",
-                at: "\(location).queries.\(name)"
-            ))
-        }
-
-        for capture in highlightCaptures.sorted() where !CaptureName.isKnown(capture) {
-            issues.append(.warning(
-                "Unknown capture '@\(capture)' — it will not be highlighted.",
-                at: "\(location).queries.highlights"
-            ))
-        }
-
-        return urls
-    }
-
-    /// The extensions and exact file names that select a contributed language.
-    private func detectionExtensions(
-        _ syntax: LanguageExtensionManifest.Contributes.Syntax
-    ) -> Set<String> {
-        var result = Set<String>()
-
-        for raw in syntax.extensions ?? [] {
-            let normalized = LanguageExtensionValidator.normalizeExtension(raw)
-            if !normalized.isEmpty {
-                result.insert(normalized)
-            }
-        }
-        for raw in syntax.filenames ?? [] {
-            let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !name.isEmpty {
-                result.insert(name)
-            }
-        }
-
-        return result
-    }
-
-    /// The extra identifiers a contributed language answers to: aliases and shebang names.
-    private func detectionIdentifiers(
-        _ syntax: LanguageExtensionManifest.Contributes.Syntax
-    ) -> Set<String> {
-        var result = Set<String>()
-
-        for raw in (syntax.aliases ?? []) + (syntax.shebangs ?? []) {
-            let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !value.isEmpty {
-                result.insert(value)
-            }
-        }
-
-        return result
-    }
-}
-
-private extension String {
-    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

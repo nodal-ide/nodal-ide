@@ -61,7 +61,7 @@ final class LanguageExtensionStore {
         lock.unlock()
 
         var result = globalExtensions()
-        result.append(contentsOf: discover(in: root.appending(path: ".codeedit/extensions")))
+        result.append(contentsOf: discover(in: root.appending(path: ".codeedit/extensions"), scope: .workspace))
 
         lock.lock()
         workspaceCache[key] = result
@@ -78,7 +78,7 @@ final class LanguageExtensionStore {
         }
         lock.unlock()
 
-        let listed = discover(in: Self.globalExtensionsDirectory)
+        let listed = discover(in: Self.globalExtensionsDirectory, scope: .global)
 
         lock.lock()
         globalCache = listed
@@ -94,7 +94,7 @@ final class LanguageExtensionStore {
         lock.unlock()
     }
 
-    private func discover(in directory: URL) -> [InstalledLanguageExtension] {
+    private func discover(in directory: URL, scope: LanguageExtensionPackScope) -> [InstalledLanguageExtension] {
         let fileManager = FileManager.default
         guard let entries = try? fileManager.contentsOfDirectory(
             at: directory,
@@ -121,7 +121,8 @@ final class LanguageExtensionStore {
                 name: manifest.name,
                 version: manifest.version,
                 root: entry,
-                manifest: manifest
+                manifest: manifest,
+                scope: scope
             )
         }
     }
@@ -145,6 +146,8 @@ final class LanguageExtensionStore {
         // Use the loader's rules so invalid packs never reach the global extensions directory.
         let context = LanguageExtensionValidationContext(
             known: SyntaxContributionLoader.knownLanguages(in: .builtIn),
+            allowsNativeGrammars: true,
+            scope: .global,
             hostVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         )
         let validation = LanguageExtensionValidator.validate(manifest: manifest, root: folder, context: context)
@@ -170,7 +173,8 @@ final class LanguageExtensionStore {
             name: manifest.name,
             version: manifest.version,
             root: destination,
-            manifest: manifest
+            manifest: manifest,
+            scope: .global
         )
     }
 

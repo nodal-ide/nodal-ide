@@ -11,6 +11,9 @@ extension SettingsData {
         /// Ids of installed extensions the user has disabled. Extensions are enabled by default.
         var disabledExtensions: [String] = []
 
+        /// Native grammar consent: `<extension id>/<grammar path>` → the approved SHA-256.
+        var nativeGrammarConsent: [String: String] = [:]
+
         /// Default initializer
         init() {}
 
@@ -21,6 +24,10 @@ extension SettingsData {
                 [String].self,
                 forKey: .disabledExtensions
             ) ?? []
+            self.nativeGrammarConsent = try container.decodeIfPresent(
+                [String: String].self,
+                forKey: .nativeGrammarConsent
+            ) ?? [:]
         }
     }
 }
