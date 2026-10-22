@@ -27,11 +27,11 @@ struct InstalledLanguageExtension: Identifiable, Hashable {
 
     /// The pack icon (`icon` in the manifest, relative to the pack root) or a default symbol.
     var icon: NSImage {
-        if let iconPath = manifest.icon {
-            let url = root.appending(path: iconPath)
-            if let image = NSImage(contentsOf: url) {
-                return image
-            }
+        if let iconPath = manifest.icon,
+           let url = LanguageExtensionPaths.resolve(iconPath, in: root),
+           LanguageExtensionPaths.isContained(url, in: root),
+           let image = NSImage(contentsOf: url) {
+            return image
         }
         if let symbol = NSImage(systemSymbolName: "puzzlepiece.extension.fill", accessibilityDescription: nil) {
             return symbol

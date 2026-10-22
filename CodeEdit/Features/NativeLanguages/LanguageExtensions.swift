@@ -142,9 +142,23 @@ final class LanguageExtensionStore {
             throw LanguageExtensionInstallError.invalidManifest
         }
 
+        // Use the loader's rules so invalid packs never reach the global extensions directory.
+        let context = LanguageExtensionValidationContext(
+            known: SyntaxContributionLoader.knownLanguages(in: .builtIn),
+            hostVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        )
+        let validation = LanguageExtensionValidator.validate(manifest: manifest, root: folder, context: context)
+        guard validation.isValid else {
+            throw LanguageExtensionInstallError.validationFailed(validation.errors)
+        }
+
+        // Defense in depth: never hand a manifest-controlled path to a filesystem operation.
+        guard let destination = LanguageExtensionPaths.resolve(manifest.id, in: Self.globalExtensionsDirectory) else {
+            throw LanguageExtensionInstallError.invalidManifest
+        }
+
         let fileManager = FileManager.default
         try fileManager.createDirectory(at: Self.globalExtensionsDirectory, withIntermediateDirectories: true)
-        let destination = Self.globalExtensionsDirectory.appending(path: manifest.id, directoryHint: .isDirectory)
         if fileManager.fileExists(atPath: destination.path(percentEncoded: false)) {
             try fileManager.removeItem(at: destination)
         }
@@ -193,8 +207,7 @@ final class LanguageExtensionStore {
 
     /// Removes a globally installed pack.
     func remove(_ ext: InstalledLanguageExtension) throws {
-        guard ext.root.path(percentEncoded: false)
-            .hasPrefix(Self.globalExtensionsDirectory.path(percentEncoded: false)) else { return }
+        guard LanguageExtensionPaths.isContained(ext.root, in: Self.globalExtensionsDirectory) else { return }
         try FileManager.default.removeItem(at: ext.root)
         reload()
     }
@@ -230,6 +243,7 @@ final class LanguageExtensionStore {
 enum LanguageExtensionInstallError: LocalizedError {
     case invalidManifest
     case unzipFailed
+    case validationFailed([LanguageExtensionIssue])
 
     var errorDescription: String? {
         switch self {
@@ -237,6 +251,8 @@ enum LanguageExtensionInstallError: LocalizedError {
             return "The extension has no valid extension.json manifest."
         case .unzipFailed:
             return "The archive could not be unzipped."
+        case .validationFailed(let issues):
+            return "The extension is invalid:\n" + issues.map(\.description).joined(separator: "\n")
         }
     }
 }
@@ -331,7 +347,8 @@ final class WorkspaceLanguageExtensions {
 
             var entries: [LanguageSymbolPack.Entry] = []
             for file in symbolFiles {
-                let url = ext.root.appending(path: file)
+                guard let url = LanguageExtensionPaths.resolve(file, in: ext.root),
+                      LanguageExtensionPaths.isContained(url, in: ext.root) else { continue }
                 guard let pack = loadJSONFile(
                     LanguageSymbolPack.self, from: url, descriptor: "symbol pack"
                 ) else {
@@ -367,7 +384,10 @@ final class WorkspaceLanguageExtensions {
                 "Failed to create stub cache directory: \(error.localizedDescription, privacy: .public)"
             )
         }
-        return Self.stubCacheDirectory.appending(path: "\(ext.id).txt")
+        let safeID = ext.id
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "\\", with: "_")
+        return Self.stubCacheDirectory.appending(path: "\(safeID).txt")
     }
 
     static var stubCacheDirectory: URL {

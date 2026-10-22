@@ -63,6 +63,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     var testRunner: TestRunner? { services.testRunner }
     var breakpointStore: BreakpointStore? { services.breakpointStore }
     var debugController: DebugController? { services.debugController }
+    var languageCatalogStore: LanguageCatalogStore? { services.languageCatalogStore }
     var localSiteCoordinator: WorkspaceLocalSiteCoordinator? { services.localSiteCoordinator }
 
     private var cancellables = Set<AnyCancellable>()

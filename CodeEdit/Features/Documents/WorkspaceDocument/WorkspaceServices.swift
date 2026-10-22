@@ -51,6 +51,9 @@ final class WorkspaceServices {
     private(set) var breakpointStore: BreakpointStore?
     private(set) var debugController: DebugController?
 
+    /// The catalog of built-in languages plus this workspace's enabled extension syntax packs.
+    private(set) var languageCatalogStore: LanguageCatalogStore?
+
     var sourceControlManager: SourceControlManager? { sourceControlCoordinator?.primaryRepository }
 
     /// Constructs the workspace-dependent services. Called once a workspace URL is known.
@@ -85,28 +88,45 @@ final class WorkspaceServices {
         breakpointStore = BreakpointStore(workspaceURL: url)
         debugController = DebugController(workspace: workspace)
 
+        // Read the workspace's extension syntax packs early so detection, highlighting and the
+        // inspector all see contributed languages as soon as the workspace is configured.
+        languageCatalogStore = LanguageCatalogStore(workspaceRoot: url)
+
         stateStore = WorkspaceStateStore(fileURL: url)
         taskNotificationHandler.workspaceURL = url
         self.workspaceFileManager?.addObserver(undoRegistration)
         editorManager.restoreFromState(workspace)
         utilityAreaModel.restoreFromState(workspace)
 
+        startProjectRuntime(workspace: workspace, url: url, settings: settingsManager)
+    }
+
+    /// Starts the workspace's runtime: the resolved runtime environment, the local site, and the
+    /// background project scan.
+    ///
+    /// Kept out of ``configure(workspace:url:)`` because everything here kicks off asynchronous work
+    /// rather than constructing a service.
+    private func startProjectRuntime(
+        workspace: WorkspaceDocument,
+        url: URL,
+        settings: CEWorkspaceSettings
+    ) {
         // Resolve the runtime environment now and keep it in sync with the project's runtime pins.
         runtimeCoordinator = WorkspaceRuntimeCoordinator(workspace: workspace)
-        runtimeCoordinator?.start(settingsManager: settingsManager)
+        runtimeCoordinator?.start(settingsManager: settings)
 
         // Keep the project's local site in sync with its `site` + `runtimes` settings.
         let siteRunner = LocalSiteRunner(
             operations: AppServices.localProxy.makeOperations(
                 workspaceURL: url,
-                site: { [weak settingsManager] in settingsManager?.settings.site ?? LocalSiteSettings() },
+                site: { [weak settings] in settings?.settings.site ?? LocalSiteSettings() },
                 taskManager: taskManager
             )
         )
         let siteCoordinator = WorkspaceLocalSiteCoordinator(workspaceURL: url, runner: siteRunner)
-        siteCoordinator.start(settingsManager: settingsManager)
+        siteCoordinator.start(settingsManager: settings)
         localSiteCoordinator = siteCoordinator
-        runController?.bindLocalSite(siteCoordinator, settingsManager: settingsManager)
+        runController?.bindLocalSite(siteCoordinator, settingsManager: settings)
 
         let autoStart = AppServices.settings.preferences.localDomains.autoStartSitesOnOpen
         Task { await siteCoordinator.startIfEnabledOnOpen(autoStart: autoStart) }
@@ -115,7 +135,7 @@ final class WorkspaceServices {
         // so the Problems panel isn't limited to open files. Only for PHP projects.
         launchCoordinator.scheduleProjectScan(
             at: url,
-            language: settingsManager.settings.project.language
+            language: settings.settings.project.language
         )
     }
 
@@ -140,5 +160,6 @@ final class WorkspaceServices {
         testRunner = nil
         breakpointStore = nil
         debugController = nil
+        languageCatalogStore = nil
     }
 }

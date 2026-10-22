@@ -5,6 +5,7 @@
 
 import SwiftUI
 import AppKit
+import CodeEditLang
 
 /// Detail view for a declarative language extension in the Extensions window.
 struct LanguageExtensionDetailView: View {
@@ -14,6 +15,13 @@ struct LanguageExtensionDetailView: View {
 
     @AppSettings(\.extensions.disabledExtensions)
     var disabledExtensions
+
+    /// The result of loading this pack's syntax contributions against the built-in catalog.
+    ///
+    /// Other enabled installed packs are loaded too, so duplicate language ids and detection keys
+    /// between packs are reported here as well. Workspace packs are workspace-scoped and resolved by
+    /// ``LanguageCatalogStore``, so they are not shown in this app-global window.
+    @State private var syntaxOutcome: SyntaxContributionLoader.PackOutcome?
 
     var body: some View {
         Form {
@@ -58,6 +66,19 @@ struct LanguageExtensionDetailView: View {
                 Toggle("Enabled", isOn: enabledBinding)
             }
 
+            Section("Syntax") {
+                if let outcome = syntaxOutcome {
+                    syntaxContent(outcome)
+                } else {
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Checking syntax contributions…")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
             Section {
                 HStack {
                     Button("Reveal in Finder") {
@@ -76,6 +97,56 @@ struct LanguageExtensionDetailView: View {
         .formStyle(.grouped)
         .navigationSubtitle(ext.name)
         .textSelection(.enabled)
+        .task(id: ext.id) {
+            let packs = languageManager.extensions.filter {
+                $0.id == ext.id || LanguageExtensionActivation.isEnabled($0)
+            }
+            let outcomes = SyntaxContributionLoader.resolveConflicts(
+                SyntaxContributionLoader().load(packs, base: .builtIn)
+            )
+            syntaxOutcome = outcomes.first { $0.extensionID == ext.id }
+        }
+    }
+
+    // MARK: - Syntax status
+
+    @ViewBuilder
+    private func syntaxContent(_ outcome: SyntaxContributionLoader.PackOutcome) -> some View {
+        if outcome.languages.isEmpty, outcome.issues.isEmpty {
+            Text("This extension does not contribute syntax.")
+                .foregroundStyle(.secondary)
+        } else {
+            ForEach(outcome.languages, id: \.id) { language in
+                labeled("Language", language.tsName)
+            }
+
+            if outcome.issues.isEmpty {
+                Label("No syntax problems found.", systemImage: "checkmark.circle")
+                    .foregroundStyle(.secondary)
+                    .font(.callout)
+            } else {
+                ForEach(Array(outcome.issues.enumerated()), id: \.offset) { _, issue in
+                    issueRow(issue)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func issueRow(_ issue: LanguageExtensionIssue) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Image(systemName: issue.severity == .error ? "xmark.octagon.fill" : "exclamationmark.triangle.fill")
+                .foregroundStyle(issue.severity == .error ? .red : .yellow)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(issue.message)
+                if let location = issue.location {
+                    Text(location)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .font(.callout)
     }
 
     private var enabledBinding: Binding<Bool> {

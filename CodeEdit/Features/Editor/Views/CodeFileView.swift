@@ -19,7 +19,11 @@ struct CodeFileView: View {
     let editorInstance: EditorInstance
     @ObservedObject var codeFile: CodeFileDocument
 
-    @State private var treeSitterClient: TreeSitterClient = TreeSitterClient()
+    /// The workspace language catalog (built-ins + enabled extension syntax packs) used for detection
+    /// and syntax highlighting. Resolved once when the view is created.
+    private let catalog: LanguageCatalog
+
+    @State private var treeSitterClient: TreeSitterClient
 
     /// Any coordinators passed to the view.
     private var textViewCoordinators: [TextViewCoordinator]
@@ -30,7 +34,7 @@ struct CodeFileView: View {
     /// language. Otherwise it would request tokens that never arrive and hold highlight ranges pending forever.
     private var highlightProviders: [any HighlightProviding] {
         var providers: [any HighlightProviding] = [treeSitterClient]
-        if let lspLanguage = codeFile.getLanguage().lspLanguage,
+        if let lspLanguage = codeFile.getLanguage(catalog: catalog).lspLanguage,
            !lspService.usesInternalLanguage(lspLanguage),
            lspService.hasServer(for: lspLanguage) {
             providers.insert(codeFile.languageServerObjects.highlightProvider, at: 0)
@@ -87,8 +91,6 @@ struct CodeFileView: View {
 
     @ObservedObject var themeModel: ThemeModel = AppServices.themeModel
 
-    @State private var treeSitter = TreeSitterClient()
-
     /// Provides access to the LSP service to decide whether an LSP-backed highlight provider is worthwhile.
     @Environment(\.lspService)
     private var lspService
@@ -119,6 +121,12 @@ struct CodeFileView: View {
     ) {
         self.editorInstance = editorInstance
         self._codeFile = .init(wrappedValue: codeFile)
+
+        // Contributed languages resolve their grammar and queries through the workspace catalog, so the
+        // syntax highlighter must be created with it rather than the built-in default.
+        let catalog = codeFile.workspaceLanguageCatalog()
+        self.catalog = catalog
+        self._treeSitterClient = State(wrappedValue: TreeSitterClient(catalog: catalog))
 
         self.textViewCoordinators = textViewCoordinators
             + [editorInstance.rangeTranslator]
@@ -159,10 +167,11 @@ struct CodeFileView: View {
     var body: some View {
         SourceEditor(
             codeFile.content ?? NSTextStorage(),
-            language: codeFile.getLanguage(),
+            language: codeFile.getLanguage(catalog: catalog),
             configuration: editorConfiguration,
             state: editorStateBinding,
             highlightProviders: highlightProviders,
+            catalog: catalog,
             undoManager: undoRegistration.manager(forFile: editorInstance.file),
             coordinators: textViewCoordinators,
             completionDelegate: languageDelegate,

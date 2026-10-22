@@ -7,6 +7,7 @@
 
 import AppKit
 import AVKit
+import CodeEditLanguages
 import CodeEditSourceEditor
 import Combine
 import SwiftUI
@@ -25,15 +26,18 @@ struct EditorAreaFileView: View {
 
     @State private var languageExtensionRevision = 0
 
-    @ViewBuilder var editorAreaFileView: some View {
+    @MainActor @ViewBuilder var editorAreaFileView: some View {
         if let utType = codeFile.utType, utType.conforms(to: .text) {
+            // Include the language fingerprint so the editor rebuilds when the detected/overridden
+            // language changes, and the extension revision so it rebuilds when packs change.
+            let catalog = codeFile.workspaceLanguageCatalog()
             CodeFileView(
                 editorInstance: editorInstance,
                 codeFile: codeFile
             )
             .id(
                 "\(ObjectIdentifier(codeFile))-" +
-                "\(codeFile.getLanguage().fingerprint.rawValue)-" +
+                "\(codeFile.getLanguage(catalog: catalog).fingerprint.rawValue)-" +
                 "\(languageExtensionRevision)"
             )
         } else {

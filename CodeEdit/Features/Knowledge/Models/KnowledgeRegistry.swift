@@ -70,8 +70,15 @@ final class KnowledgeRegistry {
         for ext in AppServices.languageExtensionStore.globalExtensions() {
             guard let contributions = ext.manifest.contributes?.knowledge else { continue }
             for contribution in contributions {
-                let root = ext.root.appending(path: contribution.root ?? ".")
-                let indexURL = root.appending(path: contribution.index ?? "index.json")
+                guard let root = LanguageExtensionPaths.resolve(contribution.root ?? ".", in: ext.root),
+                      LanguageExtensionPaths.isContained(root, in: ext.root),
+                      let indexURL = LanguageExtensionPaths.resolve(
+                          contribution.index ?? "index.json", in: root
+                      ),
+                      LanguageExtensionPaths.isContained(indexURL, in: ext.root) else {
+                    logger.error("Skipping knowledge source outside extension \(ext.id, privacy: .public)")
+                    continue
+                }
                 guard let data = try? Data(contentsOf: indexURL) else {
                     if FileManager.default.fileExists(atPath: indexURL.path(percentEncoded: false)) {
                         logger.error("Failed to read knowledge index at \(indexURL.path, privacy: .public)")

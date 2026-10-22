@@ -24,11 +24,12 @@ enum CodeFileLanguagePipeline {
         openLink: @escaping (JumpToDefinitionLink) -> Void
     ) -> Result {
         var providers: [any LanguageProvider] = []
+        let language = codeFile.getLanguage(catalog: codeFile.workspaceLanguageCatalog())
         if let workspaceRoot = codeFile.findWorkspace()?.fileURL, let fileURL = codeFile.fileURL {
             providers = AppServices.languageProviderRegistry.providers(
                 for: fileURL,
                 root: workspaceRoot,
-                languageID: codeFile.getLanguage().id.rawValue,
+                languageID: language.id.rawValue,
                 openLink: openLink
             )
         }

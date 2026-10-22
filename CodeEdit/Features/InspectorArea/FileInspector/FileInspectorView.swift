@@ -116,14 +116,15 @@ struct FileInspectorView: View {
     }
 
     @ViewBuilder private var fileType: some View {
-        Picker(
-            "Type",
-            selection: $language
-        ) {
-            Text("Default - Detected").tag(nil as CodeLanguage?)
-            Divider()
-            ForEach(LanguageCatalog.builtIn.languages, id: \.id) { language in
-                Text(language.id.rawValue.capitalized).tag(language as CodeLanguage?)
+        Group {
+            if let catalogStore = workspace.languageCatalogStore {
+                ObservedLanguageSelector(store: catalogStore, selection: $language)
+            } else {
+                LanguageSelector(
+                    builtInLanguages: LanguageCatalog.builtIn.languages,
+                    contributedLanguages: [],
+                    selection: $language
+                )
             }
         }
         .onChange(of: language) { _, newValue in
@@ -237,6 +238,99 @@ struct FileInspectorView: View {
             return dialogue.url
         } else {
             return nil
+        }
+    }
+}
+
+/// The language selector in the file inspector.
+///
+/// Lists the catalog's languages grouped by source (built-in, extension) with a search field, and
+/// shows the contributing extension's name and version for contributed languages. Inputs are plain
+/// values so the same view renders both the workspace catalog and the built-in fallback.
+private struct LanguageSelector: View {
+    let builtInLanguages: [CodeLanguage]
+    let contributedLanguages: [LanguageCatalogStore.ContributedLanguage]
+
+    @Binding var selection: CodeLanguage?
+
+    @State private var search = ""
+
+    private var query: String {
+        search.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private var visibleBuiltIn: [CodeLanguage] {
+        guard !query.isEmpty else { return builtInLanguages }
+        // Keep the current selection visible even when it does not match, so the picker keeps a label.
+        return builtInLanguages.filter { matches($0.id.rawValue) || matches($0.tsName) || $0 == selection }
+    }
+
+    private var visibleContributed: [LanguageCatalogStore.ContributedLanguage] {
+        guard !query.isEmpty else { return contributedLanguages }
+        return contributedLanguages.filter {
+            matches($0.id) || matches($0.language.tsName) || matches($0.extensionName) || $0.language == selection
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            TextField("Search Languages", text: $search)
+                .textFieldStyle(.roundedBorder)
+
+            Picker("Type", selection: $selection) {
+                Text("Default - Detected").tag(nil as CodeLanguage?)
+
+                if !visibleBuiltIn.isEmpty {
+                    Section("Built-in") {
+                        ForEach(visibleBuiltIn, id: \.id) { language in
+                            Text(language.id.rawValue.capitalized)
+                                .tag(language as CodeLanguage?)
+                        }
+                    }
+                }
+
+                if !visibleContributed.isEmpty {
+                    Section("Extensions") {
+                        ForEach(visibleContributed) { entry in
+                            Text(label(for: entry))
+                                .tag(entry.language as CodeLanguage?)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func matches(_ text: String) -> Bool {
+        text.lowercased().contains(query)
+    }
+
+    private func label(for entry: LanguageCatalogStore.ContributedLanguage) -> String {
+        let version = entry.extensionVersion.map { " \($0)" } ?? ""
+        return "\(entry.language.tsName) — \(entry.extensionName)\(version)"
+    }
+}
+
+/// Observes a workspace ``LanguageCatalogStore`` and forwards its language groups to
+/// ``LanguageSelector``, so the inspector refreshes when an extension pack is installed, enabled,
+/// disabled or reloaded.
+private struct ObservedLanguageSelector: View {
+    @ObservedObject var store: LanguageCatalogStore
+    @Binding var selection: CodeLanguage?
+
+    var body: some View {
+        LanguageSelector(
+            builtInLanguages: store.builtInLanguages,
+            contributedLanguages: store.contributedLanguages,
+            selection: $selection
+        )
+        .onChange(of: store.version) { _, _ in
+            guard let selection else { return }
+            let stillAvailable = store.builtInLanguages.contains { $0.id == selection.id }
+                || store.contributedLanguages.contains { $0.language.id == selection.id }
+            if !stillAvailable {
+                self.selection = nil
+            }
         }
     }
 }

@@ -343,19 +343,38 @@ final class CodeFileDocument: NSDocument, ObservableObject {
         return fileTypeName
     }
 
-    /// Determines the code language of the document.
-    /// Use ``CodeFileDocument/language`` for the default value before using this. That property is used to override
-    /// the file's language.
-    /// - Returns: The detected code language.
+    /// Determines the code language of the document against the built-in catalog.
+    /// Overridden by ``CodeFileDocument/language``; satisfies ``LanguageServerDocument``.
     func getLanguage() -> CodeLanguage {
+        // Preserve an explicit contributed-language override: this overload has no workspace catalog,
+        // so resolving it against `.builtIn` would turn it into the plain-text fallback.
+        language ?? getLanguage(catalog: .builtIn)
+    }
+
+    /// Determines the code language of the document against `catalog`.
+    ///
+    /// - Parameter catalog: The catalog to detect against, e.g. ``workspaceLanguageCatalog()``.
+    func getLanguage(catalog: LanguageCatalog) -> CodeLanguage {
         guard let url = fileURL else {
             return .default
         }
-        return language ?? CodeLanguage.detectLanguageFrom(
+        // Resolve an explicit override through the current catalog: a contributed language can be
+        // disabled, removed, or reloaded while open, so a stale stored value must not be used.
+        if let language, let current = catalog.language(for: language.id) {
+            return current
+        }
+        return catalog.detectLanguage(
             url: url,
-            prefixBuffer: content?.string.getFirstLines(5),
-            suffixBuffer: content?.string.getLastLines(5)
+            prefix: content?.string.getFirstLines(5),
+            suffix: content?.string.getLastLines(5)
         )
+    }
+
+    /// The catalog of this document's workspace: built-ins plus enabled extension syntax packs.
+    /// PERF: resolves the workspace by scanning open documents; cache if profiling shows it matters.
+    @MainActor
+    func workspaceLanguageCatalog() -> LanguageCatalog {
+        findWorkspace()?.languageCatalogStore?.catalog ?? .builtIn
     }
 
     func findWorkspace() -> WorkspaceDocument? {

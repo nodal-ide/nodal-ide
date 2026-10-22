@@ -40,6 +40,18 @@ enum InternalLanguage: String, CaseIterable, Identifiable {
         allCases.first(where: { $0.languageIdentifier.rawValue == languageId.rawValue })
     }
 
+    /// Whether this engine also hosts declarative symbol injection into the workspace index.
+    ///
+    /// Only PHP has a declarative symbol index today, so a new internal language must opt in explicitly
+    /// rather than inheriting the PHP index. Making this per-engine (instead of a hard-coded language
+    /// check at the call site) keeps the provider registry language-agnostic.
+    var supportsDeclarativeSymbolInjection: Bool {
+        switch self {
+        case .php:
+            return true
+        }
+    }
+
     /// The identifiers enabled by default (internal engines preferred over LSP out of the box).
     static let defaultEnabledIdentifiers: [String] = [InternalLanguage.php.rawValue]
 

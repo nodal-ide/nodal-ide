@@ -51,10 +51,14 @@ final class LanguageProviderRegistry {
         ))
 
         // Declarative packs are folded into the workspace index and served by the built-in engine.
-        if languageID == "php",
-           InternalLanguage.isEnabled(.php, in: AppServices.settings.preferences.developerSettings) {
+        // The engine that hosts the index is resolved from the internal-language registry rather than
+        // a hard-coded language id, so extension syntax packs for other languages are unaffected.
+        if let identifier = LanguageIdentifier(rawValue: languageID),
+           let engine = InternalLanguage.implementing(identifier),
+           engine.supportsDeclarativeSymbolInjection,
+           InternalLanguage.isEnabled(identifier, in: AppServices.settings.preferences.developerSettings) {
             let index = AppServices.phpWorkspaceIndex.index(for: root)
-            AppServices.workspaceLanguageExtensions.inject(into: index, root: root, language: "php")
+            AppServices.workspaceLanguageExtensions.inject(into: index, root: root, language: engine.rawValue)
             providers.append(AppServices.phpWorkspaceIndex.provider(for: file, root: root, openLink: openLink))
         }
 

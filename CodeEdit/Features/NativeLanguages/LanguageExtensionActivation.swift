@@ -42,7 +42,10 @@ enum LanguageExtensionActivation {
         _ framework: LanguageExtensionManifest.Activation.Framework,
         in root: URL
     ) -> Bool {
-        let fileURL = root.appending(path: framework.file ?? "composer.json")
+        guard let fileURL = LanguageExtensionPaths.resolve(framework.file ?? "composer.json", in: root),
+              LanguageExtensionPaths.isContained(fileURL, in: root) else {
+            return false
+        }
         guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else { return false }
         guard let requires = framework.requires, !requires.isEmpty else { return true }
         return requires.keys.contains { content.contains($0) }
@@ -52,8 +55,12 @@ enum LanguageExtensionActivation {
     private static func matchesAnyFile(_ patterns: [String], in root: URL) -> Bool {
         let fileManager = FileManager.default
         return patterns.contains { pattern in
-            !pattern.contains("*") && !pattern.contains("?")
-                && fileManager.fileExists(atPath: root.appending(path: pattern).path(percentEncoded: false))
+            guard !pattern.contains("*"), !pattern.contains("?"),
+                  let url = LanguageExtensionPaths.resolve(pattern, in: root),
+                  LanguageExtensionPaths.isContained(url, in: root) else {
+                return false
+            }
+            return fileManager.fileExists(atPath: url.path(percentEncoded: false))
         }
     }
 
