@@ -73,6 +73,34 @@ struct ExtensionCatalogModelsTests {
         #expect(first.id != second.id)
     }
 
+    @Test
+    func sourceCollectionPreservesOrderAndRejectsDuplicateLocations() throws {
+        let first = makeSource(name: "Primary", location: "https://example.com/catalog.json")
+        let second = makeSource(name: "Secondary", location: "https://other.example/catalog.json")
+        let collection = try ExtensionSourceCollection(sources: [first, second])
+
+        #expect(collection.sources.map(\.id) == [first.id, second.id])
+        #expect(throws: ExtensionSourceCollectionError.duplicateSourceLocation) {
+            try ExtensionSourceCollection(sources: [
+                first,
+                makeSource(name: "Duplicate", location: "HTTPS://EXAMPLE.COM/catalog.json/")
+            ])
+        }
+    }
+
+    @Test
+    func fixtureProviderFeedsValidatedCatalogThroughRegistry() async throws {
+        let catalog = makeCatalog(version: "1.2.3", packageURL: URL(string: "1.2.3.zip")!)
+        let provider = FixtureSourceProvider(catalog: catalog)
+        let registry = try ExtensionSourceProviderRegistry(providers: [provider])
+        let source = makeSource(name: "Fixture", location: "https://example.com/extensions.json")
+        let resolvedProvider = try registry.provider(for: source)
+        let result = try await resolvedProvider.refreshCatalog(for: source, cached: nil)
+
+        try ExtensionCatalogValidator.validate(result.catalog)
+        #expect(result.catalog == catalog)
+    }
+
     private func makeCatalog(version: String, packageURL: URL) -> ExtensionCatalog {
         let package = ExtensionCatalogVersion(
             url: packageURL,
@@ -89,5 +117,41 @@ struct ExtensionCatalogModelsTests {
             versions: [version: package]
         )
         return ExtensionCatalog(schemaVersion: 1, extensions: ["com.example.pack": entry])
+    }
+
+    private func makeSource(name: String, location: String) -> ExtensionSource {
+        ExtensionSource(
+            name: name,
+            providerID: .httpsStaticIndex,
+            location: URL(string: location)!
+        )
+    }
+}
+
+private struct FixtureSourceProvider: ExtensionSourceProvider {
+    let catalog: ExtensionCatalog
+    let identifier = ExtensionSourceProviderID.httpsStaticIndex
+
+    func validate(_ source: ExtensionSource) async throws {}
+
+    func refreshCatalog(
+        for source: ExtensionSource,
+        cached: CachedExtensionCatalog?
+    ) async throws -> ExtensionCatalogRefresh {
+        ExtensionCatalogRefresh(
+            catalog: catalog,
+            entityTag: nil,
+            lastModified: nil,
+            notModified: false
+        )
+    }
+
+    func download(
+        _ package: ExtensionCatalogVersion,
+        from source: ExtensionSource,
+        to destination: URL,
+        progress: @escaping @Sendable (Int64, Int64?) -> Void
+    ) async throws -> DownloadedExtensionPackage {
+        DownloadedExtensionPackage(fileURL: destination, byteCount: 0)
     }
 }

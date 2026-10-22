@@ -47,6 +47,59 @@ struct ExtensionSource: Codable, Hashable, Identifiable, Sendable {
     }
 }
 
+struct ExtensionSourceCollection: Sendable {
+    let sources: [ExtensionSource]
+
+    init(sources: [ExtensionSource]) throws {
+        var identifiers = Set<ExtensionSourceID>()
+        var locations = Set<SourceLocationKey>()
+
+        for source in sources {
+            guard identifiers.insert(source.id).inserted else {
+                throw ExtensionSourceCollectionError.duplicateSourceID(source.id)
+            }
+            guard let key = SourceLocationKey(source: source) else {
+                throw ExtensionSourceCollectionError.invalidSourceLocation(source.id)
+            }
+            guard locations.insert(key).inserted else {
+                throw ExtensionSourceCollectionError.duplicateSourceLocation
+            }
+        }
+        self.sources = sources
+    }
+}
+
+private struct SourceLocationKey: Hashable {
+    let providerID: ExtensionSourceProviderID
+    let location: String
+
+    init?(source: ExtensionSource) {
+        guard var components = URLComponents(url: source.location, resolvingAgainstBaseURL: false),
+              components.user == nil,
+              components.password == nil,
+              components.query == nil,
+              components.fragment == nil else { return nil }
+        components.scheme = components.scheme?.lowercased()
+        components.host = components.host?.lowercased()
+        if (components.scheme == "https" && components.port == 443)
+            || (components.scheme == "http" && components.port == 80) {
+            components.port = nil
+        }
+        if components.path.count > 1, components.path.hasSuffix("/") {
+            components.path.removeLast()
+        }
+        guard let normalizedURL = components.url else { return nil }
+        self.providerID = source.providerID
+        self.location = normalizedURL.absoluteString
+    }
+}
+
+enum ExtensionSourceCollectionError: Error, Equatable {
+    case duplicateSourceID(ExtensionSourceID)
+    case invalidSourceLocation(ExtensionSourceID)
+    case duplicateSourceLocation
+}
+
 struct ExtensionSourceProviderID: RawRepresentable, Codable, Hashable, Sendable,
     ExpressibleByStringLiteral {
     let rawValue: String
