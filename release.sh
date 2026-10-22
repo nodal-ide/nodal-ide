@@ -54,6 +54,11 @@ done <<<"$NOTES_STATUS"
 
 TAG="v${VERSION}"
 STAGE_DIR=""
+release_for_tag() {
+  gh api "repos/${REPOSITORY}/releases?per_page=100" |
+    jq -c --arg tag "$TAG" '[.[] | select(.tag_name == $tag)] | first // empty'
+}
+
 cleanup() {
   if [[ -n "$STAGE_DIR" && -d "$STAGE_DIR" ]]; then
     rm -rf "$STAGE_DIR"
@@ -83,7 +88,8 @@ elif [[ "$REMOTE_ONLY" != "0" || "$LOCAL_ONLY" != "0" ]]; then
   fail "main and origin/main must match before releasing."
 fi
 
-if EXISTING_RELEASE="$(gh api "repos/${REPOSITORY}/releases/tags/${TAG}" 2>/dev/null)"; then
+EXISTING_RELEASE="$(release_for_tag)"
+if [[ -n "$EXISTING_RELEASE" ]]; then
   EXISTING_DRAFT="$(jq -r '.draft' <<<"$EXISTING_RELEASE")"
   EXISTING_PRERELEASE="$(jq -r '.prerelease' <<<"$EXISTING_RELEASE")"
   if [[ "$EXISTING_DRAFT" == "false" && "$EXISTING_PRERELEASE" == "false" ]]; then
@@ -237,7 +243,8 @@ else
   [[ "$(git rev-parse "${TAG}^{commit}")" == "$(git rev-parse HEAD)" ]] || fail "Remote tag $TAG points to a different commit."
 fi
 
-if EXISTING_RELEASE="$(gh api "repos/${REPOSITORY}/releases/tags/${TAG}" 2>/dev/null)"; then
+EXISTING_RELEASE="$(release_for_tag)"
+if [[ -n "$EXISTING_RELEASE" ]]; then
   [[ "$(jq -r '.draft' <<<"$EXISTING_RELEASE")" == "true" ]] || fail "A published release already exists for $TAG; refusing to replace it."
   gh release edit "$TAG" --repo "$REPOSITORY" --title "Nodal IDE ${VERSION}" --notes-file "$NOTES_BODY_FILE"
   gh release upload "$TAG" "$ZIP_PATH" "$HTML_PATH" "$APPCAST_PATH" --repo "$REPOSITORY" --clobber
@@ -251,7 +258,8 @@ else
     --verify-tag
 fi
 
-REMOTE_RELEASE="$(gh api "repos/${REPOSITORY}/releases/tags/${TAG}")"
+REMOTE_RELEASE="$(release_for_tag)"
+[[ -n "$REMOTE_RELEASE" ]] || fail "GitHub draft release could not be found by tag."
 for asset in "$ZIP_PATH" "$HTML_PATH" "$APPCAST_PATH"; do
   asset_name="$(basename "$asset")"
   local_digest="sha256:$(shasum -a 256 "$asset" | awk '{print $1}')"
