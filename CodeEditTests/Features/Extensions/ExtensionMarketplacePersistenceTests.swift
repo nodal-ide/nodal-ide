@@ -35,7 +35,8 @@ struct ExtensionMarketplacePersistenceTests {
         #expect(!json.contains("secret-token"))
     }
 
-    @Test @MainActor
+    @Test
+    @MainActor
     func sourceLifecyclePersistsTrustEnablementOrderAndRemovesCache() async throws {
         try await withTempDir { directory in
             let settings = MemorySettingsStore()

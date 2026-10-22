@@ -65,12 +65,12 @@ struct ExtensionsListView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Button("Add from Folder…") { installFromFolder() }
-                    Button("Add from Archive…") { installFromArchive() }
+                    Button("Add Language Extension from Folder…") { installFromFolder() }
+                    Button("Add Language Extension from Archive…") { installFromArchive() }
                 } label: {
                     Image(systemName: "plus")
                 }
-                .help("Install a language extension")
+                .help("Add a language extension")
             }
             ToolbarItem {
                 Button {
@@ -81,15 +81,14 @@ struct ExtensionsListView: View {
                 .help("Reload extensions")
             }
             ToolbarItem {
-                Toggle(isOn: $showActivatorView) {
-                    Image(systemName: "puzzlepiece.extension")
+                Button("Add App Extension…", systemImage: "puzzlepiece.extension") {
+                    showActivatorView.toggle()
                 }
-                .toggleStyle(.button)
                 .popover(isPresented: $showActivatorView) {
                     ExtensionActivatorView()
                         .frame(width: 400, height: 300)
                 }
-                .help("Browse app extensions")
+                .help("Browse and add macOS app extensions")
             }
         }
         .onAppear { pruneSelectionAndSelectFirst() }

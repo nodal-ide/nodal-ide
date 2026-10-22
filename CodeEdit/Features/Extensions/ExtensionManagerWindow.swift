@@ -1,42 +1,82 @@
-//
-//  ExtensionManagerWindow.swift
-//  CodeEdit
-//
-//  Created by Wouter Hennen on 24/03/2023.
-//
-
 import SwiftUI
 
 struct ExtensionManagerWindow: Scene {
     @ObservedObject var manager = AppServices.extensionManager
     @ObservedObject var languageManager = AppServices.languageExtensionManager
 
-    @State var selection = Set<ExtensionItem>()
+    @State private var installedSelection = Set<ExtensionItem>()
+    @State private var destination: ExtensionManagerDestination = .discover
+    @StateObject private var marketplace = ExtensionMarketplaceViewModel()
 
     var body: some Scene {
         Window("Extensions", id: SceneID.extensions.rawValue) {
             NavigationSplitView {
-                ExtensionsListView(selection: $selection)
-            } detail: {
-                Group {
-                    if selection.isEmpty {
-                        Text("Select an extension")
-                    } else if selection.count == 1, let item = selection.first {
-                        switch item {
-                        case .app(let info):
-                            ExtensionDetailView(ext: info)
-                        case .language(let ext):
-                            LanguageExtensionDetailView(ext: ext)
+                List(selection: $destination) {
+                    Section("Marketplace") {
+                        ForEach(ExtensionManagerDestination.marketplaceDestinations) { item in
+                            Label(item.title, systemImage: item.symbol)
+                                .tag(item)
                         }
-                    } else {
-                        Text("\(selection.count) selected")
+                    }
+                    Section("Manage") {
+                        Label(
+                            ExtensionManagerDestination.installed.title,
+                            systemImage: ExtensionManagerDestination.installed.symbol
+                        )
+                            .tag(ExtensionManagerDestination.installed)
                     }
                 }
-                .navigationSplitViewColumnWidth(min: 320, ideal: 480)
+                .listStyle(.sidebar)
+                .navigationTitle("Extensions")
+            } detail: {
+                destinationView
             }
             .environmentObject(manager)
             .environmentObject(languageManager)
-            .focusedObject(manager)
+            .environmentObject(marketplace)
+            .frame(minWidth: 820, minHeight: 520)
+        }
+    }
+
+    @ViewBuilder private var destinationView: some View {
+        switch destination {
+        case .discover:
+            ExtensionDiscoverView()
+        case .installed:
+            ExtensionsListView(selection: $installedSelection)
+        case .sources:
+            ExtensionSourcesView()
+        case .updates:
+            ExtensionUpdatesView()
+        }
+    }
+}
+
+enum ExtensionManagerDestination: String, CaseIterable, Identifiable, Hashable {
+    case discover
+    case installed
+    case sources
+    case updates
+
+    static let marketplaceDestinations: [Self] = [.discover, .updates, .sources]
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .discover: "Discover"
+        case .installed: "Installed"
+        case .sources: "Sources"
+        case .updates: "Updates"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .discover: "square.grid.2x2"
+        case .installed: "puzzlepiece.extension"
+        case .sources: "externaldrive"
+        case .updates: "arrow.down.circle"
         }
     }
 }
