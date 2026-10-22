@@ -17,6 +17,7 @@ import CodeEditLangPHP
 private struct CompletionParams: Encodable {
     let file: String
     let language: String
+    let zone: ExtensionZoneContext
     let offset: Int
     let text: String
 }
@@ -24,6 +25,7 @@ private struct CompletionParams: Encodable {
 private struct HoverParams: Encodable {
     let file: String
     let language: String
+    let zone: ExtensionZoneContext
     let offset: Int
     let text: String
 }
@@ -31,6 +33,7 @@ private struct HoverParams: Encodable {
 private struct DefinitionParams: Encodable {
     let file: String
     let language: String
+    let zone: ExtensionZoneContext
     let offset: Int
     let text: String
 }
@@ -38,6 +41,7 @@ private struct DefinitionParams: Encodable {
 private struct SignatureHelpParams: Encodable {
     let file: String
     let language: String
+    let zone: ExtensionZoneContext
     let offset: Int
     let argumentIndex: Int
     let text: String
@@ -46,20 +50,39 @@ private struct SignatureHelpParams: Encodable {
 private struct DiagnosticsParams: Encodable {
     let file: String
     let language: String
+    let zone: ExtensionZoneContext
     let text: String
 }
 
 private struct SymbolsParams: Encodable {
     let file: String
     let language: String
+    let zone: ExtensionZoneContext
     let text: String
 }
 
 private struct CodeActionParams: Encodable {
     let file: String
     let language: String
+    let zone: ExtensionZoneContext
     let location: Int
     let length: Int
+}
+
+private struct ExtensionZoneContext: Encodable {
+    let parentLanguageID: String?
+    let sourceKey: String?
+    let depth: Int
+    let location: Int?
+    let length: Int?
+
+    init(_ context: LanguageZoneContext) {
+        parentLanguageID = context.parentLanguageID?.rawValue
+        sourceKey = context.sourceKey
+        depth = context.depth
+        location = context.range?.location
+        length = context.range?.length
+    }
 }
 
 private struct RPCCompletionItem: Decodable {
@@ -159,17 +182,20 @@ final class ExtensionLanguageProvider: LanguageProvider {
 
     private var filePath: String { fileURL.path(percentEncoded: false) }
 
-    private func languageID(at location: Int, in textView: TextViewController) -> String {
-        textView.languageIDs(at: location)
-            .first(where: { supportedLanguageIDs.contains($0.rawValue) })?.rawValue ?? languageID
+    private func zoneContext(at location: Int, in textView: TextViewController) -> LanguageZoneContext {
+        textView.languageContexts(at: location).first(where: {
+            supportedLanguageIDs.contains($0.languageID.rawValue)
+        }) ?? LanguageZoneContext(languageID: textView.language.id)
     }
 
     // MARK: JumpToDefinitionDelegate
 
     func queryLinks(forRange range: NSRange, textView: TextViewController) async -> [JumpToDefinitionLink]? {
+        let context = zoneContext(at: range.location, in: textView)
         let params = DefinitionParams(
             file: filePath,
-            language: languageID(at: range.location, in: textView),
+            language: context.languageID.rawValue,
+            zone: ExtensionZoneContext(context),
             offset: range.location,
             text: textView.textView.string
         )
@@ -200,9 +226,11 @@ final class ExtensionLanguageProvider: LanguageProvider {
 
     @MainActor
     func hoverInfo(forRange range: NSRange, textView: TextViewController) async -> HoverInfo? {
+        let context = zoneContext(at: range.location, in: textView)
         let params = HoverParams(
             file: filePath,
-            language: languageID(at: range.location, in: textView),
+            language: context.languageID.rawValue,
+            zone: ExtensionZoneContext(context),
             offset: range.location,
             text: textView.textView.string
         )
@@ -221,9 +249,11 @@ final class ExtensionLanguageProvider: LanguageProvider {
         argumentIndex: Int,
         textView: TextViewController
     ) async -> SignatureHelpInfo? {
+        let context = zoneContext(at: calleeRange.location, in: textView)
         let params = SignatureHelpParams(
             file: filePath,
-            language: languageID(at: calleeRange.location, in: textView),
+            language: context.languageID.rawValue,
+            zone: ExtensionZoneContext(context),
             offset: calleeRange.location,
             argumentIndex: argumentIndex,
             text: textView.textView.string
@@ -245,6 +275,7 @@ final class ExtensionLanguageProvider: LanguageProvider {
         let params = SymbolsParams(
             file: filePath,
             language: textView.language.id.rawValue,
+            zone: ExtensionZoneContext(LanguageZoneContext(languageID: textView.language.id)),
             text: textView.textView.string
         )
         guard let symbols = try? await server.request("documentSymbols", params: params, as: [RPCSymbol].self) else {
@@ -266,6 +297,7 @@ final class ExtensionLanguageProvider: LanguageProvider {
         let params = DiagnosticsParams(
             file: filePath,
             language: textView.language.id.rawValue,
+            zone: ExtensionZoneContext(LanguageZoneContext(languageID: textView.language.id)),
             text: textView.textView.string
         )
         guard let diagnostics = try? await server.request(
@@ -293,9 +325,11 @@ final class ExtensionLanguageProvider: LanguageProvider {
 
     @MainActor
     func codeActions(forRange range: NSRange, textView: TextViewController) async -> [CodeActionInfo] {
+        let context = zoneContext(at: range.location, in: textView)
         let params = CodeActionParams(
             file: filePath,
-            language: languageID(at: range.location, in: textView),
+            language: context.languageID.rawValue,
+            zone: ExtensionZoneContext(context),
             location: range.location,
             length: range.length
         )
@@ -325,9 +359,11 @@ final class ExtensionLanguageProvider: LanguageProvider {
     ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
         let source = textView.textView.string
         let offset = cursorPosition.range.location
+        let context = zoneContext(at: offset, in: textView)
         let params = CompletionParams(
             file: filePath,
-            language: languageID(at: offset, in: textView),
+            language: context.languageID.rawValue,
+            zone: ExtensionZoneContext(context),
             offset: offset,
             text: source
         )
