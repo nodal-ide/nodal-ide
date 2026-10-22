@@ -58,6 +58,12 @@ struct ExtensionSourceCollection: Sendable {
             guard identifiers.insert(source.id).inserted else {
                 throw ExtensionSourceCollectionError.duplicateSourceID(source.id)
             }
+            guard !source.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  source.name.utf8.count <= 128,
+                  !source.providerID.rawValue.isEmpty,
+                  source.refreshInterval.map({ $0.isFinite && $0 >= 60 && $0 <= 604_800 }) ?? true else {
+                throw ExtensionSourceCollectionError.invalidSourceConfiguration(source.id)
+            }
             guard let key = SourceLocationKey(source: source) else {
                 throw ExtensionSourceCollectionError.invalidSourceLocation(source.id)
             }
@@ -100,6 +106,7 @@ private struct SourceLocationKey: Hashable {
 
 enum ExtensionSourceCollectionError: Error, Equatable {
     case duplicateSourceID(ExtensionSourceID)
+    case invalidSourceConfiguration(ExtensionSourceID)
     case invalidSourceLocation(ExtensionSourceID)
     case duplicateSourceLocation
 }

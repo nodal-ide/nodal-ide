@@ -14,6 +14,9 @@ extension SettingsData {
         /// Native grammar consent: `<extension id>/<grammar path>` → the approved SHA-256.
         var nativeGrammarConsent: [String: String] = [:]
 
+        /// Package source configuration; secrets are stored in Keychain, never in settings.
+        var sources: [ExtensionSource] = []
+
         /// Global rollout switches for extension-contributed syntax.
         var syntaxPacksEnabled = true
         var nativeGrammarsEnabled = true
@@ -32,6 +35,7 @@ extension SettingsData {
                 [String: String].self,
                 forKey: .nativeGrammarConsent
             ) ?? [:]
+            self.sources = try container.decodeIfPresent([ExtensionSource].self, forKey: .sources) ?? []
             self.syntaxPacksEnabled = try container.decodeIfPresent(
                 Bool.self,
                 forKey: .syntaxPacksEnabled

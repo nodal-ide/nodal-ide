@@ -55,6 +55,9 @@ enum AppServices {
     /// The app-wide store of installed language extensions.
     static var languageExtensionStore: LanguageExtensionStore = .shared
 
+    /// The app-wide configured extension sources.
+    @MainActor static var extensionSourceStore = ExtensionSourceStore.shared
+
     /// The app-wide per-workspace language-extension injection registry.
     static var workspaceLanguageExtensions: WorkspaceLanguageExtensions = .shared
 
