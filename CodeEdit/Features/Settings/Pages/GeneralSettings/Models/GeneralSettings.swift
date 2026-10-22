@@ -43,7 +43,7 @@ extension SettingsData {
                 "Find Navigator Detail",
                 "Issue Navigator Detail",
                 "Show “Open in Nodal IDE“ option in Finder",
-                "'codeedit' Shell command",
+                "'nodal' Shell command",
                 "Dialog Warnings",
                 "Check for updates",
                 "Automatically check for app updates",

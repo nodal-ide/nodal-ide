@@ -21,7 +21,7 @@ class CEOpenWith: FIFinderSync {
     /// App-group defaults, or standard defaults when the group isn't provisioned. Avoids noisy
     /// `cfprefsd` "detaching from cfprefsd" console output in local (unprovisioned) builds.
     private var sharedDefaults: UserDefaults {
-        let suiteName = "app.codeedit.CodeEdit.shared"
+        let suiteName = "app.nodalide.Nodal.shared"
         guard FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: suiteName
         ) != nil else {

@@ -8,7 +8,7 @@ extension UserDefaults {
     /// `cfprefsd` log noisy "detaching from cfprefsd" warnings, so only build the suite when
     /// the container is actually reachable, and otherwise fall back to standard defaults.
     static var appGroup: UserDefaults {
-        let suiteName = "app.codeedit.CodeEdit.shared"
+        let suiteName = "app.nodalide.Nodal.shared"
         guard FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: suiteName
         ) != nil else {

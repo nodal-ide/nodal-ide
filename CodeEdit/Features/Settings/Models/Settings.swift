@@ -27,6 +27,7 @@ final class Settings: ObservableObject, SettingsProviding {
     private var storeTask: AnyCancellable!
 
     private init() {
+        NodalDataMigration.migrateIfNeeded()
         self.preferences = .init()
         self.preferences = loadSettings()
 
@@ -46,7 +47,7 @@ final class Settings: ObservableObject, SettingsProviding {
     @Published var preferences: SettingsData
 
     /// Load and construct ``Settings`` model from
-    /// `~/Library/Application Support/CodeEdit/settings.json`
+    /// `~/Library/Application Support/Nodal/settings.json`
     private func loadSettings() -> SettingsData {
         if !filemanager.fileExists(atPath: settingsURL.path) {
             do {
@@ -67,7 +68,7 @@ final class Settings: ObservableObject, SettingsProviding {
     }
 
     /// Save``Settings`` model to
-    /// `~/Library/Application Support/CodeEdit/settings.json`
+    /// `~/Library/Application Support/Nodal/settings.json`
     private func savePreferences(_ data: SettingsData) throws {
         let data = try JSONEncoder().encode(data)
         let json = try JSONSerialization.jsonObject(with: data)
@@ -80,16 +81,16 @@ final class Settings: ObservableObject, SettingsProviding {
 
     /// The base URL of settings.
     ///
-    /// Points to `~/Library/Application Support/CodeEdit/`
+    /// Points to `~/Library/Application Support/Nodal/`
     internal var baseURL: URL {
         filemanager
             .homeDirectoryForCurrentUser
-            .appending(path: "Library/Application Support/CodeEdit", directoryHint: .isDirectory)
+            .appending(path: "Library/Application Support/Nodal", directoryHint: .isDirectory)
     }
 
     /// The URL of the `settings.json` settings file.
     ///
-    /// Points to `~/Library/Application Support/CodeEdit/settings.json`
+    /// Points to `~/Library/Application Support/Nodal/settings.json`
     private var settingsURL: URL {
         baseURL
             .appending(path: "settings")

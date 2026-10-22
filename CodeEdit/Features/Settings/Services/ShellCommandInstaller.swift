@@ -21,8 +21,8 @@ enum ShellCommandInstallError: LocalizedError {
 
 @MainActor
 enum ShellCommandInstaller {
-    static let commandName = "codeedit"
-    static let installationURL = URL(fileURLWithPath: "/usr/local/bin/codeedit")
+    static let commandName = "nodal"
+    static let installationURL = URL(fileURLWithPath: "/usr/local/bin/nodal")
 
     static func isInstalled(
         appPath: String = Bundle.main.bundlePath,
@@ -72,8 +72,8 @@ enum ShellCommandInstaller {
 
         case "$1" in
             -h|--help)
-                printf '%s\\n' 'Usage: codeedit [path ...]' '' \\
-                    'Opens files or folders in CodeEdit. With no paths, activates CodeEdit.'
+                printf '%s\\n' 'Usage: nodal [path ...]' '' \\
+                    'Opens files or folders in Nodal IDE. With no paths, activates Nodal IDE.'
                 exit 0
                 ;;
             -v|--version)

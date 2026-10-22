@@ -9,7 +9,7 @@ import Foundation
 import Sparkle
 
 class SoftwareUpdater: NSObject, ObservableObject, SPUUpdaterDelegate {
-    private static let feedURLString = "https://github.com/upperdo/CodeEdit/releases/latest/download/appcast.xml"
+    private static let feedURLString = "https://github.com/nodal-ide/nodal-ide/releases/latest/download/appcast.xml"
 
     private var updater: SPUUpdater?
     private var automaticallyChecksForUpdatesObservation: NSKeyValueObservation?

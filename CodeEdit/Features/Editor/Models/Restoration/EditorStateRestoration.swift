@@ -71,7 +71,7 @@ final class EditorStateRestoration {
     init(_ databaseURL: URL? = nil) throws {
         self.databaseURL = databaseURL ?? FileManager.default
             .homeDirectoryForCurrentUser
-            .appending(path: "Library/Application Support/CodeEdit", directoryHint: .isDirectory)
+            .appending(path: "Library/Application Support/Nodal", directoryHint: .isDirectory)
             .appending(path: "editor-restoration.db", directoryHint: .notDirectory)
         try attemptMigration(retry: true)
     }

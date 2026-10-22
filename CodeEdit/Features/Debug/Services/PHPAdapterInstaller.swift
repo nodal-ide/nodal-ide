@@ -29,7 +29,7 @@ final class PHPAdapterInstaller: ObservableObject {
     /// Where we install the adapter: `~/Library/Application Support/CodeEdit/Debug Adapters/php`.
     static var installDirectory: URL {
         FileManager.default.homeDirectoryForCurrentUser
-            .appending(path: "Library/Application Support/CodeEdit/Debug Adapters/php")
+            .appending(path: "Library/Application Support/Nodal/Debug Adapters/php")
     }
 
     /// A small launcher script that runs the adapter under `node`.

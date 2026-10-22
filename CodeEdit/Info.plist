@@ -1273,6 +1273,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>codeedit</string>
+				<string>nodal</string>
 			</array>
 		</dict>
 	</array>
@@ -1287,8 +1288,8 @@
 	<key>SUEnableJavaScript</key>
 	<true/>
 	<key>SUFeedURL</key>
-	<string>https://github.com/upperdo/CodeEdit/releases/latest/download/appcast.xml</string>
+	<string>https://github.com/nodal-ide/nodal-ide/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>aCyoV7viNDH5j2F8mEKL6IYGeW6y2Q8Mri2R/7ANX78=</string>
+	<string>PdCTNP2Grf4EjT7LCaknQ0hzVK/El4hl/u2/PPw22ZU=</string>
 </dict>
 </plist>

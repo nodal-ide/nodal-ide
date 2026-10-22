@@ -13,7 +13,7 @@ import Foundation
 enum PHPDebugEnvironment {
     static var directory: URL {
         FileManager.default.homeDirectoryForCurrentUser
-            .appending(path: "Library/Application Support/CodeEdit/php-debug", directoryHint: .isDirectory)
+            .appending(path: "Library/Application Support/Nodal/php-debug", directoryHint: .isDirectory)
     }
 
     static var iniURL: URL { directory.appending(path: "zz-codeedit-xdebug.ini") }
