@@ -19,6 +19,7 @@ struct EditorProblem: Identifiable {
     let message: String
     /// A stable rule id (e.g. `php.complexity`) when the source is rule-based.
     let ruleID: String?
+    let languageContext: LanguageZoneContext?
 
     init(
         fileURL: URL,
@@ -27,7 +28,8 @@ struct EditorProblem: Identifiable {
         column: Int? = nil,
         severity: EditorDiagnosticSeverity,
         message: String,
-        ruleID: String? = nil
+        ruleID: String? = nil,
+        languageContext: LanguageZoneContext? = nil
     ) {
         self.fileURL = fileURL
         self.range = range
@@ -36,6 +38,7 @@ struct EditorProblem: Identifiable {
         self.severity = severity
         self.message = message
         self.ruleID = ruleID
+        self.languageContext = languageContext
     }
 }
 
@@ -79,7 +82,8 @@ final class DiagnosticsStore: ObservableObject {
             line: diagnostic.line,
             severity: diagnostic.severity,
             message: diagnostic.message,
-            ruleID: diagnostic.ruleID
+            ruleID: diagnostic.ruleID,
+            languageContext: diagnostic.languageContext
         )
     }
 
@@ -113,6 +117,13 @@ final class DiagnosticsStore: ObservableObject {
             hasher.combine(diagnostic.line)
             hasher.combine(diagnostic.message)
             hasher.combine(diagnostic.severity.rawValue)
+            hasher.combine(diagnostic.ruleID)
+            hasher.combine(diagnostic.languageContext?.languageID.rawValue)
+            hasher.combine(diagnostic.languageContext?.parentLanguageID?.rawValue)
+            hasher.combine(diagnostic.languageContext?.sourceKey)
+            hasher.combine(diagnostic.languageContext?.depth)
+            hasher.combine(diagnostic.languageContext?.range?.location)
+            hasher.combine(diagnostic.languageContext?.range?.length)
         }
         return hasher.finalize()
     }

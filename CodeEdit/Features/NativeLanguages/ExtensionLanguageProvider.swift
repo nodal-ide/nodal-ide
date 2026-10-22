@@ -9,6 +9,7 @@ import Foundation
 import AppKit
 import SwiftUI
 import CodeEditSourceEditor
+import CodeEditLanguages
 import CodeEditLang
 import CodeEditLangPHP
 
@@ -114,12 +115,24 @@ private struct RPCDiagnostic: Decodable {
     let severity: String?
     let message: String
     let line: Int?
+    let languageID: String?
+    let parentLanguageID: String?
+    let sourceKey: String?
+    let depth: Int?
+    let zoneLocation: Int?
+    let zoneLength: Int?
 }
 
 private struct RPCSymbol: Decodable {
     let name: String
     let detail: String?
     let location: Int
+    let languageID: String?
+    let parentLanguageID: String?
+    let sourceKey: String?
+    let depth: Int?
+    let zoneLocation: Int?
+    let zoneLength: Int?
 }
 
 private struct RPCEdit: Decodable {
@@ -132,6 +145,12 @@ private struct RPCCodeAction: Decodable {
     let title: String
     let kind: String?
     let edits: [RPCEdit]
+    let languageID: String?
+    let parentLanguageID: String?
+    let sourceKey: String?
+    let depth: Int?
+    let zoneLocation: Int?
+    let zoneLength: Int?
 }
 
 // MARK: - Completion item
@@ -186,6 +205,29 @@ final class ExtensionLanguageProvider: LanguageProvider {
         textView.languageContexts(at: location).first(where: {
             supportedLanguageIDs.contains($0.languageID.rawValue)
         }) ?? LanguageZoneContext(languageID: textView.language.id)
+    }
+
+    private func responseContext(
+        languageID: String?,
+        parentLanguageID: String?,
+        sourceKey: String?,
+        depth: Int?,
+        zoneLocation: Int? = nil,
+        zoneLength: Int? = nil,
+        fallback: LanguageZoneContext
+    ) -> LanguageZoneContext {
+        let resolvedLanguage = languageID.flatMap { supportedLanguageIDs.contains($0) ? LanguageID(rawValue: $0) : nil }
+            ?? fallback.languageID
+        let resolvedParent = parentLanguageID.map { LanguageID(rawValue: $0) } ?? fallback.parentLanguageID
+        return LanguageZoneContext(
+            languageID: resolvedLanguage,
+            parentLanguageID: resolvedParent,
+            sourceKey: sourceKey ?? fallback.sourceKey,
+            depth: max(0, depth ?? fallback.depth),
+            range: zoneLocation.map {
+                NSRange(location: max(0, $0), length: max(0, zoneLength ?? 0))
+            } ?? fallback.range
+        )
     }
 
     // MARK: JumpToDefinitionDelegate
@@ -272,6 +314,7 @@ final class ExtensionLanguageProvider: LanguageProvider {
 
     @MainActor
     func documentSymbols(for textView: TextViewController) async -> [EditorSymbol] {
+        let rootContext = LanguageZoneContext(languageID: textView.language.id)
         let params = SymbolsParams(
             file: filePath,
             language: textView.language.id.rawValue,
@@ -285,7 +328,16 @@ final class ExtensionLanguageProvider: LanguageProvider {
             EditorSymbol(
                 name: $0.name,
                 detail: $0.detail,
-                position: CursorPosition(range: NSRange(location: $0.location, length: 0))
+                position: CursorPosition(range: NSRange(location: $0.location, length: 0)),
+                languageContext: responseContext(
+                    languageID: $0.languageID,
+                    parentLanguageID: $0.parentLanguageID,
+                    sourceKey: $0.sourceKey,
+                    depth: $0.depth,
+                    zoneLocation: $0.zoneLocation,
+                    zoneLength: $0.zoneLength,
+                    fallback: rootContext
+                )
             )
         }
     }
@@ -294,6 +346,7 @@ final class ExtensionLanguageProvider: LanguageProvider {
 
     @MainActor
     func diagnostics(for textView: TextViewController) async -> [EditorDiagnostic] {
+        let rootContext = LanguageZoneContext(languageID: textView.language.id)
         let params = DiagnosticsParams(
             file: filePath,
             language: textView.language.id.rawValue,
@@ -316,7 +369,16 @@ final class ExtensionLanguageProvider: LanguageProvider {
                 range: NSRange(location: diagnostic.location, length: diagnostic.length ?? 0),
                 severity: Self.severity(from: diagnostic.severity),
                 message: diagnostic.message,
-                line: diagnostic.line
+                line: diagnostic.line,
+                languageContext: responseContext(
+                    languageID: diagnostic.languageID,
+                    parentLanguageID: diagnostic.parentLanguageID,
+                    sourceKey: diagnostic.sourceKey,
+                    depth: diagnostic.depth,
+                    zoneLocation: diagnostic.zoneLocation,
+                    zoneLength: diagnostic.zoneLength,
+                    fallback: rootContext
+                )
             )
         }
     }
@@ -337,12 +399,22 @@ final class ExtensionLanguageProvider: LanguageProvider {
             return []
         }
         return actions.map { action in
-            CodeActionInfo(
+            let context = responseContext(
+                languageID: action.languageID,
+                parentLanguageID: action.parentLanguageID,
+                sourceKey: action.sourceKey,
+                depth: action.depth,
+                zoneLocation: action.zoneLocation,
+                zoneLength: action.zoneLength,
+                fallback: context
+            )
+            return CodeActionInfo(
                 title: action.title,
                 kind: action.kind,
                 edits: action.edits.map {
                     CodeActionEdit(range: NSRange(location: $0.location, length: $0.length), text: $0.text)
-                }
+                },
+                languageContext: context
             )
         }
     }
