@@ -9,6 +9,15 @@ final class ExtensionSourceStore: ObservableObject {
 
     private let settings: any SettingsProviding
     private let catalogCache: ExtensionCatalogCache
+    private static let defaultSource = ExtensionSource(
+        name: "Nodal IDE Extensions",
+        providerID: .httpsStaticIndex,
+        location: URL(
+            string: "https://raw.githubusercontent.com/nodal-ide/extensions-registry/refs/heads/main/extensions.json"
+        )!,
+        isEnabled: true,
+        isTrusted: false
+    )
 
     init(
         settings: any SettingsProviding,
@@ -16,7 +25,18 @@ final class ExtensionSourceStore: ObservableObject {
     ) {
         self.settings = settings
         self.catalogCache = catalogCache
-        self.sources = settings.preferences.extensions.sources
+
+            var preferences = settings.preferences
+            var extensions = preferences.extensions
+
+            if !extensions.hasSeededDefaultSource {
+                extensions.sources.append(Self.defaultSource)
+                extensions.hasSeededDefaultSource = true
+                preferences.extensions = extensions
+                settings.preferences = preferences
+            }
+
+            self.sources = settings.preferences.extensions.sources
     }
 
     func reload() {

@@ -16,6 +16,9 @@ extension SettingsData {
 
         /// Package source configuration; secrets are stored in Keychain, never in settings.
         var sources: [ExtensionSource] = []
+    
+        /// Whether the built-in extension source has been initialized.
+        var hasSeededDefaultSource = false
 
         /// Global rollout switches for extension-contributed syntax.
         var syntaxPacksEnabled = true
@@ -27,6 +30,10 @@ extension SettingsData {
         /// Explicit decoder init for setting default values when key is not present in `JSON`
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.hasSeededDefaultSource = try container.decodeIfPresent(
+                Bool.self,
+                forKey: .hasSeededDefaultSource
+            ) ?? false
             self.disabledExtensions = try container.decodeIfPresent(
                 [String].self,
                 forKey: .disabledExtensions
