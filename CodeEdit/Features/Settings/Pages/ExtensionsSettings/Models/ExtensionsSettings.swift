@@ -16,7 +16,7 @@ extension SettingsData {
 
         /// Package source configuration; secrets are stored in Keychain, never in settings.
         var sources: [ExtensionSource] = []
-    
+
         /// Whether the built-in extension source has been initialized.
         var hasSeededDefaultSource = false
 

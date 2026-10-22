@@ -7,6 +7,7 @@
 
 import Foundation
 import CryptoKit
+import CodeEditLang
 
 /// The native grammars of an installed pack that the user has explicitly trusted.
 ///
@@ -51,5 +52,27 @@ struct NativeGrammarConsent: Equatable, Sendable {
     static func hashOfFile(at url: URL) -> String? {
         guard let data = try? Data(contentsOf: url) else { return nil }
         return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+/// Reconciles consent after a package replacement without granting trust for new or changed bytes.
+enum NativeGrammarConsentReconciler {
+    static func reconciled(
+        existing: [String: String],
+        packID: String,
+        installed: InstalledLanguageExtension
+    ) -> [String: String] {
+        let prefix = "\(packID)/"
+        var result = existing.filter { !$0.key.hasPrefix(prefix) }
+        for declaration in NativeGrammarConsent.declarations(in: installed) {
+            let key = NativeGrammarConsent.key(packID: packID, grammarPath: declaration.path)
+            guard let previousHash = existing[key],
+                  let url = LanguageExtensionPaths.resolve(declaration.path, in: installed.root),
+                  LanguageExtensionPaths.isContained(url, in: installed.root),
+                  let hash = NativeGrammarConsent.hashOfFile(at: url),
+                  hash == previousHash else { continue }
+            result[key] = previousHash
+        }
+        return result
     }
 }

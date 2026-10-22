@@ -18,6 +18,26 @@ struct InstalledLanguageExtension: Identifiable, Hashable {
     let manifest: LanguageExtensionManifest
     /// Where the pack came from. Only global packs may load native grammars.
     let scope: LanguageExtensionPackScope
+    /// Marketplace origin for packages installed from a catalog source.
+    let provenance: ExtensionProvenance?
+
+    init(
+        id: String,
+        name: String,
+        version: String?,
+        root: URL,
+        manifest: LanguageExtensionManifest,
+        scope: LanguageExtensionPackScope,
+        provenance: ExtensionProvenance? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.version = version
+        self.root = root
+        self.manifest = manifest
+        self.scope = scope
+        self.provenance = provenance
+    }
 
     /// The framework this pack targets, if any (from `framework` or `activation.framework.requires`).
     var frameworkName: String? { manifest.frameworkName }

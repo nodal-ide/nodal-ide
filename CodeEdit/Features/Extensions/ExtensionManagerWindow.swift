@@ -7,6 +7,7 @@ struct ExtensionManagerWindow: Scene {
     @State private var installedSelection = Set<ExtensionItem>()
     @State private var destination: ExtensionManagerDestination = .discover
     @StateObject private var marketplace = ExtensionMarketplaceViewModel()
+    @StateObject private var installation = ExtensionInstallationViewModel()
 
     var body: some Scene {
         Window("Extensions", id: SceneID.extensions.rawValue) {
@@ -14,8 +15,14 @@ struct ExtensionManagerWindow: Scene {
                 List(selection: $destination) {
                     Section("Marketplace") {
                         ForEach(ExtensionManagerDestination.marketplaceDestinations) { item in
-                            Label(item.title, systemImage: item.symbol)
-                                .tag(item)
+                            if item == .updates, availableUpdateCount > 0 {
+                                Label(item.title, systemImage: item.symbol)
+                                    .tag(item)
+                                    .badge(availableUpdateCount)
+                            } else {
+                                Label(item.title, systemImage: item.symbol)
+                                    .tag(item)
+                            }
                         }
                     }
                     Section("Manage") {
@@ -34,20 +41,39 @@ struct ExtensionManagerWindow: Scene {
             .environmentObject(manager)
             .environmentObject(languageManager)
             .environmentObject(marketplace)
+            .environmentObject(installation)
             .frame(minWidth: 820, minHeight: 520)
+            .task { await marketplace.loadCachedCatalogs() }
         }
+    }
+
+    private var availableUpdateCount: Int {
+        ExtensionUpdateIndex(
+            installed: languageManager.extensions,
+            catalogs: marketplace.catalogs,
+            sources: marketplace.sources,
+            appVersion: Bundle.versionString
+        )
+        .availableUpdates
+        .count
     }
 
     @ViewBuilder private var destinationView: some View {
         switch destination {
         case .discover:
-            ExtensionDiscoverView()
+            ExtensionDiscoverView(onShowSources: { destination = .sources })
         case .installed:
-            ExtensionsListView(selection: $installedSelection)
+            ExtensionsListView(
+                selection: $installedSelection,
+                onShowDiscover: { destination = .discover }
+            )
         case .sources:
             ExtensionSourcesView()
         case .updates:
-            ExtensionUpdatesView()
+            ExtensionUpdatesView(
+                onShowDiscover: { destination = .discover },
+                onShowSources: { destination = .sources }
+            )
         }
     }
 }

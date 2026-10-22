@@ -21,22 +21,31 @@ final class ExtensionSourceStore: ObservableObject {
 
     init(
         settings: any SettingsProviding,
-        catalogCache: ExtensionCatalogCache = ExtensionCatalogCache()
+        catalogCache: ExtensionCatalogCache = ExtensionCatalogCache(),
+        seedsDefaultSource: Bool = true
     ) {
         self.settings = settings
         self.catalogCache = catalogCache
+        self.sources = settings.preferences.extensions.sources
+        if seedsDefaultSource {
+            seedDefaultSourceIfNeeded()
+        }
+    }
 
-            var preferences = settings.preferences
-            var extensions = preferences.extensions
-
-            if !extensions.hasSeededDefaultSource {
-                extensions.sources.append(Self.defaultSource)
-                extensions.hasSeededDefaultSource = true
-                preferences.extensions = extensions
-                settings.preferences = preferences
-            }
-
-            self.sources = settings.preferences.extensions.sources
+    /// Adds the built-in registry once for new settings, then persists the flag so removing the
+    /// source is respected on subsequent launches.
+    private func seedDefaultSourceIfNeeded() {
+        var preferences = settings.preferences
+        guard !preferences.extensions.hasSeededDefaultSource else { return }
+        let alreadyConfigured = preferences.extensions.sources.contains {
+            $0.providerID == Self.defaultSource.providerID && $0.location == Self.defaultSource.location
+        }
+        if !alreadyConfigured {
+            preferences.extensions.sources.append(Self.defaultSource)
+        }
+        preferences.extensions.hasSeededDefaultSource = true
+        settings.preferences = preferences
+        sources = preferences.extensions.sources
     }
 
     func reload() {

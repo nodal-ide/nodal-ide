@@ -12,14 +12,17 @@ struct ExtensionSourcesView: View {
         VStack(spacing: 0) {
             List {
                 if marketplace.sources.isEmpty {
-                    ContentUnavailableView {
-                        Label("No Sources Added", systemImage: "externaldrive")
-                    } description: {
-                        Text("Add a static HTTPS catalog to browse extensions.")
-                    } actions: {
-                        Button("Add Source…") { isShowingAddSource = true }
-                    }
+                    ExtensionEmptyState(
+                        systemImage: "externaldrive.badge.plus",
+                        title: "No Extension Sources",
+                        message: "Add a static HTTPS catalog to browse extensions from a publisher " +
+                            "you choose. New sources stay untrusted until you review and trust them.",
+                        primaryAction: .init("Add Source…", systemImage: "plus") {
+                            isShowingAddSource = true
+                        }
+                    )
                     .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
                 } else {
                     ForEach(marketplace.sources) { source in
                         ExtensionSourceRow(

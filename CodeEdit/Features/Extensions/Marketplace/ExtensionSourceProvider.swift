@@ -19,7 +19,7 @@ struct DownloadedExtensionPackage: Sendable {
     let byteCount: Int64
 }
 
-enum ExtensionSourceProviderError: Error, Equatable {
+enum ExtensionSourceProviderError: LocalizedError, Equatable {
     case unsupportedProvider(ExtensionSourceProviderID)
     case duplicateProvider(ExtensionSourceProviderID)
     case invalidConfiguration(String)
@@ -29,6 +29,20 @@ enum ExtensionSourceProviderError: Error, Equatable {
     case integrityMismatch
     case transport(String)
     case cancelled
+
+    var errorDescription: String? {
+        switch self {
+        case .unsupportedProvider(let provider): "Unsupported source provider: \(provider.rawValue)."
+        case .duplicateProvider(let provider): "Duplicate source provider: \(provider.rawValue)."
+        case .invalidConfiguration(let message): message
+        case .invalidResponse: "The source returned an invalid response."
+        case .responseTooLarge: "The source response exceeds the size limit."
+        case .unsupportedRedirect: "The source redirected to an unsupported location."
+        case .integrityMismatch: "The downloaded package failed its integrity check."
+        case .transport(let message): message
+        case .cancelled: "The operation was cancelled."
+        }
+    }
 }
 
 protocol ExtensionSourceProvider: Sendable {

@@ -55,6 +55,30 @@ final class LanguageExtensionManager: ObservableObject {
         reloadAll()
     }
 
+    /// Captures the consent state before a marketplace replacement so it can be reconciled against
+    /// the new package without granting consent for bytes the user has never approved.
+    var nativeGrammarConsentSnapshot: [String: String] {
+        AppServices.settings.preferences.extensions.nativeGrammarConsent
+    }
+
+    /// Applies runtime changes after a marketplace package has been installed transactionally.
+    ///
+    /// Disabled state is keyed by extension ID and therefore survives a replacement. Native grammar
+    /// consent is preserved only for declarations whose bytes are unchanged; changed or new grammars
+    /// require a fresh trust decision.
+    func completeMarketplaceInstall(
+        _ ext: InstalledLanguageExtension,
+        consentBefore: [String: String]
+    ) {
+        AppServices.settings.preferences.extensions.nativeGrammarConsent =
+            NativeGrammarConsentReconciler.reconciled(
+                existing: consentBefore,
+                packID: ext.id,
+                installed: ext
+            )
+        reloadAll()
+    }
+
     // MARK: - Native grammar trust
 
     /// The native grammars the user has explicitly trusted.

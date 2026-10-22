@@ -1,6 +1,46 @@
 import Combine
 import Foundation
 
+/// Aggregate health of the configured sources, used to explain cached/offline browsing states.
+struct ExtensionSourceHealth: Equatable, Sendable {
+    var isLoadingCatalogs = false
+    var isRefreshing = false
+    var staleCount = 0
+    var offlineCount = 0
+    var invalidCount = 0
+
+    var hasIssues: Bool {
+        staleCount + offlineCount + invalidCount > 0
+    }
+
+    var notice: ExtensionSourceHealthNotice? {
+        guard hasIssues else { return nil }
+
+        var counts: [String] = []
+        if staleCount > 0 { counts.append("\(staleCount) stale") }
+        if offlineCount > 0 { counts.append("\(offlineCount) offline") }
+        if invalidCount > 0 { counts.append("\(invalidCount) invalid") }
+
+        let title: String
+        if invalidCount > 0 {
+            title = "Some sources could not be refreshed"
+        } else if offlineCount > 0 {
+            title = "Some sources are offline"
+        } else {
+            title = "Showing cached catalog data"
+        }
+        return ExtensionSourceHealthNotice(
+            title: title,
+            detail: "\(counts.joined(separator: " · ")). Results may be out of date until a refresh succeeds."
+        )
+    }
+}
+
+struct ExtensionSourceHealthNotice: Equatable {
+    let title: String
+    let detail: String
+}
+
 @MainActor
 final class ExtensionMarketplaceViewModel: ObservableObject {
     @Published private(set) var catalogs: [ExtensionSourceID: ExtensionCatalog] = [:]
@@ -8,131 +48,142 @@ final class ExtensionMarketplaceViewModel: ObservableObject {
     @Published private(set) var sourceNames: [ExtensionSourceID: String] = [:]
     @Published private(set) var candidates: [ExtensionCatalogCandidate] = []
     @Published private(set) var isRefreshing = false
+    @Published private(set) var isLoadingCachedCatalogs = false
     @Published var selectedSourceID: ExtensionSourceID? {
-        didSet { rebuildCandidates() }
+        didSet { rebuildIndex() }
     }
     @Published var searchText = "" {
-        didSet { rebuildCandidates() }
+        didSet { applySearchFilter() }
     }
+
+    private static let maximumConcurrentRefreshes = 4
 
     private let sourceStore: ExtensionSourceStore
     private let catalogService: ExtensionCatalogService
     private let providers: ExtensionSourceProviderRegistry?
 
+    private var catalogIndex = ExtensionCatalogIndex(
+        catalogs: [:],
+        sources: [],
+        selectedSourceID: nil
+    )
+    private var didLoadCachedCatalogs = false
+
     init(
         sourceStore: ExtensionSourceStore? = nil,
-        catalogService: ExtensionCatalogService = ExtensionCatalogService()
+        catalogService: ExtensionCatalogService? = nil,
+        providers: ExtensionSourceProviderRegistry? = nil
     ) {
         let resolvedSourceStore = sourceStore ?? AppServices.extensionSourceStore
         self.sourceStore = resolvedSourceStore
-        self.catalogService = catalogService
-        self.providers = try? ExtensionSourceProviderRegistry(providers: [HTTPSStaticIndexProvider()])
+        self.catalogService = catalogService ?? AppServices.extensionCatalogService
+        self.providers = providers ?? AppServices.extensionSourceProviders
         sourceNames = resolvedSourceStore.sources.reduce(into: [:]) { names, source in
             names[source.id] = source.name
         }
-        rebuildCandidates()
-        Task { await loadCachedCatalogs() }
+        rebuildIndex()
     }
 
     var sources: [ExtensionSource] { sourceStore.sources }
 
-    private func rebuildCandidates() {
-        let sourceByID = sources.reduce(into: [ExtensionSourceID: ExtensionSource]()) { indexed, source in
-            indexed[source.id] = source
-        }
-        var rebuiltCandidates: [ExtensionCatalogCandidate] = []
+    var hasRefreshableSources: Bool {
+        sources.contains { $0.isEnabled && $0.isTrusted }
+    }
 
-        for (sourceID, catalog) in catalogs {
-            guard let source = sourceByID[sourceID],
-                  source.isEnabled,
-                  source.isTrusted,
-                  selectedSourceID == nil || selectedSourceID == sourceID
-            else {
-                continue
-            }
+    var hasEnabledUntrustedSources: Bool {
+        sources.contains { $0.isEnabled && !$0.isTrusted }
+    }
 
-            for (extensionID, entry) in catalog.extensions {
-                guard let package = entry.versions[entry.latest] else {
-                    continue
-                }
+    var hasSearchOrSourceFilter: Bool {
+        selectedSourceID != nil
+            || !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
-                let candidate = ExtensionCatalogCandidate(
-                    sourceID: sourceID,
-                    extensionID: extensionID,
-                    version: entry.latest,
-                    entry: entry,
-                    package: package
-                )
+    var indexedCandidateCount: Int { catalogIndex.count }
 
-                guard matchesSearch(candidate) else {
-                    continue
-                }
-
-                rebuiltCandidates.append(candidate)
+    var sourceHealth: ExtensionSourceHealth {
+        var health = ExtensionSourceHealth(
+            isLoadingCatalogs: isLoadingCachedCatalogs,
+            isRefreshing: isRefreshing
+        )
+        for source in sources {
+            switch state(for: source.id) {
+            case .stale:
+                health.staleCount += 1
+            case .offline:
+                health.offlineCount += 1
+            case .invalid:
+                health.invalidCount += 1
+            case .idle, .loading, .fresh, .untrusted, .disabled:
+                break
             }
         }
-
-        candidates = rebuiltCandidates.sorted {
-            let nameOrder = $0.entry.name.localizedStandardCompare($1.entry.name)
-
-            if nameOrder != .orderedSame {
-                return nameOrder == .orderedAscending
-            }
-
-            if $0.entry.publisher != $1.entry.publisher {
-                return $0.entry.publisher.localizedStandardCompare(
-                    $1.entry.publisher
-                ) == .orderedAscending
-            }
-
-            if $0.sourceID != $1.sourceID {
-                return $0.sourceID.rawValue.uuidString
-                    < $1.sourceID.rawValue.uuidString
-            }
-
-            return $0.extensionID < $1.extensionID
-        }
+        return health
     }
 
     func state(for sourceID: ExtensionSourceID) -> ExtensionSourceCatalogState {
         sourceStates[sourceID] ?? .idle
     }
 
+    func isShowingCachedData(for sourceID: ExtensionSourceID) -> Bool {
+        switch state(for: sourceID) {
+        case .stale, .offline:
+            return true
+        case .idle, .loading, .fresh, .invalid, .untrusted, .disabled:
+            return false
+        }
+    }
+
     func cachedCatalog(for sourceID: ExtensionSourceID) -> ExtensionCatalog? {
         catalogs[sourceID]
     }
 
+    func candidate(for id: ExtensionCatalogCandidateID) -> ExtensionCatalogCandidate? {
+        catalogIndex.candidate(for: id)
+    }
+
     func loadCachedCatalogs() async {
+        guard !didLoadCachedCatalogs, !isLoadingCachedCatalogs else { return }
+        isLoadingCachedCatalogs = true
+        defer {
+            isLoadingCachedCatalogs = false
+            didLoadCachedCatalogs = true
+        }
+
+        var loadedCatalogs = catalogs
+        var loadedStates = sourceStates
         for source in sources {
             do {
                 if let cached = try await catalogService.cachedCatalog(for: source.id) {
-                    catalogs[source.id] = cached.catalog
+                    loadedCatalogs[source.id] = cached.catalog
                     let timeToLive = source.refreshInterval ?? ExtensionCatalogService.defaultTimeToLive
                     let cacheAge = Date.now.timeIntervalSince(cached.fetchedAt)
                     if !source.isEnabled {
-                        sourceStates[source.id] = .disabled
+                        loadedStates[source.id] = .disabled
                     } else if !source.isTrusted {
-                        sourceStates[source.id] = .untrusted
+                        loadedStates[source.id] = .untrusted
                     } else if cacheAge >= 0, cacheAge < timeToLive {
-                        sourceStates[source.id] = .fresh(
+                        loadedStates[source.id] = .fresh(
                             fetchedAt: cached.fetchedAt,
                             extensionCount: cached.catalog.extensions.count
                         )
                     } else {
-                        sourceStates[source.id] = .stale(
+                        loadedStates[source.id] = .stale(
                             fetchedAt: cached.fetchedAt,
                             failure: .unavailable
                         )
                     }
                 }
-                if sourceStates[source.id] == nil {
-                    sourceStates[source.id] = await catalogService.state(for: source.id)
+                if loadedStates[source.id] == nil {
+                    loadedStates[source.id] = await catalogService.state(for: source.id)
                 }
             } catch {
-                sourceStates[source.id] = .invalid(.cacheUnavailable)
+                loadedStates[source.id] = .invalid(.cacheUnavailable)
             }
         }
-        rebuildCandidates()
+        catalogs = loadedCatalogs
+        sourceStates = loadedStates
+        rebuildIndex()
     }
 
     func refresh(_ source: ExtensionSource, force: Bool = true) async {
@@ -158,15 +209,34 @@ final class ExtensionMarketplaceViewModel: ObservableObject {
         } catch {
             sourceStates[source.id] = .invalid(.cacheUnavailable)
         }
-        rebuildCandidates()
+        rebuildIndex()
     }
 
     func refreshAll() async {
         guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
-        for source in sources where source.isEnabled && source.isTrusted {
-            await refresh(source)
+
+        for source in sources where !source.isEnabled {
+            sourceStates[source.id] = .disabled
+        }
+        for source in sources where source.isEnabled && !source.isTrusted {
+            sourceStates[source.id] = .untrusted
+        }
+
+        let refreshableSources = sources.filter { $0.isEnabled && $0.isTrusted }
+        await withTaskGroup(of: Void.self) { group in
+            var iterator = refreshableSources.makeIterator()
+            var running = 0
+            while running < Self.maximumConcurrentRefreshes, let source = iterator.next() {
+                group.addTask { await self.refresh(source) }
+                running += 1
+            }
+            while await group.next() != nil {
+                if let source = iterator.next() {
+                    group.addTask { await self.refresh(source) }
+                }
+            }
         }
     }
 
@@ -185,7 +255,7 @@ final class ExtensionMarketplaceViewModel: ObservableObject {
         sourceNames[source.id] = source.name
         sourceStates[source.id] = source.isTrusted ? .idle : .untrusted
         selectedSourceID = source.id
-        rebuildCandidates()
+        rebuildIndex()
     }
 
     func updateSource(_ source: ExtensionSource, name: String, location: URL) async throws {
@@ -201,19 +271,19 @@ final class ExtensionMarketplaceViewModel: ObservableObject {
         if source.location != location {
             sourceStates[source.id] = source.isTrusted ? .idle : .untrusted
         }
-        rebuildCandidates()
+        rebuildIndex()
     }
 
     func setEnabled(_ enabled: Bool, for source: ExtensionSource) throws {
         try sourceStore.setEnabled(enabled, for: source.id)
         sourceStates[source.id] = enabled ? .idle : .disabled
-        rebuildCandidates()
+        rebuildIndex()
     }
 
     func setTrusted(_ trusted: Bool, for source: ExtensionSource) throws {
         try sourceStore.setTrusted(trusted, for: source.id)
         sourceStates[source.id] = trusted ? .idle : .untrusted
-        rebuildCandidates()
+        rebuildIndex()
     }
 
     func remove(_ source: ExtensionSource) async throws {
@@ -223,19 +293,29 @@ final class ExtensionMarketplaceViewModel: ObservableObject {
         catalogs.removeValue(forKey: source.id)
         sourceStates.removeValue(forKey: source.id)
         if selectedSourceID == source.id { selectedSourceID = nil }
-        rebuildCandidates()
+        rebuildIndex()
     }
 
     func sourceName(for sourceID: ExtensionSourceID) -> String {
         sourceNames[sourceID] ?? "Unknown Source"
     }
 
-    private func matchesSearch(_ candidate: ExtensionCatalogCandidate) -> Bool {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return true }
-        return candidate.entry.name.localizedCaseInsensitiveContains(query)
-            || candidate.entry.description.localizedCaseInsensitiveContains(query)
-            || candidate.entry.publisher.localizedCaseInsensitiveContains(query)
-            || candidate.extensionID.localizedCaseInsensitiveContains(query)
+    func source(for sourceID: ExtensionSourceID) -> ExtensionSource? {
+        sources.first { $0.id == sourceID }
+    }
+
+    /// Rebuilds the ordered candidate index once per catalog/source/filter change. Search filtering
+    /// only walks the precomputed index, so typing never reindexes or re-sorts the catalog.
+    private func rebuildIndex() {
+        catalogIndex = ExtensionCatalogIndex(
+            catalogs: catalogs,
+            sources: sources,
+            selectedSourceID: selectedSourceID
+        )
+        applySearchFilter()
+    }
+
+    private func applySearchFilter() {
+        candidates = catalogIndex.candidates(matching: searchText)
     }
 }

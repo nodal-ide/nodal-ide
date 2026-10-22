@@ -161,6 +161,43 @@ struct NativeGrammarConsentTests {
         }
     }
 
+    @Test
+    func replacementPreservesOnlyUnchangedNativeGrammarConsent() throws {
+        try withTempDir { directory in
+            try write("v1", to: "grammars/lib.dylib", in: directory)
+            let pack = makePack(root: directory, syntax: [nativeSyntax])
+            let key = NativeGrammarConsent.key(
+                packID: pack.id,
+                grammarPath: "grammars/lib.dylib"
+            )
+            let approvedHash = try #require(NativeGrammarConsent.hashOfFile(
+                at: directory.appending(path: "grammars/lib.dylib")
+            ))
+            let otherKey = NativeGrammarConsent.key(
+                packID: "com.example.other",
+                grammarPath: "grammars/other.dylib"
+            )
+            let existing = [key: approvedHash, otherKey: "other-hash"]
+
+            let unchanged = NativeGrammarConsentReconciler.reconciled(
+                existing: existing,
+                packID: pack.id,
+                installed: pack
+            )
+            #expect(unchanged[key] == approvedHash)
+            #expect(unchanged[otherKey] == "other-hash")
+
+            try write("v2", to: "grammars/lib.dylib", in: directory)
+            let changed = NativeGrammarConsentReconciler.reconciled(
+                existing: existing,
+                packID: pack.id,
+                installed: pack
+            )
+            #expect(changed[key] == nil)
+            #expect(changed[otherKey] == "other-hash")
+        }
+    }
+
     // MARK: - Helpers
 
     private var nativeSyntax: LanguageExtensionManifest.Contributes.Syntax {

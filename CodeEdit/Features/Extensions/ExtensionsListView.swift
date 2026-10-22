@@ -13,6 +13,7 @@ struct ExtensionsListView: View {
     @EnvironmentObject var manager: ExtensionManager
     @EnvironmentObject var languageManager: LanguageExtensionManager
     @Binding var selection: Set<ExtensionItem>
+    var onShowDiscover: () -> Void = {}
 
     @AppSettings(\.extensions.disabledExtensions)
     private var disabledExtensions
@@ -58,10 +59,24 @@ struct ExtensionsListView: View {
             }
 
             if languageItems.isEmpty && appItems.isEmpty {
-                Text("No extensions installed")
-                    .foregroundStyle(.secondary)
+                ExtensionEmptyState(
+                    systemImage: "puzzlepiece.extension",
+                    title: "No Extensions Installed",
+                    message: "Browse Discover for marketplace extensions, or add a language " +
+                        "extension from a folder or archive.",
+                    primaryAction: .init("Browse Discover", systemImage: "square.grid.2x2") {
+                        onShowDiscover()
+                    },
+                    secondaryAction: .init("Add Language Extension…", systemImage: "plus") {
+                        installFromFolder()
+                    },
+                    minimumHeight: 220
+                )
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             }
         }
+        .navigationTitle("Installed")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {

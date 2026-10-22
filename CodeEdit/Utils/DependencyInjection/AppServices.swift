@@ -58,6 +58,25 @@ enum AppServices {
     /// The app-wide configured extension sources.
     @MainActor static var extensionSourceStore = ExtensionSourceStore.shared
 
+    /// The app-wide marketplace catalog cache/service.
+    static let extensionCatalogService = ExtensionCatalogService()
+
+    /// The app-wide registry of marketplace source transport providers.
+    ///
+    /// Providers are host-owned implementations; marketplace source records select among these
+    /// identifiers. Tests may substitute a different registry.
+    @MainActor static var extensionSourceProviders: ExtensionSourceProviderRegistry? =
+        makeExtensionSourceProviders()
+
+    private static func makeExtensionSourceProviders() -> ExtensionSourceProviderRegistry? {
+        do {
+            return try ExtensionSourceProviderRegistry(providers: [HTTPSStaticIndexProvider()])
+        } catch {
+            assertionFailure("Duplicate marketplace source provider identifier: \(error)")
+            return nil
+        }
+    }
+
     /// The app-wide per-workspace language-extension injection registry.
     static var workspaceLanguageExtensions: WorkspaceLanguageExtensions = .shared
 

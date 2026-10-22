@@ -17,6 +17,41 @@ struct ExtensionMarketplacePersistenceTests {
     }
 
     @Test
+    @MainActor
+    func defaultSourceIsSeededOnceAndRemovalIsPersisted() async throws {
+        let settings = MemorySettingsStore()
+        let store = ExtensionSourceStore(settings: settings, seedsDefaultSource: true)
+
+        #expect(store.sources.count == 1)
+        #expect(store.sources[0].name == "Nodal IDE Extensions")
+        #expect(!store.sources[0].isTrusted)
+        #expect(settings.preferences.extensions.hasSeededDefaultSource)
+
+        try await store.remove(store.sources[0].id)
+        let reloaded = ExtensionSourceStore(settings: settings, seedsDefaultSource: true)
+
+        #expect(reloaded.sources.isEmpty)
+    }
+
+    @Test
+    @MainActor
+    func defaultSourceSeedingDoesNotDuplicateAnExistingRegistry() {
+        let settings = MemorySettingsStore()
+        let existing = makeSource(
+            name: "Manual Registry",
+            location: "https://raw.githubusercontent.com/nodal-ide/extensions-registry/refs/heads/main/extensions.json"
+        )
+        var preferences = settings.preferences
+        preferences.extensions.sources = [existing]
+        settings.preferences = preferences
+
+        let store = ExtensionSourceStore(settings: settings, seedsDefaultSource: true)
+
+        #expect(store.sources == [existing])
+        #expect(settings.preferences.extensions.hasSeededDefaultSource)
+    }
+
+    @Test
     func sourceSettingsRoundTripPersistsOnlyTheKeychainReference() throws {
         var settings = SettingsData.ExtensionsSettings()
         let source = makeSource(
@@ -28,7 +63,7 @@ struct ExtensionMarketplacePersistenceTests {
 
         let data = try JSONEncoder().encode(settings)
         let decoded = try JSONDecoder().decode(SettingsData.ExtensionsSettings.self, from: data)
-        let json = String(decoding: data, as: UTF8.self)
+        let json = try #require(String(bytes: data, encoding: .utf8))
 
         #expect(decoded.sources == [source])
         #expect(json.contains("extension-source\\/github-token"))
@@ -41,7 +76,11 @@ struct ExtensionMarketplacePersistenceTests {
         try await withTempDir { directory in
             let settings = MemorySettingsStore()
             let cache = ExtensionCatalogCache(directory: directory)
-            let store = ExtensionSourceStore(settings: settings, catalogCache: cache)
+            let store = ExtensionSourceStore(
+                settings: settings,
+                catalogCache: cache,
+                seedsDefaultSource: false
+            )
             let first = makeSource(name: "First", location: "https://first.example/extensions.json")
             let second = makeSource(name: "Second", location: "https://second.example/extensions.json")
 
