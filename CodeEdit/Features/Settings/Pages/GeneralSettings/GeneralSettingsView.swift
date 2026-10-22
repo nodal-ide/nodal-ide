@@ -259,7 +259,7 @@ private extension GeneralSettingsView {
     }
 
     var shellCommand: some View {
-        LabeledContent("'codeedit' Shell Command") {
+        LabeledContent("'nodal' Shell Command") {
             HStack(spacing: 8) {
                 if shellCommandInstalled {
                     Text("Installed")
