@@ -12,8 +12,9 @@ created by CodeEditApp. Nodal is now independently developed by the `nodal-ide` 
 project preserves the original license, project history, and contributor attribution; it is not
 affiliated with CodeEditApp.
 
-Nodal is in active development. The canonical source repository and release links are being prepared
-under [`nodal-ide/nodal-ide`](https://github.com/nodal-ide/nodal-ide).
+Nodal is in active development. Its canonical source repository is
+[`nodal-ide/nodal-ide`](https://github.com/nodal-ide/nodal-ide), with releases delivered separately
+from the legacy CodeEdit updater feed.
 
 ## Table of Contents
 
@@ -32,8 +33,8 @@ integrated development workflows.
 
 ## Contributing
 
-Read the local [contribution guide](CONTRIBUTING.md) before opening a pull request. The Nodal issue
-tracker and project channels will be available from the canonical repository after it is created.
+Read the local [contribution guide](CONTRIBUTING.md) before opening a pull request. Report bugs and
+request features in the [Nodal issue tracker](https://github.com/nodal-ide/nodal-ide/issues).
 
 ## CodeEdit contributors (historical)
 
@@ -211,8 +212,7 @@ Licensed under the [MIT license](LICENSE.md).
 
 ## Related repositories
 
-The following dependency forks are planned for migration to the `nodal-ide` organization. Their
-repository links will be activated after NR7 completes the transfers:
+The app and its required dependency packages are maintained in the `nodal-ide` organization:
 
 - [CodeEditKit](https://github.com/nodal-ide/CodeEditKit)
 - [CodeEditTextView](https://github.com/nodal-ide/CodeEditTextView)
@@ -222,3 +222,7 @@ repository links will be activated after NR7 completes the transfers:
 - [CodeEditLang](https://github.com/nodal-ide/CodeEditLang)
 - [AboutWindow](https://github.com/nodal-ide/AboutWindow)
 - [WelcomeWindow](https://github.com/nodal-ide/WelcomeWindow)
+- [tree-sitter-apacheconf](https://github.com/nodal-ide/tree-sitter-apacheconf)
+- [tree-sitter-dotenv](https://github.com/nodal-ide/tree-sitter-dotenv)
+- [tree-sitter-gitignore](https://github.com/nodal-ide/tree-sitter-gitignore)
+- [tree-sitter-php](https://github.com/nodal-ide/tree-sitter-php)

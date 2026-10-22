@@ -1,6 +1,14 @@
 {
-  "originHash" : "ef17db89075ce0ed252cc648b93fc5b71ee41dfd8c3c059296816153c0f1d155",
+  "originHash" : "854fc795446d5ab7c65d6e8130762082058682c511db1f640f1c227ec2170b5c",
   "pins" : [
+    {
+      "identity" : "aboutwindow",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nodal-ide/AboutWindow.git",
+      "state" : {
+        "revision" : "9225786ce6e8487d149ac1b998287fccc67b3abe"
+      }
+    },
     {
       "identity" : "anycodable",
       "kind" : "remoteSourceControl",
@@ -8,6 +16,54 @@
       "state" : {
         "revision" : "862808b2070cd908cb04f9aafe7de83d35f81b05",
         "version" : "0.6.7"
+      }
+    },
+    {
+      "identity" : "codeeditkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nodal-ide/CodeEditKit.git",
+      "state" : {
+        "revision" : "e897337ce0f16dd3612cb89edacb055aa2cd65de"
+      }
+    },
+    {
+      "identity" : "codeeditlang",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nodal-ide/CodeEditLang.git",
+      "state" : {
+        "revision" : "c0e4ded4d51ae4123ca00866621528b388a790cc"
+      }
+    },
+    {
+      "identity" : "codeeditlanguages",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nodal-ide/CodeEditLanguages.git",
+      "state" : {
+        "revision" : "497fc6a7c5c0042bf3c0d2b907be6b145a963364"
+      }
+    },
+    {
+      "identity" : "codeeditsourceeditor",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nodal-ide/CodeEditSourceEditor.git",
+      "state" : {
+        "revision" : "d67543ba928cf7f845f2edf3f57e60c732151025"
+      }
+    },
+    {
+      "identity" : "codeeditsymbols",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nodal-ide/CodeEditSymbols.git",
+      "state" : {
+        "revision" : "247200521218bc1cc0ec962012c407a5ef8460d7"
+      }
+    },
+    {
+      "identity" : "codeedittextview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nodal-ide/CodeEditTextView.git",
+      "state" : {
+        "revision" : "eb9820c2384ce5f6661d29846a147390f6ff538e"
       }
     },
     {
@@ -222,8 +278,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/TextStory",
       "state" : {
-        "revision" : "91df6fc9bd817f9712331a4a3e826f7bdc823e1d",
-        "version" : "0.9.1"
+        "revision" : "a52db1a2eca74d37c8c19bf3165416941632ed45",
+        "version" : "0.9.2"
       }
     },
     {
@@ -231,8 +287,40 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tree-sitter/tree-sitter",
       "state" : {
-        "revision" : "f2f197b6b27ce75c280c20f131d4f71e906b86f7",
-        "version" : "0.25.8"
+        "revision" : "da6fe9beb4f7f67beb75914ca8e0d48ae48d6406",
+        "version" : "0.25.10"
+      }
+    },
+    {
+      "identity" : "tree-sitter-apacheconf",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nodal-ide/tree-sitter-apacheconf.git",
+      "state" : {
+        "revision" : "62447ac088bc86464538fe9ee98c9e7dcd8a9da7"
+      }
+    },
+    {
+      "identity" : "tree-sitter-dotenv",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nodal-ide/tree-sitter-dotenv.git",
+      "state" : {
+        "revision" : "28a07b76b0e1d7f192a819cce1a2b444b609581b"
+      }
+    },
+    {
+      "identity" : "tree-sitter-gitignore",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nodal-ide/tree-sitter-gitignore.git",
+      "state" : {
+        "revision" : "3e81ac0449a025fea02282063f127b540b088ebe"
+      }
+    },
+    {
+      "identity" : "welcomewindow",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nodal-ide/WelcomeWindow.git",
+      "state" : {
+        "revision" : "1baf6c4075ec05e2a8e64a6b62750c62d15692bc"
       }
     },
     {

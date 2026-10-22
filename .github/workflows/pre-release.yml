@@ -131,19 +131,18 @@ jobs:
           # SPARKLE_KEY: Sparkle EdDSA key exported from `generate_keys -x` as plain text
           # SPARKLE_CHANNEL: Seperate dev builds from default channel, to be specified in [SPUUpdaterDelegate allowedChannelsForUpdater:]
           # SPARKLE_DL_PREFIX: Prefix for the URL from where updates will be downloaded
-          # SPARKLE_LINK: CodeEdit Website
-          #   https://github.com/CodeEditApp/CodeEdit/releases/download/0.0.1-alpha.11/CodeEdit-9113dc5.dmg
-          # RELEASE_NOTES_PREFIX: The URL to prefix before an update link:
-          #   https://codeedit.app/whats-new/raw/{v0.1.0} -- data in {} is inserted by sparkle
-          # RELEASE_NOTES_URL: The URL of the entire release notes page: https://codeedit.app/whats-new
+          # SPARKLE_LINK: Nodal IDE repository
+          #   https://github.com/nodal-ide/nodal-ide/releases
+          # RELEASE_NOTES_PREFIX: Prefix for versioned GitHub release-note assets.
+          # RELEASE_NOTES_URL: GitHub releases page for the full release notes.
           SPARKLE_KEY: ${{ secrets.SPARKLE_KEY }}
           SPARKLE_CHANNEL: dev
-          SPARKLE_DL_PREFIX: "https://github.com/CodeEditApp/CodeEdit/releases/download"
-          SPARKLE_LINK: "https://github.com/CodeEditApp/CodeEdit"
+          SPARKLE_DL_PREFIX: "https://github.com/nodal-ide/nodal-ide/releases/download"
+          SPARKLE_LINK: "https://github.com/nodal-ide/nodal-ide"
           APP_VERSION: ${{ env.APP_VERSION }}
           APP_BUILD: ${{ env.APP_BUILD }}
-          RELEASE_NOTES_URL: "https://codeedit.app/whats-new/"
-          RELEASE_NOTES_PREFIX: "https://codeedit.app/sparkle/"
+          RELEASE_NOTES_URL: "https://github.com/nodal-ide/nodal-ide/releases"
+          RELEASE_NOTES_PREFIX: "https://github.com/nodal-ide/nodal-ide/releases/download"
         run: |
           SPARKLE_BIN="$RUNNER_TEMP/DerivedData/SourcePackages/artifacts/sparkle/Sparkle/bin"
           SPARKLE_ARCHIVE="$RUNNER_TEMP/Sparkle_Archive"
@@ -151,7 +150,11 @@ jobs:
           mkdir "$SPARKLE_ARCHIVE"
           cp "$RUNNER_TEMP/CodeEdit.dmg" "$SPARKLE_ARCHIVE"
           SPARKLE_SIG=$("$SPARKLE_BIN/sign_update" --ed-key-file "$RUNNER_TEMP/sparkle_key" "$SPARKLE_ARCHIVE/CodeEdit.dmg" | cut -d\" -f2)
-          echo "<!DOCTYPE>" > "$SPARKLE_ARCHIVE/CodeEdit.html" # Need a blank html doc with the DOCTYPE tag to trick sparkle into loading our remote release notes.
+          cat > "$SPARKLE_ARCHIVE/CodeEdit.html" <<EOF
+          <!DOCTYPE html>
+          <meta http-equiv="refresh" content="0;url=https://github.com/nodal-ide/nodal-ide/releases/tag/v${APP_VERSION}">
+          <a href="https://github.com/nodal-ide/nodal-ide/releases/tag/v${APP_VERSION}">View release notes</a>
+          EOF
           "$SPARKLE_BIN/generate_appcast" --ed-key-file "$RUNNER_TEMP/sparkle_key" --download-url-prefix "${{ env.SPARKLE_DL_PREFIX }}/v${{ env.APP_VERSION }}/" --link "$SPARKLE_LINK" --channel "$SPARKLE_CHANNEL" --maximum-deltas 0 "$SPARKLE_ARCHIVE" --release-notes-url-prefix "${{ env.RELEASE_NOTES_PREFIX }}v${{ env.APP_VERSION }}/" --full-release-notes-url "$RELEASE_NOTES_URL"
 
       ############################
@@ -166,6 +169,7 @@ jobs:
           title: "v${{ env.APP_VERSION }}"
           files: |
             ${{ RUNNER.TEMP }}/Sparkle_Archive/CodeEdit.dmg
+            ${{ RUNNER.TEMP }}/Sparkle_Archive/CodeEdit.html
             ${{ RUNNER.TEMP }}/Sparkle_Archive/appcast.xml
           automatic_release_tag: "v${{ env.APP_VERSION }}"
           prerelease: false
