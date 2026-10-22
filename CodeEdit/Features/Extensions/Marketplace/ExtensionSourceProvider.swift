@@ -26,6 +26,7 @@ enum ExtensionSourceProviderError: Error, Equatable {
     case invalidResponse
     case responseTooLarge
     case unsupportedRedirect
+    case integrityMismatch
     case transport(String)
     case cancelled
 }

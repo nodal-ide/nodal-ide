@@ -123,7 +123,8 @@ actor ExtensionCatalogService {
                 let failure: ExtensionCatalogFailure = switch error {
                 case .unsupportedProvider: .providerUnavailable
                 case .transport, .cancelled: .unavailable
-                case .invalidConfiguration, .invalidResponse, .responseTooLarge, .unsupportedRedirect:
+                case .invalidConfiguration, .invalidResponse, .responseTooLarge,
+                     .unsupportedRedirect, .integrityMismatch:
                     .invalidCatalog
                 case .duplicateProvider: .providerUnavailable
                 }
