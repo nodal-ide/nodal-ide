@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     private var lspService: LSPService { AppServices.lspService }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        presentDataMigrationRecoveryIfNeeded()
         enableWindowSizeSaveOnQuit()
         AppServices.settings.preferences.general.appAppearance.applyAppearance()
         checkForFilesToOpen()
@@ -58,6 +59,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                 self.handleOpen()
             }
         }
+    }
+
+    private func presentDataMigrationRecoveryIfNeeded() {
+        let details = NodalDataMigration.pendingRecoveryDetails
+        guard !details.isEmpty else { return }
+
+        let alert = NSAlert()
+        alert.messageText = "Some CodeEdit data was kept alongside Nodal data"
+        alert.informativeText = "Nodal data was not overwritten. Compare both copies before deciding how to recover these categories:\n\n\(details.joined(separator: "\n"))"
+        alert.addButton(withTitle: "Continue with Nodal")
+        alert.addButton(withTitle: "Compare Folders")
+        if alert.runModal() == .alertSecondButtonReturn {
+            let fileManager = FileManager.default
+            let legacy = fileManager.homeDirectoryForCurrentUser
+                .appending(path: "Library/Application Support/CodeEdit", directoryHint: .isDirectory)
+            NSWorkspace.shared.activateFileViewerSelecting([legacy, NodalDataMigration.supportDirectory])
+        }
+        NodalDataMigration.clearRecoveryDetails()
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {

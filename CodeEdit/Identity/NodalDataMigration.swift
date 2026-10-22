@@ -7,6 +7,19 @@ enum NodalDataMigration {
     private static let oldDefaultsDomain = "do.upper.codeedit"
     private static let oldAppGroup = "app.codeedit.CodeEdit.shared"
     private static let newAppGroup = "app.nodalide.Nodal.shared"
+    private static let conflictsKey = "NodalDataMigration.v1.conflicts"
+    private static let failuresKey = "NodalDataMigration.v1.failures"
+
+    static var pendingRecoveryDetails: [String] {
+        let defaults = UserDefaults.standard
+        return (defaults.stringArray(forKey: conflictsKey) ?? [])
+            + (defaults.stringArray(forKey: failuresKey) ?? [])
+    }
+
+    static func clearRecoveryDetails() {
+        UserDefaults.standard.removeObject(forKey: conflictsKey)
+        UserDefaults.standard.removeObject(forKey: failuresKey)
+    }
 
     static var supportDirectory: URL {
         FileManager.default.homeDirectoryForCurrentUser
@@ -21,6 +34,7 @@ enum NodalDataMigration {
         let oldRoot = FileManager.default.homeDirectoryForCurrentUser
             .appending(path: "Library/Application Support/CodeEdit", directoryHint: .isDirectory)
         var failures: [String] = []
+        var conflicts: [String] = []
 
         do {
             try FileManager.default.createDirectory(at: supportDirectory, withIntermediateDirectories: true)
@@ -30,6 +44,7 @@ enum NodalDataMigration {
                 guard FileManager.default.fileExists(atPath: source.path) else { continue }
                 guard !FileManager.default.fileExists(atPath: destination.path) else {
                     logger.notice("Kept existing Nodal data for migration category \(name, privacy: .public)")
+                    conflicts.append(name)
                     continue
                 }
                 do {
@@ -39,7 +54,9 @@ enum NodalDataMigration {
                 }
             }
             do {
-                try copyRestorationDatabase(from: oldRoot, to: supportDirectory)
+                if try copyRestorationDatabase(from: oldRoot, to: supportDirectory) {
+                    conflicts.append("editor-restoration.db")
+                }
             } catch {
                 failures.append("Editor restoration: \(error.localizedDescription)")
             }
@@ -66,16 +83,18 @@ enum NodalDataMigration {
         } else {
             logger.error("Nodal data migration incomplete; retry will resume. Categories: \(failures.joined(separator: "; "), privacy: .public)")
         }
+        defaults.set(conflicts, forKey: conflictsKey)
+        defaults.set(failures, forKey: failuresKey)
     }
 
-    private static func copyRestorationDatabase(from sourceRoot: URL, to destinationRoot: URL) throws {
+    private static func copyRestorationDatabase(from sourceRoot: URL, to destinationRoot: URL) throws -> Bool {
         let fileManager = FileManager.default
         let source = sourceRoot.appending(path: "editor-restoration.db")
         let destination = destinationRoot.appending(path: "editor-restoration.db")
-        guard fileManager.fileExists(atPath: source.path) else { return }
+        guard fileManager.fileExists(atPath: source.path) else { return false }
         guard !fileManager.fileExists(atPath: destination.path) else {
             logger.notice("Kept existing Nodal editor restoration database")
-            return
+            return true
         }
 
         let staging = destinationRoot.appending(path: "editor-restoration.\(UUID().uuidString).migration")
@@ -92,5 +111,6 @@ enum NodalDataMigration {
         try stagingQueue.close()
         try sourceQueue.close()
         try fileManager.moveItem(at: staging, to: destination)
+        return false
     }
 }
