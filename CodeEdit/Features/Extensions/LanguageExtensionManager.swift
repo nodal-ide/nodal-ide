@@ -14,6 +14,10 @@ import CodeEditLanguages
 final class LanguageExtensionManager: ObservableObject {
     static let shared = LanguageExtensionManager()
     static let didChangeNotification = Notification.Name("CodeEdit.LanguageExtensionsDidChange")
+    static let didRemoveExtensionNotification = Notification.Name(
+        "CodeEdit.LanguageExtensionDidRemove"
+    )
+    static let removedExtensionIDKey = "extensionID"
 
     /// Globally installed packs (Application Support/CodeEdit/Extensions).
     @Published var extensions: [InstalledLanguageExtension] = []
@@ -53,6 +57,11 @@ final class LanguageExtensionManager: ObservableObject {
         AppServices.settings.preferences.extensions.disabledExtensions.removeAll { $0 == ext.id }
         revokeNativeGrammarConsent(packID: ext.id)
         reloadAll()
+        NotificationCenter.default.post(
+            name: Self.didRemoveExtensionNotification,
+            object: nil,
+            userInfo: [Self.removedExtensionIDKey: ext.id]
+        )
     }
 
     /// Captures the consent state before a marketplace replacement so it can be reconciled against
