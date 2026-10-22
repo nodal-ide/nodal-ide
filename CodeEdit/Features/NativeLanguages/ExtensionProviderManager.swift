@@ -35,7 +35,7 @@ final class ExtensionProviderManager {
         for ext in AppServices.languageExtensionStore.extensions(forWorkspace: root) {
             guard let contribution = ext.manifest.contributes?.provider else { continue }
             let languages = contribution.languages ?? ext.manifest.languages ?? []
-            guard LanguageExtensionActivation.isEnabled(ext),
+            guard LanguageExtensionActivation.isEnabled(ext, in: root),
                   LanguageExtensionActivation.isActivated(ext, in: root),
                   !languages.isEmpty else {
                 continue
@@ -60,6 +60,16 @@ final class ExtensionProviderManager {
         lock.lock()
         let running = Array(servers.values)
         servers.removeAll()
+        lock.unlock()
+        running.forEach { $0.stop() }
+    }
+
+    /// Stops provider processes belonging to one workspace, leaving other workspaces running.
+    func shutdown(workspaceRoot: URL) {
+        let suffix = "|\(workspaceRoot.path(percentEncoded: false))"
+        lock.lock()
+        let keys = servers.keys.filter { $0.hasSuffix(suffix) }
+        let running = keys.compactMap { servers.removeValue(forKey: $0) }
         lock.unlock()
         running.forEach { $0.stop() }
     }

@@ -63,7 +63,7 @@ struct ExtensionManagerWindow: Scene {
         case .discover:
             ExtensionDiscoverView(onShowSources: { destination = .sources })
         case .installed:
-            ExtensionsListView(
+            InstalledExtensionsView(
                 selection: $installedSelection,
                 onShowDiscover: { destination = .discover }
             )

@@ -116,11 +116,21 @@ final class WorkspaceLanguageExtensions {
         lock.unlock()
     }
 
+    /// Clears cached symbols and injections for one workspace only.
+    func reload(root: URL) {
+        let prefix = "\(root.path(percentEncoded: false))|"
+        lock.lock()
+        symbolCache = symbolCache.filter { !$0.key.hasPrefix(prefix) }
+        injectedRoots = injectedRoots.filter { !$0.hasPrefix(prefix) }
+        injectedStubs = injectedStubs.filter { !$0.key.hasPrefix(prefix) }
+        lock.unlock()
+    }
+
     private func build(root: URL, language: String) -> [SymbolInfo] {
         var result: [SymbolInfo] = []
 
         for ext in AppServices.languageExtensionStore.extensions(forWorkspace: root) {
-            guard LanguageExtensionActivation.isEnabled(ext),
+            guard LanguageExtensionActivation.isEnabled(ext, in: root),
                   ext.manifest.languages?.contains(language) == true,
                   LanguageExtensionActivation.isActivated(ext, in: root),
                   let symbolFiles = ext.manifest.contributes?.symbols, !symbolFiles.isEmpty else {

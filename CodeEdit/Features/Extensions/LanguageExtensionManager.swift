@@ -14,6 +14,9 @@ import CodeEditLanguages
 final class LanguageExtensionManager: ObservableObject {
     static let shared = LanguageExtensionManager()
     static let didChangeNotification = Notification.Name("CodeEdit.LanguageExtensionsDidChange")
+    static let didChangeWorkspaceNotification = Notification.Name(
+        "CodeEdit.LanguageExtensionsDidChangeWorkspace"
+    )
     static let didRemoveExtensionNotification = Notification.Name(
         "CodeEdit.LanguageExtensionDidRemove"
     )
@@ -34,7 +37,6 @@ final class LanguageExtensionManager: ObservableObject {
     /// Reloads packs and re-applies them to all open workspaces.
     func reloadAll() {
         NativeGrammarLoader.shared.resetFailures()
-        AppServices.languageExtensionStore.reload()
         AppServices.languageProviderRegistry.reloadAllExtensions()
         AppServices.knowledgeSearchIndex.invalidate()
         AppServices.knowledgeRegistry.reload()

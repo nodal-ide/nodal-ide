@@ -82,6 +82,8 @@ struct LanguageExtensionDetailView: View {
                 Toggle("Enabled", isOn: enabledBinding)
             }
 
+            ProjectExtensionScopeSection(ext: ext)
+
             Section("Syntax") {
                 if let outcome = syntaxOutcome {
                     syntaxContent(outcome)

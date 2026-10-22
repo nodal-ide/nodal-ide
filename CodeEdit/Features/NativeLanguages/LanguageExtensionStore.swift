@@ -70,6 +70,14 @@ final class LanguageExtensionStore: @unchecked Sendable {
         lock.unlock()
     }
 
+    /// Drops only one workspace's discovered packs, leaving other workspaces cached.
+    func invalidateWorkspace(_ root: URL) {
+        let key = root.path(percentEncoded: false)
+        lock.lock()
+        workspaceCache[key] = nil
+        lock.unlock()
+    }
+
     private func discover(in directory: URL, scope: LanguageExtensionPackScope) -> [InstalledLanguageExtension] {
         let fileManager = FileManager.default
         guard let entries = try? fileManager.contentsOfDirectory(

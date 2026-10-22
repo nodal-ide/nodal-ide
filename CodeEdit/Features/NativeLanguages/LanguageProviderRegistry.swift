@@ -89,14 +89,19 @@ final class LanguageProviderRegistry {
     /// Re-evaluates language extensions for a workspace after project settings change: removes the
     /// previously injected pack symbols from the index and re-injects with the new activation.
     func reloadExtensions(for root: URL) {
-        AppServices.languageExtensionStore.reload()
-        AppServices.extensionProviderManager.shutdownAll()
+        AppServices.languageExtensionStore.invalidateWorkspace(root)
+        AppServices.extensionProviderManager.shutdown(workspaceRoot: root)
+        LanguageExtensionActivation.invalidate(root: root)
         let index = AppServices.phpWorkspaceIndex.index(for: root)
         for url in AppServices.workspaceLanguageExtensions.takeInjectedStubURLs(for: root) {
             index.removeFile(url)
         }
-        AppServices.workspaceLanguageExtensions.reload()
+        AppServices.workspaceLanguageExtensions.reload(root: root)
         AppServices.workspaceLanguageExtensions.inject(into: index, root: root, language: "php")
+        NotificationCenter.default.post(
+            name: LanguageExtensionManager.didChangeWorkspaceNotification,
+            object: root
+        )
     }
 
     /// Re-evaluates language extensions for all workspaces (after installing, removing, enabling or
@@ -104,6 +109,7 @@ final class LanguageProviderRegistry {
     func reloadAllExtensions() {
         AppServices.languageExtensionStore.reload()
         AppServices.extensionProviderManager.shutdownAll()
+        LanguageExtensionActivation.invalidateAll()
 
         let roots = AppServices.phpWorkspaceIndex.allRoots
         for root in roots {

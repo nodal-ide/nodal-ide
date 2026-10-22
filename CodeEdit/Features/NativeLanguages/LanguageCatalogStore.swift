@@ -47,6 +47,7 @@ final class LanguageCatalogStore: ObservableObject {
     @Published private(set) var packOutcomes: [SyntaxContributionLoader.PackOutcome] = []
 
     private var observer: NSObjectProtocol?
+    private var workspaceObserver: NSObjectProtocol?
 
     init(workspaceRoot: URL, base: LanguageCatalog = .builtIn) {
         self.workspaceRoot = workspaceRoot
@@ -64,11 +65,27 @@ final class LanguageCatalogStore: ObservableObject {
                 self?.rebuild()
             }
         }
+        workspaceObserver = NotificationCenter.default.addObserver(
+            forName: LanguageExtensionManager.didChangeWorkspaceNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let changedRoot = notification.object as? URL else { return }
+            MainActor.assumeIsolated {
+                guard let self,
+                      changedRoot.standardizedFileURL
+                        == self.workspaceRoot.standardizedFileURL else { return }
+                self.rebuild()
+            }
+        }
     }
 
     deinit {
         if let observer {
             NotificationCenter.default.removeObserver(observer)
+        }
+        if let workspaceObserver {
+            NotificationCenter.default.removeObserver(workspaceObserver)
         }
     }
 
@@ -109,7 +126,8 @@ final class LanguageCatalogStore: ObservableObject {
     /// ``LanguageExtensionManager/didChangeNotification``; this is for callers that know a workspace
     /// pack changed on disk.
     func reload() {
-        AppServices.languageExtensionStore.reload()
+        AppServices.languageExtensionStore.invalidateWorkspace(workspaceRoot)
+        LanguageExtensionActivation.invalidate(root: workspaceRoot)
         rebuild()
     }
 
@@ -153,6 +171,6 @@ final class LanguageCatalogStore: ObservableObject {
         guard AppServices.settings.preferences.extensions.syntaxPacksEnabled else { return [] }
         return AppServices.languageExtensionStore
             .extensions(forWorkspace: workspaceRoot)
-            .filter(LanguageExtensionActivation.isEnabled)
+            .filter { LanguageExtensionActivation.isEnabled($0, in: workspaceRoot) }
     }
 }
