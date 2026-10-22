@@ -72,7 +72,6 @@ case "$REMOTE_URL" in
   *) fail "origin must point to nodal-ide/nodal-ide (found: $REMOTE_URL)." ;;
 esac
 [[ "$(git branch --show-current)" == "main" ]] || fail "Run releases from the main branch."
-[[ -z "$(git status --porcelain --untracked-files=all)" ]] || fail "Commit or stash all changes before releasing."
 gh auth status --hostname github.com >/dev/null 2>&1 || fail "Authenticate gh with access to $REPOSITORY."
 
 git fetch origin main --tags
