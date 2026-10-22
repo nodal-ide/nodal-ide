@@ -1,22 +1,15 @@
 ---
-version: 0.19.0
-build: 71
+version: 0.19.1
+build: 72
 ---
-# Nodal IDE 0.19.0
+# Nodal IDE 0.19.1
 
-This is the first Nodal IDE release, published from the independent `nodal-ide` repository.
+This patch updates the app icons to the Nodal brand.
 
-## Language extensions
+## Improvements
 
-- Install native language packs with trusted grammar consent and project activation controls.
-- Route extension providers using the active language zone, including mixed-language files.
-- Preserve language-zone context in extension results for more accurate editor features.
-
-## Nodal identity and migration
-
-- Launch as Nodal IDE with its independent bundle identity, settings location, and Sparkle update feed.
-- Keep CodeEdit installations separate; this release does not update or replace the legacy CodeEdit app.
-- Provide first-launch data migration with a recovery prompt for supported user data.
+- Replace the legacy CodeEdit artwork across stable, alpha, beta, development, and pre-release app icons.
+- Update the Finder integration icon to match Nodal IDE.
 
 ## Notes
 
