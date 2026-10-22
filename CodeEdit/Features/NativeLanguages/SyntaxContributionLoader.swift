@@ -25,6 +25,7 @@ struct SyntaxContributionLoader {
         let base: LanguageCatalog
         let consent: NativeGrammarConsent
         let validatesNativeGrammar: Bool
+        let nativeGrammarsEnabled: Bool
     }
 
     /// What one pack contributed, and everything that stopped it from contributing more.
@@ -57,7 +58,8 @@ struct SyntaxContributionLoader {
         _ extensions: [InstalledLanguageExtension],
         base: LanguageCatalog,
         consent: NativeGrammarConsent = .none,
-        validateNativeGrammarsFor: Set<String> = []
+        validateNativeGrammarsFor: Set<String> = [],
+        nativeGrammarsEnabled: Bool = true
     ) -> [PackOutcome] {
         let known = Self.knownLanguages(in: base)
         let hostVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
@@ -95,7 +97,8 @@ struct SyntaxContributionLoader {
                 pack: ext,
                 base: base,
                 consent: consent,
-                validatesNativeGrammar: validateNativeGrammarsFor.contains(ext.id)
+                validatesNativeGrammar: validateNativeGrammarsFor.contains(ext.id),
+                nativeGrammarsEnabled: nativeGrammarsEnabled
             )
 
             for (index, syntax) in (ext.manifest.contributes?.syntax ?? []).enumerated() {
@@ -160,6 +163,10 @@ struct SyntaxContributionLoader {
         }
 
         return resolved
+    }
+
+    static func catalog(base: LanguageCatalog, outcomes: [PackOutcome]) -> LanguageCatalog {
+        LanguageCatalog(languages: base.languages + outcomes.flatMap(\.languages))
     }
 
     // MARK: - Catalog knowledge

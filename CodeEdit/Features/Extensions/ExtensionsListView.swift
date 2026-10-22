@@ -17,6 +17,12 @@ struct ExtensionsListView: View {
     @AppSettings(\.extensions.disabledExtensions)
     private var disabledExtensions
 
+    @AppSettings(\.extensions.syntaxPacksEnabled)
+    private var syntaxPacksEnabled
+
+    @AppSettings(\.extensions.nativeGrammarsEnabled)
+    private var nativeGrammarsEnabled
+
     @State var showActivatorView = false
     @State private var errorMessage: String?
 
@@ -25,6 +31,16 @@ struct ExtensionsListView: View {
 
     var body: some View {
         List(selection: $selection) {
+            Section("Language Syntax") {
+                Toggle("Enable Extension Syntax Packs", isOn: $syntaxPacksEnabled)
+                    .help("Adds extension-contributed languages and highlighting to workspaces.")
+                Toggle("Allow Native Grammars", isOn: $nativeGrammarsEnabled)
+                    .help(
+                        "Allows trusted global grammar libraries to load. " +
+                        "Restart to unload libraries already loaded."
+                    )
+            }
+
             if !languageItems.isEmpty {
                 Section("Language Extensions") {
                     ForEach(languageItems) { item in
@@ -77,6 +93,8 @@ struct ExtensionsListView: View {
             }
         }
         .onAppear { pruneSelectionAndSelectFirst() }
+        .onChange(of: syntaxPacksEnabled) { _, _ in languageManager.reloadAll() }
+        .onChange(of: nativeGrammarsEnabled) { _, _ in languageManager.reloadAll() }
         .onChange(of: languageManager.extensions) { _, _ in pruneSelectionAndSelectFirst() }
         .onChange(of: manager.extensions) { _, _ in pruneSelectionAndSelectFirst() }
         .alert(

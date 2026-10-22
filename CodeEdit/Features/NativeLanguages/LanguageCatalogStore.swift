@@ -80,16 +80,16 @@ final class LanguageCatalogStore: ObservableObject {
     func rebuild() {
         let packs = enabledPacks()
         let outcomes = SyntaxContributionLoader.resolveConflicts(
-            loader.load(packs, base: base, consent: .current)
+            loader.load(
+                packs,
+                base: base,
+                consent: .current,
+                nativeGrammarsEnabled: AppServices.settings.preferences.extensions.nativeGrammarsEnabled
+            )
         )
 
-        var languages = base.languages
-        for outcome in outcomes {
-            languages.append(contentsOf: outcome.languages)
-        }
-
         packOutcomes = outcomes
-        catalog = LanguageCatalog(languages: languages)
+        catalog = SyntaxContributionLoader.catalog(base: base, outcomes: outcomes)
         version &+= 1
 
         let failures = outcomes.filter { $0.issues.contains { $0.severity == .error } }
@@ -150,7 +150,8 @@ final class LanguageCatalogStore: ObservableObject {
     /// Activation is deliberately not required. A language has to be visible in detection and the
     /// inspector as soon as its pack is enabled; activation only gates providers and symbols.
     private func enabledPacks() -> [InstalledLanguageExtension] {
-        AppServices.languageExtensionStore
+        guard AppServices.settings.preferences.extensions.syntaxPacksEnabled else { return [] }
+        return AppServices.languageExtensionStore
             .extensions(forWorkspace: workspaceRoot)
             .filter(LanguageExtensionActivation.isEnabled)
     }

@@ -14,6 +14,10 @@ extension SettingsData {
         /// Native grammar consent: `<extension id>/<grammar path>` → the approved SHA-256.
         var nativeGrammarConsent: [String: String] = [:]
 
+        /// Global rollout switches for extension-contributed syntax.
+        var syntaxPacksEnabled = true
+        var nativeGrammarsEnabled = true
+
         /// Default initializer
         init() {}
 
@@ -28,6 +32,14 @@ extension SettingsData {
                 [String: String].self,
                 forKey: .nativeGrammarConsent
             ) ?? [:]
+            self.syntaxPacksEnabled = try container.decodeIfPresent(
+                Bool.self,
+                forKey: .syntaxPacksEnabled
+            ) ?? true
+            self.nativeGrammarsEnabled = try container.decodeIfPresent(
+                Bool.self,
+                forKey: .nativeGrammarsEnabled
+            ) ?? true
         }
     }
 }

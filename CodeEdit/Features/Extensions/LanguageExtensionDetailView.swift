@@ -20,6 +20,12 @@ struct LanguageExtensionDetailView: View {
     @AppSettings(\.extensions.nativeGrammarConsent)
     var nativeGrammarConsent
 
+    @AppSettings(\.extensions.syntaxPacksEnabled)
+    var syntaxPacksEnabled
+
+    @AppSettings(\.extensions.nativeGrammarsEnabled)
+    var nativeGrammarsEnabled
+
     /// The result of loading this pack's syntax contributions against the built-in catalog.
     ///
     /// Other enabled installed packs are loaded too, so duplicate language ids and detection keys
@@ -128,7 +134,11 @@ struct LanguageExtensionDetailView: View {
             }
             let outcomes = SyntaxContributionLoader.resolveConflicts(
                 SyntaxContributionLoader().load(
-                    packs, base: .builtIn, consent: consent, validateNativeGrammarsFor: [ext.id]
+                    packs,
+                    base: .builtIn,
+                    consent: consent,
+                    validateNativeGrammarsFor: [ext.id],
+                    nativeGrammarsEnabled: syntaxPacksEnabled && nativeGrammarsEnabled
                 )
             )
             syntaxOutcome = outcomes.first { $0.extensionID == ext.id }
@@ -140,7 +150,7 @@ struct LanguageExtensionDetailView: View {
         let signature = nativeGrammarDeclarations
             .map { "\($0.path)=\(consent.recordedHash(packID: ext.id, grammarPath: $0.path) ?? "-")" }
             .joined(separator: "|")
-        return "\(ext.id)#\(signature)"
+        return "\(ext.id)#\(syntaxPacksEnabled)#\(nativeGrammarsEnabled)#\(signature)"
     }
 
     // MARK: - Native grammars

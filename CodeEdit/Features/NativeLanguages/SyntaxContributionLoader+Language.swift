@@ -123,6 +123,10 @@ extension SyntaxContributionLoader {
         case "builtin":
             return resolveBuiltInGrammar(grammar, base: context.base, location: location, into: &issues)
         case "native":
+            guard context.nativeGrammarsEnabled else {
+                issues.append(.error("Native grammars are disabled in Extensions settings.", at: "\(location).grammar"))
+                return nil
+            }
             return resolveNativeGrammar(
                 grammar, pack: context.pack, consent: context.consent, location: location, into: &issues
             )

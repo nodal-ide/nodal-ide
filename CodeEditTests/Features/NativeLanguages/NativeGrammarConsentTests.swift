@@ -8,6 +8,14 @@ import CodeEditLanguages
 @Suite
 struct NativeGrammarConsentTests {
     @Test
+    func extensionSyntaxFeatureFlagsDefaultOnForExistingSettings() throws {
+        let settings = try JSONDecoder().decode(SettingsData.ExtensionsSettings.self, from: Data("{}".utf8))
+
+        #expect(settings.syntaxPacksEnabled)
+        #expect(settings.nativeGrammarsEnabled)
+    }
+
+    @Test
     func consentIsRecordedPerPackAndGrammarPath() {
         var consent = NativeGrammarConsent()
         consent.recorded[NativeGrammarConsent.key(packID: "com.example.a", grammarPath: "grammars/a.dylib")] = "abc"
@@ -70,6 +78,8 @@ struct NativeGrammarConsentTests {
             #expect(outcome.issues.contains {
                 $0.severity == .error && $0.message.contains("Highlights query failed to compile")
             })
+            #expect(SyntaxContributionLoader.catalog(base: .builtIn, outcomes: [outcome]).languages.count ==
+                LanguageCatalog.builtIn.languages.count)
         }
     }
 
@@ -97,7 +107,11 @@ struct NativeGrammarConsentTests {
             try write("", to: "grammars/lib.dylib", in: directory)
 
             var consent = NativeGrammarConsent()
-            consent.recorded[NativeGrammarConsent.key(packID: "com.example.svelte", grammarPath: "grammars/lib.dylib")] =
+            let key = NativeGrammarConsent.key(
+                packID: "com.example.svelte",
+                grammarPath: "grammars/lib.dylib"
+            )
+            consent.recorded[key] =
                 NativeGrammarConsent.hashOfFile(at: directory.appending(path: "grammars/lib.dylib")) ?? "missing"
 
             let outcome = SyntaxContributionLoader()
@@ -123,6 +137,26 @@ struct NativeGrammarConsentTests {
             #expect(outcome.languages.isEmpty)
             #expect(outcome.issues.contains {
                 $0.severity == .error && $0.message.contains("globally installed extensions")
+            })
+        }
+    }
+
+    @Test
+    func disabledNativeGrammarFeatureRejectsPackWithoutLoadingIt() throws {
+        try withTempDir { directory in
+            try write("(comment) @comment\n", to: "queries/highlights.scm", in: directory)
+            try write("", to: "grammars/lib.dylib", in: directory)
+
+            let outcome = SyntaxContributionLoader().load(
+                [makePack(root: directory, syntax: [nativeSyntax])],
+                base: .builtIn,
+                consent: .none,
+                nativeGrammarsEnabled: false
+            )[0]
+
+            #expect(outcome.languages.isEmpty)
+            #expect(outcome.issues.contains {
+                $0.severity == .error && $0.message.contains("Native grammars are disabled")
             })
         }
     }
