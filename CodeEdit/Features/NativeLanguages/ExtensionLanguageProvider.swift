@@ -23,18 +23,21 @@ private struct CompletionParams: Encodable {
 
 private struct HoverParams: Encodable {
     let file: String
+    let language: String
     let offset: Int
     let text: String
 }
 
 private struct DefinitionParams: Encodable {
     let file: String
+    let language: String
     let offset: Int
     let text: String
 }
 
 private struct SignatureHelpParams: Encodable {
     let file: String
+    let language: String
     let offset: Int
     let argumentIndex: Int
     let text: String
@@ -42,16 +45,19 @@ private struct SignatureHelpParams: Encodable {
 
 private struct DiagnosticsParams: Encodable {
     let file: String
+    let language: String
     let text: String
 }
 
 private struct SymbolsParams: Encodable {
     let file: String
+    let language: String
     let text: String
 }
 
 private struct CodeActionParams: Encodable {
     let file: String
+    let language: String
     let location: Int
     let length: Int
 }
@@ -127,6 +133,7 @@ private struct ExtensionCompletionItem: CodeSuggestionEntry {
 /// A language provider backed by an out-of-process extension process.
 final class ExtensionLanguageProvider: LanguageProvider {
     let languageID: String
+    let supportedLanguageIDs: Set<String>
     let priority: LanguageProviderPriority = .languageExtension
 
     private let fileURL: URL
@@ -136,13 +143,15 @@ final class ExtensionLanguageProvider: LanguageProvider {
     private var lastItems: [ExtensionCompletionItem] = []
     private var lastItemsPrefix = ""
 
-    nonisolated init(
-        languageID: String,
+    init(
+        languageIDs: Set<String>,
         fileURL: URL,
         server: StdioLanguageServer,
         openLink: @escaping (JumpToDefinitionLink) -> Void
     ) {
+        let languageID = languageIDs.sorted().first ?? ""
         self.languageID = languageID
+        self.supportedLanguageIDs = languageIDs
         self.fileURL = fileURL
         self.server = server
         self.openLinkHandler = openLink
@@ -150,11 +159,17 @@ final class ExtensionLanguageProvider: LanguageProvider {
 
     private var filePath: String { fileURL.path(percentEncoded: false) }
 
+    private func languageID(at location: Int, in textView: TextViewController) -> String {
+        textView.languageIDs(at: location)
+            .first(where: { supportedLanguageIDs.contains($0.rawValue) })?.rawValue ?? languageID
+    }
+
     // MARK: JumpToDefinitionDelegate
 
     func queryLinks(forRange range: NSRange, textView: TextViewController) async -> [JumpToDefinitionLink]? {
         let params = DefinitionParams(
             file: filePath,
+            language: languageID(at: range.location, in: textView),
             offset: range.location,
             text: textView.textView.string
         )
@@ -185,7 +200,12 @@ final class ExtensionLanguageProvider: LanguageProvider {
 
     @MainActor
     func hoverInfo(forRange range: NSRange, textView: TextViewController) async -> HoverInfo? {
-        let params = HoverParams(file: filePath, offset: range.location, text: textView.textView.string)
+        let params = HoverParams(
+            file: filePath,
+            language: languageID(at: range.location, in: textView),
+            offset: range.location,
+            text: textView.textView.string
+        )
         guard let hover = try? await server.request("hover", params: params, as: RPCHover?.self),
               !hover.contents.isEmpty else {
             return nil
@@ -203,6 +223,7 @@ final class ExtensionLanguageProvider: LanguageProvider {
     ) async -> SignatureHelpInfo? {
         let params = SignatureHelpParams(
             file: filePath,
+            language: languageID(at: calleeRange.location, in: textView),
             offset: calleeRange.location,
             argumentIndex: argumentIndex,
             text: textView.textView.string
@@ -221,7 +242,11 @@ final class ExtensionLanguageProvider: LanguageProvider {
 
     @MainActor
     func documentSymbols(for textView: TextViewController) async -> [EditorSymbol] {
-        let params = SymbolsParams(file: filePath, text: textView.textView.string)
+        let params = SymbolsParams(
+            file: filePath,
+            language: textView.language.id.rawValue,
+            text: textView.textView.string
+        )
         guard let symbols = try? await server.request("documentSymbols", params: params, as: [RPCSymbol].self) else {
             return []
         }
@@ -238,7 +263,11 @@ final class ExtensionLanguageProvider: LanguageProvider {
 
     @MainActor
     func diagnostics(for textView: TextViewController) async -> [EditorDiagnostic] {
-        let params = DiagnosticsParams(file: filePath, text: textView.textView.string)
+        let params = DiagnosticsParams(
+            file: filePath,
+            language: textView.language.id.rawValue,
+            text: textView.textView.string
+        )
         guard let diagnostics = try? await server.request(
 
             "diagnostics",
@@ -264,7 +293,12 @@ final class ExtensionLanguageProvider: LanguageProvider {
 
     @MainActor
     func codeActions(forRange range: NSRange, textView: TextViewController) async -> [CodeActionInfo] {
-        let params = CodeActionParams(file: filePath, location: range.location, length: range.length)
+        let params = CodeActionParams(
+            file: filePath,
+            language: languageID(at: range.location, in: textView),
+            location: range.location,
+            length: range.length
+        )
         guard let actions = try? await server.request("codeActions", params: params, as: [RPCCodeAction].self) else {
             return []
         }
@@ -291,7 +325,12 @@ final class ExtensionLanguageProvider: LanguageProvider {
     ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
         let source = textView.textView.string
         let offset = cursorPosition.range.location
-        let params = CompletionParams(file: filePath, language: languageID, offset: offset, text: source)
+        let params = CompletionParams(
+            file: filePath,
+            language: languageID(at: offset, in: textView),
+            offset: offset,
+            text: source
+        )
         guard let items = try? await server.request("completion", params: params, as: [RPCCompletionItem].self),
               !items.isEmpty else {
             lastItems = []

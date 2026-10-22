@@ -37,7 +37,6 @@ final class LanguageProviderRegistry {
         providers.append(contentsOf: AppServices.extensionProviderManager.providers(
             for: file,
             root: root,
-            languageID: languageID,
             openLink: openLink
         ))
 

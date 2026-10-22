@@ -22,11 +22,12 @@ final class ExtensionProviderManager {
 
     private init() {}
 
-    /// Providers contributed by extensions for an open file.
+    /// Creates one provider per enabled extension. Each provider advertises its supported zones;
+    /// the aggregator routes requests without duplicating extension processes or provider objects.
+    @MainActor
     func providers(
         for file: URL,
         root: URL,
-        languageID: String,
         openLink: @escaping (JumpToDefinitionLink) -> Void
     ) -> [any LanguageProvider] {
         var result: [any LanguageProvider] = []
@@ -34,16 +35,16 @@ final class ExtensionProviderManager {
         for ext in AppServices.languageExtensionStore.extensions(forWorkspace: root) {
             guard let contribution = ext.manifest.contributes?.provider else { continue }
             let languages = contribution.languages ?? ext.manifest.languages ?? []
-            guard languages.contains(languageID),
-                  LanguageExtensionActivation.isEnabled(ext),
-                  LanguageExtensionActivation.isActivated(ext, in: root) else {
+            guard LanguageExtensionActivation.isEnabled(ext),
+                  LanguageExtensionActivation.isActivated(ext, in: root),
+                  !languages.isEmpty else {
                 continue
             }
 
             let server = server(for: ext, contribution: contribution, root: root)
             result.append(
                 ExtensionLanguageProvider(
-                    languageID: languageID,
+                    languageIDs: Set(languages),
                     fileURL: file,
                     server: server,
                     openLink: openLink
