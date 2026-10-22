@@ -38,6 +38,36 @@ struct ExtensionCatalogModelsTests {
     }
 
     @Test
+    func rejectsSemVerPrereleaseNumbersWithLeadingZeros() {
+        let catalog = makeCatalog(version: "1.0.0-01", packageURL: URL(string: "1.0.0.zip")!)
+
+        #expect(throws: ExtensionCatalogValidationError.invalidVersion("1.0.0-01")) {
+            try ExtensionCatalogValidator.validate(catalog)
+        }
+    }
+
+    @Test
+    func rejectsEmptySemVerPrerelease() {
+        let catalog = makeCatalog(version: "1.0.0-", packageURL: URL(string: "1.0.0.zip")!)
+
+        #expect(throws: ExtensionCatalogValidationError.invalidVersion("1.0.0-")) {
+            try ExtensionCatalogValidator.validate(catalog)
+        }
+    }
+
+    @Test
+    func rejectsProtocolRelativePackageURLs() {
+        let catalog = makeCatalog(version: "1.0.0", packageURL: URL(string: "//other.example/pack.zip")!)
+
+        #expect(throws: ExtensionCatalogValidationError.invalidPackageURL(
+            extensionID: "com.example.pack",
+            version: "1.0.0"
+        )) {
+            try ExtensionCatalogValidator.validate(catalog)
+        }
+    }
+
+    @Test
     func candidatesFromDifferentSourcesHaveDifferentIdentity() {
         let firstSource = ExtensionSourceID()
         let secondSource = ExtensionSourceID()
@@ -85,6 +115,19 @@ struct ExtensionCatalogModelsTests {
                 first,
                 makeSource(name: "Duplicate", location: "HTTPS://EXAMPLE.COM/catalog.json/")
             ])
+        }
+    }
+
+    @Test
+    func sourceCollectionRequiresCredentialFreeHTTPSForStaticIndexes() {
+        let insecure = makeSource(name: "Insecure", location: "http://example.com/extensions.json")
+        let withQuery = makeSource(name: "Query", location: "https://example.com/extensions.json?token=secret")
+
+        #expect(throws: ExtensionSourceCollectionError.invalidSourceLocation(insecure.id)) {
+            try ExtensionSourceCollection(sources: [insecure])
+        }
+        #expect(throws: ExtensionSourceCollectionError.invalidSourceLocation(withQuery.id)) {
+            try ExtensionSourceCollection(sources: [withQuery])
         }
     }
 

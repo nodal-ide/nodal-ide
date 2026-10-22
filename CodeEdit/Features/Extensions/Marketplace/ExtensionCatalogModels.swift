@@ -79,10 +79,14 @@ private struct SourceLocationKey: Hashable {
               components.password == nil,
               components.query == nil,
               components.fragment == nil else { return nil }
+        if source.providerID == .httpsStaticIndex,
+           (components.scheme?.lowercased() != "https" || components.host == nil) {
+            return nil
+        }
         components.scheme = components.scheme?.lowercased()
         components.host = components.host?.lowercased()
-        if (components.scheme == "https" && components.port == 443)
-            || (components.scheme == "http" && components.port == 80) {
+        if components.scheme == "https" && components.port == 443
+            || components.scheme == "http" && components.port == 80 {
             components.port = nil
         }
         if components.path.count > 1, components.path.hasSuffix("/") {
@@ -157,19 +161,15 @@ struct ExtensionCatalogCandidate: Hashable, Sendable, Identifiable {
 enum ExtensionCatalogValidationError: Error, Equatable {
     case unsupportedSchemaVersion(Int)
     case invalidExtensionID(String)
+    case invalidMetadata(String)
     case invalidVersion(String)
     case missingLatestVersion(String)
     case invalidIntegrity(extensionID: String, version: String)
+    case invalidHomepageURL(String)
     case invalidPackageURL(extensionID: String, version: String)
 }
 
 enum ExtensionCatalogValidator {
-    private static let semverPattern = [
-        #"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"#,
-        #"(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?"#,
-        #"(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"#
-    ].joined()
-
     static func validate(_ catalog: ExtensionCatalog) throws {
         guard catalog.schemaVersion == 1 else {
             throw ExtensionCatalogValidationError.unsupportedSchemaVersion(catalog.schemaVersion)
@@ -178,6 +178,22 @@ enum ExtensionCatalogValidator {
         for (extensionID, entry) in catalog.extensions {
             guard isReverseDNSIdentifier(extensionID) else {
                 throw ExtensionCatalogValidationError.invalidExtensionID(extensionID)
+            }
+            guard !entry.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  entry.name.utf8.count <= 128,
+                  !entry.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  entry.description.utf8.count <= 4_096,
+                  !entry.publisher.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  entry.publisher.utf8.count <= 128 else {
+                throw ExtensionCatalogValidationError.invalidMetadata(extensionID)
+            }
+            if let homepage = entry.url {
+                guard homepage.scheme?.lowercased() == "https",
+                      homepage.host != nil,
+                      homepage.user == nil,
+                      homepage.password == nil else {
+                    throw ExtensionCatalogValidationError.invalidHomepageURL(extensionID)
+                }
             }
             guard isSemVer(entry.latest) else {
                 throw ExtensionCatalogValidationError.invalidVersion(entry.latest)
@@ -200,6 +216,7 @@ enum ExtensionCatalogValidator {
                 }
                 let scheme = package.url.scheme?.lowercased()
                 guard scheme == nil || scheme == "https",
+                      scheme != nil || package.url.host == nil,
                       package.url.user == nil,
                       package.url.password == nil else {
                     throw ExtensionCatalogValidationError.invalidPackageURL(
@@ -212,12 +229,41 @@ enum ExtensionCatalogValidator {
     }
 
     private static func isSemVer(_ value: String) -> Bool {
-        guard value.range(of: semverPattern, options: .regularExpression) != nil else { return false }
-        let versionWithoutBuild = value.split(separator: "+", maxSplits: 1).first ?? Substring(value)
-        guard let prerelease = versionWithoutBuild.split(separator: "-", maxSplits: 1)
-            .dropFirst().first else { return true }
-        return prerelease.split(separator: ".").allSatisfy { identifier in
-            guard identifier.utf8.allSatisfy({ (48...57).contains($0) }) else { return true }
+        let buildParts = value.split(separator: "+", omittingEmptySubsequences: false)
+        guard buildParts.count <= 2, let versionAndPrerelease = buildParts.first else { return false }
+        if buildParts.count == 2, !areValidIdentifiers(buildParts[1], enforceNumericLeadingZeroRule: false) {
+            return false
+        }
+
+        let prereleaseParts = versionAndPrerelease.split(
+            separator: "-",
+            maxSplits: 1,
+            omittingEmptySubsequences: false
+        )
+        guard let core = prereleaseParts.first else { return false }
+        let numbers = core.split(separator: ".", omittingEmptySubsequences: false)
+        guard numbers.count == 3, numbers.allSatisfy(isValidCoreNumber) else { return false }
+        guard prereleaseParts.count == 2 else { return true }
+        return areValidIdentifiers(prereleaseParts[1], enforceNumericLeadingZeroRule: true)
+    }
+
+    private static func isValidCoreNumber(_ value: Substring) -> Bool {
+        !value.isEmpty
+            && value.utf8.allSatisfy { (48...57).contains($0) }
+            && (value == "0" || value.first != "0")
+    }
+
+    private static func areValidIdentifiers(
+        _ value: Substring,
+        enforceNumericLeadingZeroRule: Bool
+    ) -> Bool {
+        let identifiers = value.split(separator: ".", omittingEmptySubsequences: false)
+        guard !identifiers.isEmpty else { return false }
+        return identifiers.allSatisfy { identifier in
+            guard !identifier.isEmpty,
+                  identifier.utf8.allSatisfy({ $0.isASCIIAlphaNumeric || $0 == 45 }) else { return false }
+            guard enforceNumericLeadingZeroRule,
+                  identifier.utf8.allSatisfy({ (48...57).contains($0) }) else { return true }
             return identifier == "0" || identifier.first != "0"
         }
     }
