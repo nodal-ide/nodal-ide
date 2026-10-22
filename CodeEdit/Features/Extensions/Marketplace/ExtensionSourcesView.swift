@@ -2,7 +2,12 @@ import SwiftUI
 
 struct ExtensionSourcesView: View {
     @EnvironmentObject private var marketplace: ExtensionMarketplaceViewModel
+    @AppSettings(\.extensions.registry)
+    private var registry
     @State private var isShowingAddSource = false
+    @State private var isShowingRegistrySetup = false
+    @State private var isShowingRegistryManage = false
+    @State private var isShowingPublish = false
     @State private var sourceToEdit: ExtensionSource?
     @State private var sourceToTrust: ExtensionSource?
     @State private var sourceToRemove: ExtensionSource?
@@ -11,6 +16,15 @@ struct ExtensionSourcesView: View {
     var body: some View {
         VStack(spacing: 0) {
             List {
+                Section("Publishing") {
+                    ExtensionRegistrySourcesRow(
+                        registry: registry,
+                        onCreate: { isShowingRegistrySetup = true },
+                        onManage: { isShowingRegistryManage = true },
+                        onPublish: { isShowingPublish = true }
+                    )
+                }
+
                 if marketplace.sources.isEmpty {
                     ExtensionEmptyState(
                         systemImage: "externaldrive.badge.plus",
@@ -48,6 +62,24 @@ struct ExtensionSourcesView: View {
         .navigationTitle("Sources")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    if registry == nil {
+                        Button("Create Registry…", systemImage: "shippingbox") {
+                            isShowingRegistrySetup = true
+                        }
+                    } else {
+                        Button("Manage Registry…", systemImage: "shippingbox") {
+                            isShowingRegistryManage = true
+                        }
+                    }
+                    Button("Package & Publish Extension…", systemImage: "paperplane") {
+                        isShowingPublish = true
+                    }
+                } label: {
+                    Label("Registry", systemImage: "shippingbox")
+                }
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Button("Add Source…", systemImage: "plus") { isShowingAddSource = true }
             }
             ToolbarItem(placement: .primaryAction) {
@@ -65,6 +97,17 @@ struct ExtensionSourcesView: View {
         .sheet(isPresented: $isShowingAddSource) {
             AddExtensionSourceSheet()
                 .environmentObject(marketplace)
+        }
+        .sheet(isPresented: $isShowingRegistrySetup) {
+            ExtensionRegistrySetupView(configuration: registry)
+                .environmentObject(marketplace)
+        }
+        .sheet(isPresented: $isShowingRegistryManage) {
+            ExtensionRegistryManageView()
+                .environmentObject(marketplace)
+        }
+        .sheet(isPresented: $isShowingPublish) {
+            ExtensionPublishView(initialExtension: nil)
         }
         .sheet(item: $sourceToEdit) { source in
             AddExtensionSourceSheet(source: source)

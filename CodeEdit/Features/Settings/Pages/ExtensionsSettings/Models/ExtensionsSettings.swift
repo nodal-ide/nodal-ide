@@ -17,6 +17,9 @@ extension SettingsData {
         /// Package source configuration; secrets are stored in Keychain, never in settings.
         var sources: [ExtensionSource] = []
 
+        /// The Git checkout used by the editor to package and publish releases.
+        var registry: ExtensionRegistryConfiguration?
+
         /// Whether the built-in extension source has been initialized.
         var hasSeededDefaultSource = false
 
@@ -43,6 +46,10 @@ extension SettingsData {
                 forKey: .nativeGrammarConsent
             ) ?? [:]
             self.sources = try container.decodeIfPresent([ExtensionSource].self, forKey: .sources) ?? []
+            self.registry = try container.decodeIfPresent(
+                ExtensionRegistryConfiguration.self,
+                forKey: .registry
+            )
             self.syntaxPacksEnabled = try container.decodeIfPresent(
                 Bool.self,
                 forKey: .syntaxPacksEnabled

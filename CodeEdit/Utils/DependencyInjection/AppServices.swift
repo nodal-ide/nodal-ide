@@ -61,6 +61,9 @@ enum AppServices {
     /// The app-wide marketplace catalog cache/service.
     static let extensionCatalogService = ExtensionCatalogService()
 
+    /// The app-wide extension registry authoring/publishing service.
+    static let extensionRegistryService = ExtensionRegistryService()
+
     /// The app-wide registry of marketplace source transport providers.
     ///
     /// Providers are host-owned implementations; marketplace source records select among these

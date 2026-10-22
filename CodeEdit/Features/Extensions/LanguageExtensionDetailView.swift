@@ -32,6 +32,7 @@ struct LanguageExtensionDetailView: View {
     /// between packs are reported here as well. Workspace packs are workspace-scoped and resolved by
     /// ``LanguageCatalogStore``, so they are not shown in this app-global window.
     @State private var syntaxOutcome: SyntaxContributionLoader.PackOutcome?
+    @State private var isShowingPublish = false
 
     private var consent: NativeGrammarConsent { NativeGrammarConsent(recorded: nativeGrammarConsent) }
 
@@ -117,6 +118,7 @@ struct LanguageExtensionDetailView: View {
                     Button("Reveal in Finder") {
                         NSWorkspace.shared.activateFileViewerSelecting([ext.root])
                     }
+                    Button("Package & Publish…") { isShowingPublish = true }
                     Spacer()
                     Button(role: .destructive) {
                         try? languageManager.remove(ext)
@@ -130,6 +132,9 @@ struct LanguageExtensionDetailView: View {
         .formStyle(.grouped)
         .navigationSubtitle(ext.name)
         .textSelection(.enabled)
+        .sheet(isPresented: $isShowingPublish) {
+            ExtensionPublishView(initialExtension: ext)
+        }
         .task(id: taskID) {
             let packs = languageManager.extensions.filter {
                 $0.id == ext.id || LanguageExtensionActivation.isEnabled($0)

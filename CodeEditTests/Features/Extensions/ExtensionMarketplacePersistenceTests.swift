@@ -14,6 +14,25 @@ struct ExtensionMarketplacePersistenceTests {
 
         #expect(settings.sources.isEmpty)
         #expect(settings.syntaxPacksEnabled)
+        #expect(settings.registry == nil)
+    }
+
+    @Test
+    func registryConfigurationRoundTrips() throws {
+        var settings = SettingsData.ExtensionsSettings()
+        let configuration = ExtensionRegistryConfiguration(
+            workingCopyPath: "/tmp/team-registry",
+            name: "Team Registry",
+            branch: "main",
+            remote: "origin",
+            catalogURL: "https://registry.example/extensions.json"
+        )
+        settings.registry = configuration
+
+        let data = try JSONEncoder().encode(settings)
+        let decoded = try JSONDecoder().decode(SettingsData.ExtensionsSettings.self, from: data)
+
+        #expect(decoded.registry == configuration)
     }
 
     @Test
