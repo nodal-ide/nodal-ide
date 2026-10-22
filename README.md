@@ -1,87 +1,44 @@
-<p align="center">
-  <img src="https://github.com/CodeEditApp/CodeEdit/blob/main/.github/CodeEdit-Icon-128@2x.png?raw=true" height="128">
-  <h1 align="center">CodeEdit for macOS</h1>
-</p>
+<h1 align="center">Nodal IDE for macOS</h1>
 
+[![Nodal IDE releases](https://img.shields.io/github/v/release/nodal-ide/nodal-ide?color=orange&label=latest%20release&sort=semver&style=flat-square)](https://github.com/nodal-ide/nodal-ide/releases/latest)
+[![Historical CodeEdit contributors](https://img.shields.io/badge/historical_CodeEdit_contributors-32-orange.svg?style=flat-square)](#codeedit-contributors-historical)
 
-<p align="center">
-  <a aria-label="Follow CodeEdit on X" href="https://x.com/CodeEditApp" target="_blank">
-    <img alt="" src="https://img.shields.io/badge/Follow%20@CodeEditApp-black.svg?style=for-the-badge&logo=X">
-  </a>
-  <a aria-label="Follow CodeEdit on BlueSky" href="https://bsky.app/profile/codeedit.app" target="_blank">
-    <img alt="" src="https://img.shields.io/badge/Follow%20@codeedit.app-black.svg?style=for-the-badge&logo=bluesky">
-  </a>
-  <a aria-label="Join the community on Discord" href="https://discord.gg/vChUXVf9Em" target="_blank">
-    <img alt="" src="https://img.shields.io/badge/Join%20the%20community-black.svg?style=for-the-badge&logo=Discord">
-  </a>
-</p>
+Nodal IDE is a native macOS development environment for editing and working with software projects.
+It includes syntax highlighting, code completion, project search, snippets, an integrated terminal,
+debugging, Git tools, and extensions.
 
-CodeEdit is a code editor built by the community, for the community, written entirely and unapologetically for macOS. Features include syntax highlighting, code completion, project find and replace, snippets, terminal, task running, debugging, git integration, code review, extensions, and more.
+Nodal began as a fork of [CodeEdit](https://github.com/CodeEditApp/CodeEdit), an open-source editor
+created by CodeEditApp. Nodal is now independently developed by the `nodal-ide` organization. This
+project preserves the original license, project history, and contributor attribution; it is not
+affiliated with CodeEditApp.
 
-<img width="1012" alt="github-banner" src="https://user-images.githubusercontent.com/806104/194004176-3143d19f-1ad9-449c-bd41-8c4f9998f44b.png">
-
-[![GitHub release](https://img.shields.io/github/v/release/CodeEditApp/CodeEdit?color=orange&label=latest%20release&sort=semver&style=flat-square)](https://github.com/CodeEditApp/CodeEdit/releases/latest)
-[![All Contributors](https://img.shields.io/badge/all_contributors-32-orange.svg?style=flat-square)](#contributors-)
-[![GitHub Workflow Status (with branch)](https://img.shields.io/github/actions/workflow/status/CodeEditApp/CodeEdit/CI-pre-release.yml?style=flat-square)](https://github.com/CodeEditApp/CodeEdit/actions/workflows/CI-pre-release.yml)
-[![GitHub Repo stars](https://img.shields.io/github/stars/CodeEditApp/CodeEdit?style=flat-square)](https://github.com/CodeEditApp/CodeEdit/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/CodeEditApp/CodeEdit?style=flat-square)](https://github.com/CodeEditApp/CodeEdit/forks)
-[![Discord Badge](https://img.shields.io/discord/951544472238444645?color=5865F2&label=Discord&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/vChUXVf9Em)
-
-> [!IMPORTANT]
-> CodeEdit is currently in development and not yet recommended for production use, however you can take part in shaping it's future by test-driving [pre-release versions](https://github.com/CodeEditApp/CodeEdit/releases) and [submitting an issue](https://github.com/CodeEditApp/CodeEdit/issues) to let us know what you think.
+Nodal is in active development. The canonical source repository and release links are being prepared
+under [`nodal-ide/nodal-ide`](https://github.com/nodal-ide/nodal-ide).
 
 ## Table of Contents
 
-- [Motivation](#motivation)
-- [Mission](#mission)
-- [Community](#community)
-- [Activity](#activity)
+- [About Nodal](#about-nodal)
 - [Contributing](#contributing)
-- [Contributors](#contributors)
-- [Sponsors](#sponsors)
-- [Backers](#backers)
+- [CodeEdit contributors (historical)](#codeedit-contributors-historical)
+- [Historical CodeEdit supporters](#historical-codeedit-supporters)
 - [License](#license)
+- [Related repositories](#related-repositories)
 
-## Motivation
+## About Nodal
 
-Most editors in use today rely on Electron or other cross-platform frameworks, limiting their ability to fully utilize system resources. While Xcode provides a native experience, it is specifically designed for projects targeting Apple platforms. 
-
-We think developers working on projects not written for Apple platforms deserve that same macOS-native experience we get with Xcode while unlocking the full potential of the Mac. 
-
-This raised the question "what if such an editor existed?", a question that led to the creation of [this concept](https://www.figma.com/proto/qj6raZbQsZpGO0NAVi4qsv/CodeEdit-Concept?node-id=1%3A870), which our project aims to make a reality.
-
-## Mission
-
-It is our commitment to keep CodeEdit open source and free forever, supported by the community.
-
-<img width="1012" alt="TextEdit plus Xcode equals CodeEdit" src="https://github.com/CodeEditApp/CodeEdit/assets/806104/a9379df0-ab26-4ef8-98a9-2e2b4bd8c7b4">
-
-Our goal is to maintain a lightweight experience, similar to TextEdit, while being able to scale up to a more feature-rich experience, comparable to Xcode, as necessary.
-
-We strive to remain true to Apple's human interface guidelines and development patterns, ensuring CodeEdit looks and feels like an application developed by Apple themselves, which includes a meticulous attention to detail.
-
-## Community
-
-Join our growing community on [Discord](https://discord.gg/vChUXVf9Em) and [GitHub Discussions](https://github.com/orgs/CodeEditApp/discussions) where we discuss and collaborate on all things CodeEdit. Don't be shy, jump right in and be part of the discussion!
-
-> [!NOTE]
-> We hold a weekly meetup on Discord **every Saturday at 3pm UTC** where we discuss latests development, feature requests, goals, and priorities.
-> 
-> [**Join us**](https://discord.gg/KvdE3wYKNR?event=1189275961456336937)
-> 
-## Activity
-
-<img src="https://repobeats.axiom.co/api/embed/acd5eeb654fc98f6ffbce26b09fd0e3603edf1fd.svg" alt="CodeEdit Repository Activity" width="100%" />
+Nodal aims to provide a focused, native macOS workspace for building software across languages and
+frameworks. Its roadmap includes language and framework extensions, project-level tooling, and
+integrated development workflows.
 
 ## Contributing
 
-Be part of the next revolution in code editing by contributing to the project. This is a community-led effort, so we welcome as many contributors who can help. Read the [Contribution Guide](https://github.com/CodeEditApp/CodeEdit/blob/main/CONTRIBUTING.md) for more information.
+Read the local [contribution guide](CONTRIBUTING.md) before opening a pull request. The Nodal issue
+tracker and project channels will be available from the canonical repository after it is created.
 
-This project spans [multiple repositories](https://github.com/CodeEditApp/CodeEdit#related-repositories) so instead of browsing issues in the issues tab, it may be helpful to find an issue to get started on in our [project board](https://github.com/orgs/CodeEditApp/projects/3/views/1).
+## CodeEdit contributors (historical)
 
-For issues we want to focus on that are most relevant at any given time, please see the issues scoped to our current iteration [here](https://github.com/orgs/CodeEditApp/projects/3/views/10).
-
-## Contributors
+The contributors listed below worked on the original CodeEdit project. Their names and historical
+CodeEdit contribution links are retained as attribution; this is not a list of Nodal maintainers.
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
@@ -212,9 +169,10 @@ For issues we want to focus on that are most relevant at any given time, please 
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-## Sponsors
+## Historical CodeEdit supporters
 
-Support CodeEdit's development by [becoming a sponsor](https://github.com/sponsors/CodeEditApp).
+The following sponsors and backers supported the original CodeEdit project. They are listed for
+historical recognition and are not Nodal funding partners.
 
 <a title="Vercel" href="https://vercel.com/?utm_source=codeedit&utm_campaign=oss" target="_blank"><img src="https://user-images.githubusercontent.com/806104/162766170-60f3b95a-ca30-4015-a3e3-a605df78b98a.png" width="128"></a>
 <a title="MacStadium" href="https://macstadium.com" target="_blank"><img src="https://user-images.githubusercontent.com/806104/162766594-eff7f985-31a9-48c5-9e58-139794fefa10.png" width="128"></a>
@@ -224,9 +182,7 @@ Support CodeEdit's development by [becoming a sponsor](https://github.com/sponso
 <a title="Proxyman" href="https://proxyman.io/" target="_blank"><img src="https://user-images.githubusercontent.com/35942988/215859653-0d3622e4-a214-4691-acbe-cd96ca833193.png" width="128"></a>
 <a title="TablePlus" href="https://tableplus.com/" target="_blank"><img src="https://avatars.githubusercontent.com/u/29408238?s=200&v=4" width="128"></a>
 
-## Backers
-
-Support CodeEdit's development by [becoming a backer](https://github.com/sponsors/CodeEditApp).
+### CodeEdit backers
 
 <a title="dannydorazio" href="https://github.com/dannydorazio" target="_blank"><img src="https://avatars.githubusercontent.com/u/21158275?v=4" width="64"></a>
 <a title="omrd" href="https://github.com/omrd" target="_blank"><img src="https://avatars.githubusercontent.com/u/34616424?v=4" width="64"></a>
@@ -246,46 +202,23 @@ Support CodeEdit's development by [becoming a backer](https://github.com/sponsor
 [@cadenkriese](https://github.com/cadenkriese)
 [@petrjahoda](https://github.com/petrjahoda)
 [@allejo](https://github.com/allejo)
-[@frousselet](frousselet)
-[@wkillerud](wkillerud)
+[@frousselet](https://github.com/frousselet)
+[@wkillerud](https://github.com/wkillerud)
 
 ## License
 
-Licensed under the [MIT license](https://github.com/CodeEditApp/CodeEdit/blob/main/LICENSE.md).
+Licensed under the [MIT license](LICENSE.md).
 
-## Related Repositories
+## Related repositories
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/CodeEditApp/CodeEditKit">
-        <img src="https://github.com/CodeEditApp/CodeEditKit/blob/main/.github/CodeEditKit-Icon-128@2x.png?raw=true" height="128">
-      </a>
-      <p>&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://github.com/CodeEditApp/CodeEditKit">CodeEditKit</a>&nbsp;&nbsp;&nbsp;&nbsp;</p>
-    </td>
-    <td align="center">
-      <a href="https://github.com/CodeEditApp/CodeEditTextView">
-        <img src="https://github.com/CodeEditApp/CodeEditTextView/blob/main/.github/CodeEditTextView-Icon-128@2x.png?raw=true" height="128">
-      </a>
-      <p><a href="https://github.com/CodeEditApp/CodeEditTextView">CodeEditTextView</a></p>
-    </td>
-    <td align="center">
-      <a href="https://github.com/CodeEditApp/CodeEditSourceEditor">
-        <img src="https://github.com/CodeEditApp/CodeEditTextView/blob/main/.github/CodeEditSourceEditor-Icon-128@2x.png?raw=true" height="128">
-      </a>
-      <p><a href="https://github.com/CodeEditApp/CodeEditSourceEditor">CodeEditSourceEditor</a></p>
-    </td>
-    <td align="center">
-      <a href="https://github.com/CodeEditApp/CodeEditLanguages">
-        <img src="https://github.com/CodeEditApp/CodeEditLanguages/blob/main/.github/CodeEditLanguages-Icon-128@2x.png?raw=true" height="128">
-      </a>
-      <p><a href="https://github.com/CodeEditApp/CodeEditLanguages">CodeEditLanguages</a></p>
-    </td>
-    <td align="center">
-      <a href="https://github.com/CodeEditApp/CodeEditCLI">
-        <img src="https://github.com/CodeEditApp/CodeEditCLI/blob/main/.github/CodeEditCLI-Icon-128@2x.png?raw=true" height="128">
-      </a>
-      <p>&nbsp;&nbsp;&nbsp;&nbsp;<a href="https://github.com/CodeEditApp/CodeEditCLI">CodeEditCLI</a>&nbsp;&nbsp;&nbsp;&nbsp;</p>
-    </td>
-  </tr>
-</table>
+The following dependency forks are planned for migration to the `nodal-ide` organization. Their
+repository links will be activated after NR7 completes the transfers:
+
+- [CodeEditKit](https://github.com/nodal-ide/CodeEditKit)
+- [CodeEditTextView](https://github.com/nodal-ide/CodeEditTextView)
+- [CodeEditSourceEditor](https://github.com/nodal-ide/CodeEditSourceEditor)
+- [CodeEditLanguages](https://github.com/nodal-ide/CodeEditLanguages)
+- [CodeEditSymbols](https://github.com/nodal-ide/CodeEditSymbols)
+- [CodeEditLang](https://github.com/nodal-ide/CodeEditLang)
+- [AboutWindow](https://github.com/nodal-ide/AboutWindow)
+- [WelcomeWindow](https://github.com/nodal-ide/WelcomeWindow)

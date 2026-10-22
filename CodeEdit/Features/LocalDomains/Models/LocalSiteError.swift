@@ -102,7 +102,7 @@ enum LocalSiteError: Error, Equatable, LocalizedError {
         case .nginxUnavailable:
             return "Install nginx with Homebrew."
         case .certificateUntrusted:
-            return "Trust the CodeEdit local certificate."
+            return "Trust the Nodal IDE local certificate."
         case .portInUse:
             return "Stop the other service or choose another port."
         case .upstreamNotReady:

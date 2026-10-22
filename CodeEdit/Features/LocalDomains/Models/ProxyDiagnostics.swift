@@ -16,9 +16,9 @@ struct ProxyDiagnosticsReport: Equatable, Sendable {
 
     func rendered() -> String {
         var lines = [
-            "CodeEdit Local Domains Diagnostics",
+            "Nodal IDE Local Domains Diagnostics",
             "Generated: \(ISO8601DateFormatter().string(from: generatedAt))",
-            "CodeEdit: \(appVersion)",
+            "Nodal IDE: \(appVersion)",
             "macOS: \(macOSVersion)",
             "Proxy root: \(proxyRoot)",
             "Port mode: \(portMode)"

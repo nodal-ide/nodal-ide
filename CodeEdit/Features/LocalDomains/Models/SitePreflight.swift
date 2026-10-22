@@ -114,9 +114,9 @@ enum SitePreflight {
         case .present(trusted: true):
             return .ready("The local certificate authority is trusted.")
         case .present(trusted: false):
-            return .actionRequired("Trust the CodeEdit certificate authority to enable HTTPS.")
+            return .actionRequired("Trust the Nodal IDE certificate authority to enable HTTPS.")
         case .missing:
-            return .actionRequired("Create and trust the CodeEdit certificate authority.")
+            return .actionRequired("Create and trust the Nodal IDE certificate authority.")
         }
     }
 }

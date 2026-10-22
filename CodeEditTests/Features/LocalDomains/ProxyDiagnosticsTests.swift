@@ -21,9 +21,9 @@ struct ProxyDiagnosticsTests {
 
         let text = report.rendered()
 
-        #expect(text.contains("CodeEdit Local Domains Diagnostics"))
+        #expect(text.contains("Nodal IDE Local Domains Diagnostics"))
         #expect(text.contains("Generated: 1970-01-01T00:00:00Z"))
-        #expect(text.contains("CodeEdit: 1.2.3 (45)"))
+        #expect(text.contains("Nodal IDE: 1.2.3 (45)"))
         #expect(text.contains("Proxy root: ~/.codeedit/proxy"))
         #expect(text.contains("Port mode: High ports (8080/8443)"))
         #expect(text.contains("nginx: 1.29.4 (/opt/homebrew/bin/nginx)"))

@@ -38,7 +38,7 @@ final class NPMPackageManager: PackageManagerProtocol {
         PackageManagerInstallStep(
             name: "",
             confirmation: .required(
-                message: "This package requires npm to install. Allow CodeEdit to run npm commands?"
+                message: "This package requires npm to install. Allow Nodal IDE to run npm commands?"
             )
         ) { model in
             let versionOutput = try await model.runCommand("npm --version")
@@ -115,7 +115,7 @@ final class NPMPackageManager: PackageManagerProtocol {
             name: "Install Package Using npm",
             confirmation: .required(
                 message: "This requires the npm package\(sSuffix) \(packagesDescription)."
-                + "\nAllow CodeEdit to install \(suffix)?"
+                + "\nAllow Nodal IDE to install \(suffix)?"
             )
         ) { model in
             do {

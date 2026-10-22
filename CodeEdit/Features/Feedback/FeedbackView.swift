@@ -78,7 +78,7 @@ struct FeedbackView: View {
                     }
                 }
                 TextField("", text: $feedbackModel.feedbackTitle)
-                Text("Example: CodeEdit crashes when using autocomplete")
+                Text("Example: Nodal IDE crashes when using autocomplete")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
@@ -162,7 +162,7 @@ struct FeedbackView: View {
                 TextEditor(text: $feedbackModel.issueDescription)
                            .frame(minHeight: 127, alignment: .leading)
                            .border(Color(NSColor.separatorColor))
-                Text("Example: CodeEdit crashes when the autocomplete popup appears on screen.")
+                Text("Example: Nodal IDE crashes when the autocomplete popup appears on screen.")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }
@@ -202,7 +202,7 @@ struct FeedbackView: View {
                            .frame(minHeight: 60, alignment: .leading)
                            .border(Color(NSColor.separatorColor))
                 // swiftlint:disable:next line_length
-                Text("Example: The autocomplete window flickered on screen and CodeEdit crashed. See attached crashlog.")
+                Text("Example: The autocomplete window flickered on screen and Nodal IDE crashed. See attached crashlog.")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
             }

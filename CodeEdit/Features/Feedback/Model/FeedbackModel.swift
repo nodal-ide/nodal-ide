@@ -143,8 +143,8 @@ public class FeedbackModel: ObservableObject {
 
         let config = GitHubTokenConfiguration(keychain.get(firstGitAccount!.name))
         GitHubAccount(config).postIssue(
-            owner: "upperdo",
-            repository: "CodeEdit",
+            owner: "nodal-ide",
+            repository: "nodal-ide",
             title: "\(getFeedbackTypeTitle()) \(title)",
             body: createIssueBody(
                 description: description,
@@ -158,7 +158,7 @@ public class FeedbackModel: ObservableObject {
             switch response {
             case .success(let issue):
                 if AppServices.settings[\.sourceControl].general.openFeedbackInBrowser {
-                    self.openIssueURL(issue.htmlURL ?? URL(string: "https://github.com/upperdo/CodeEdit/issues")!)
+                    self.openIssueURL(issue.htmlURL ?? URL(string: "https://github.com/nodal-ide/nodal-ide/issues")!)
                 }
                 self.isSubmitted.toggle()
                 print(issue)

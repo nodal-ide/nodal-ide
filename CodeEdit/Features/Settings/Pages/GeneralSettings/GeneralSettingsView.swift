@@ -336,7 +336,7 @@ private extension GeneralSettingsView {
     }
 
     var openInCodeEditToggle: some View {
-        Toggle("Show “Open With CodeEdit” option in Finder", isOn: $openInCodeEdit)
+        Toggle("Show “Open in Nodal IDE” option in Finder", isOn: $openInCodeEdit)
             .onChange(of: openInCodeEdit) { _, newValue in
                 UserDefaults.appGroup.set(newValue, forKey: "enableOpenInCE")
             }

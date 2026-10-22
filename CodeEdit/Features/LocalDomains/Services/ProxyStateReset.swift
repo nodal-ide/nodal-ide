@@ -25,7 +25,7 @@ enum ProxyStateResetError: Error, Equatable, LocalizedError {
         case .processNotOwned, .processNotNginx:
             return "Stop the process manually, then try again."
         case .processStillRunning:
-            return "Quit CodeEdit, stop nginx from Activity Monitor, then try again."
+            return "Quit Nodal IDE, stop nginx from Activity Monitor, then try again."
         case .removalFailed(_, let message):
             return message
         }

@@ -95,7 +95,7 @@ struct InvisiblesSettingsView: View {
                     }
                 } header: {
                     Text("Invisible Characters")
-                    Text("Toggle whitespace symbols CodeEdit will render with replacement characters.")
+                    Text("Toggle whitespace symbols Nodal IDE will render with replacement characters.")
                 }
                 .textFieldStyle(.roundedBorder)
             }

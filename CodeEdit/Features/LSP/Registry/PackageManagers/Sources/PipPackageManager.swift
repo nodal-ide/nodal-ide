@@ -91,7 +91,7 @@ final class PipPackageManager: PackageManagerProtocol {
             name: "Install Package Using pip",
             confirmation: .required(
                 message: "This requires the pip package \(source.pkgName)."
-                + "\nAllow CodeEdit to install this package?"
+                + "\nAllow Nodal IDE to install this package?"
             )
         ) { model in
             var installArgs = [pipCommand, "install"]

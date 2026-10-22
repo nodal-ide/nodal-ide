@@ -42,7 +42,7 @@ extension SettingsData {
                 "Maximum Open Tabs",
                 "Find Navigator Detail",
                 "Issue Navigator Detail",
-                "Show “Open With CodeEdit“ option in Finder",
+                "Show “Open in Nodal IDE“ option in Finder",
                 "'codeedit' Shell command",
                 "Dialog Warnings",
                 "Check for updates",

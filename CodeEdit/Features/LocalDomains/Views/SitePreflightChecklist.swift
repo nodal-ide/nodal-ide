@@ -64,7 +64,7 @@ struct SitePreflightChecklist: View {
                 }
                 .disabled(model.isBusy || !model.mkcertInstalled)
                 .help(model.mkcertInstalled
-                      ? "Trust the CodeEdit CA; macOS asks for your password."
+                      ? "Trust the Nodal IDE CA; macOS asks for your password."
                       : "Install mkcert first.")
                 .controlSize(.small)
             case .phpFPM:

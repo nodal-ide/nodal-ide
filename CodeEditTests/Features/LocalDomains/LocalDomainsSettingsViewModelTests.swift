@@ -134,7 +134,7 @@ struct LocalDomainsSettingsViewModelTests {
 
         let text = await model.diagnosticsReport(portMode: .privilegedRelay)
 
-        #expect(text.contains("CodeEdit: 1.2.3 (45)"))
+        #expect(text.contains("Nodal IDE: 1.2.3 (45)"))
         #expect(text.contains("Port mode: Portless (80/443)"))
         #expect(text.contains("Certificate authority: not created"))
     }

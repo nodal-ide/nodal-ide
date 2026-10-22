@@ -60,7 +60,7 @@ final class CargoPackageManager: PackageManagerProtocol {
             name: "Install Package Using cargo",
             confirmation: .required(
                 message: "This requires the cargo package \(qualifiedPackageName)."
-                + "\nAllow CodeEdit to install this package?"
+                + "\nAllow Nodal IDE to install this package?"
             )
         ) { model in
             var cargoArgs = ["cargo", "install", "--root", "."]

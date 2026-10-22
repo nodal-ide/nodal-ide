@@ -16,7 +16,7 @@
 
 <!--- Add things that are not yet implemented above -->
 
-- [ ] I read and understood the [contributing guide](https://github.com/CodeEditApp/CodeEdit/blob/main/CONTRIBUTING.md) as well as the [code of conduct](https://github.com/CodeEditApp/CodeEdit/blob/main/CODE_OF_CONDUCT.md)
+- [ ] I read and understood the [contributing guide](https://github.com/nodal-ide/nodal-ide/blob/main/CONTRIBUTING.md) and [code of conduct](https://github.com/nodal-ide/nodal-ide/blob/main/CODE_OF_CONDUCT.md)
 - [ ] The issues this PR addresses are related to each other
 - [ ] My changes generate no new warnings
 - [ ] My code builds and runs on my machine

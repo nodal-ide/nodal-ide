@@ -42,7 +42,7 @@ struct SitePreflightTests {
         #expect(items[0].status == .actionRequired("nginx is required and was not found."))
         #expect(items[1].status == .actionRequired("mkcert is required and was not found."))
         #expect(items[2].status == .actionRequired("No installed PHP runtime includes PHP-FPM."))
-        #expect(items[3].status == .actionRequired("Create and trust the CodeEdit certificate authority."))
+        #expect(items[3].status == .actionRequired("Create and trust the Nodal IDE certificate authority."))
     }
 
     @Test
@@ -116,7 +116,7 @@ struct SitePreflightTests {
         ))
 
         #expect(items[3].status == .actionRequired(
-            "Trust the CodeEdit certificate authority to enable HTTPS."
+            "Trust the Nodal IDE certificate authority to enable HTTPS."
         ))
     }
 
@@ -181,7 +181,7 @@ struct SitePreflightViewModelTests {
         #expect(item(.mkcert, in: model)?.status == .ready("mkcert v1.4.4"))
         #expect(item(.phpFPM, in: model)?.status == .ready("PHP 8.4.12 with PHP-FPM"))
         #expect(item(.certificate, in: model)?.status == .actionRequired(
-            "Trust the CodeEdit certificate authority to enable HTTPS."
+            "Trust the Nodal IDE certificate authority to enable HTTPS."
         ))
     }
 

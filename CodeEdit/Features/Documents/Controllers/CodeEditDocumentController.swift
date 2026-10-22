@@ -28,7 +28,7 @@ final class CodeEditDocumentController: NSDocumentController {
                 .workspaceSettingsManager?
                 .settings.project.projectName
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            let orgFallback = projectSettingsName.flatMap { $0.isEmpty ? nil : $0 } ?? "CodeEdit"
+            let orgFallback = projectSettingsName.flatMap { $0.isEmpty ? nil : $0 } ?? "Nodal IDE"
             fileContents = FileHeaderGenerator.generateHeaderData(
                 for: newDocumentUrl,
                 organization: settings.fileHeaderOrganization.isEmpty
@@ -66,7 +66,7 @@ final class CodeEditDocumentController: NSDocumentController {
                 .workspaceSettingsManager?
                 .settings.project.projectName
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            let orgFallback = projectSettingsName.flatMap { $0.isEmpty ? nil : $0 } ?? "CodeEdit"
+            let orgFallback = projectSettingsName.flatMap { $0.isEmpty ? nil : $0 } ?? "Nodal IDE"
             fileContents = FileHeaderGenerator.generateHeaderData(
                 for: newDocumentUrl,
                 organization: settings.fileHeaderOrganization.isEmpty

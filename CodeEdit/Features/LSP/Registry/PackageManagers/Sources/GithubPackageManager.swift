@@ -52,7 +52,7 @@ final class GithubPackageManager: PackageManagerProtocol {
             PackageManagerInstallStep(
                 name: "",
                 confirmation: .required(
-                    message: "This package requires git to install. Allow CodeEdit to run git commands?"
+                    message: "This package requires git to install. Allow Nodal IDE to run git commands?"
                 )
             ) { model in
                 let versionOutput = try await model.runCommand("git --version")

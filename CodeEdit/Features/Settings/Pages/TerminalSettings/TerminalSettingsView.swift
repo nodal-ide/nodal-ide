@@ -95,7 +95,7 @@ private extension TerminalSettingsView {
         VStack {
             Toggle("Shell Integration", isOn: $settings.useShellIntegration)
             // swiftlint:disable:next line_length
-                .help("CodeEdit supports integrating with common shells such as Bash and Zsh. This enables features like terminal title detection.")
+                .help("Nodal IDE supports integrating with common shells such as Bash and Zsh. This enables features like terminal title detection.")
             if !settings.useShellIntegration {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")

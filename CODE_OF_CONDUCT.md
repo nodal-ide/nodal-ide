@@ -60,8 +60,8 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-[Github Issues](https://github.com/CodeEditApp/CodeEdit/issues/new).
+reported to the Nodal community leaders through [the Nodal issue tracker](https://github.com/nodal-ide/nodal-ide/issues/new)
+after the canonical repository is available.
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the

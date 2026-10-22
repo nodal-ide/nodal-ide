@@ -21,7 +21,7 @@ enum FileHeaderGenerator {
             : author.trimmingCharacters(in: .whitespacesAndNewlines)
         let parentName = fileURL.deletingLastPathComponent().lastPathComponent
         let resolvedOrg = organization.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? (parentName.isEmpty ? "CodeEdit" : parentName)
+            ? (parentName.isEmpty ? "Nodal IDE" : parentName)
             : organization.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let language = CodeLanguage.detectLanguageFrom(url: fileURL)

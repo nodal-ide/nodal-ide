@@ -9,7 +9,7 @@ enum LocalProxyLockError: Error, Equatable, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .alreadyLocked:
-            return "Another CodeEdit instance is already managing local domains."
+            return "Another Nodal IDE instance is already managing local domains."
         case let .cannotOpen(url, code):
             return "Could not open the lock file at \(url.path(percentEncoded: false)) (errno \(code))."
         case let .cannotLock(url, code):
@@ -20,7 +20,7 @@ enum LocalProxyLockError: Error, Equatable, LocalizedError {
     var recoverySuggestion: String? {
         switch self {
         case .alreadyLocked:
-            return "Close the other CodeEdit window or quit the other instance, then try again."
+            return "Close the other Nodal IDE window or quit the other instance, then try again."
         case .cannotOpen, .cannotLock:
             return "Check that \(LocalProxyLock.defaultDirectory.path(percentEncoded: false)) is writable."
         }

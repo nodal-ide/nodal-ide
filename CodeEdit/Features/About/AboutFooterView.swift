@@ -12,7 +12,7 @@ struct AboutFooterView: View {
     var body: some View {
         FooterView(
             primaryView: {
-                Link(destination: URL(string: "https://github.com/upperdo/CodeEdit/blob/main/LICENSE.md")!) {
+                Link(destination: URL(string: "https://github.com/nodal-ide/nodal-ide/blob/main/LICENSE.md")!) {
                     Text("MIT License")
                         .underline()
                 }

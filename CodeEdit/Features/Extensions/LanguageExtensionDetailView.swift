@@ -98,7 +98,7 @@ struct LanguageExtensionDetailView: View {
             if !nativeGrammarDeclarations.isEmpty {
                 Section("Native Grammars") {
                     Text(
-                        "This extension ships native parser code. It runs inside CodeEdit, so it is "
+                        "This extension ships native parser code. It runs inside Nodal IDE, so it is "
                             + "loaded only after you trust it."
                     )
                     .font(.callout)

@@ -92,7 +92,7 @@ class CEOpenWith: FIFinderSync {
 
         let menu = NSMenu(title: "")
         let menuItem = NSMenuItem(
-            title: "Open in CodeEdit",
+            title: "Open in Nodal IDE",
             action: #selector(openInCodeEditAction(_:)),
             keyEquivalent: ""
         )

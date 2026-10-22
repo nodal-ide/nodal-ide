@@ -12,7 +12,7 @@ final class FeedbackWindowController: NSWindowController, NSToolbarDelegate {
         let hostingController = NSHostingController(rootView: SettingsInjector { view })
         let window = NSWindow(contentViewController: hostingController)
         self.init(window: window)
-        window.title = "Feedback for CodeEdit"
+        window.title = "Feedback for Nodal IDE"
         window.setContentSize(size)
         window.styleMask.insert(.fullSizeContentView)
         window.styleMask.remove(.resizable)

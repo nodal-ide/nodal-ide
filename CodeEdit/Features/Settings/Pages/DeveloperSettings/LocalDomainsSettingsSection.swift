@@ -54,7 +54,7 @@ struct LocalDomainsSettingsSection: View {
                 .disabled(model.isBusy)
             }
         } footer: {
-            Text("nginx and mkcert are installed with Homebrew; CodeEdit runs the detected system binaries.")
+            Text("nginx and mkcert are installed with Homebrew; Nodal IDE runs the detected system binaries.")
         }
     }
 
@@ -107,7 +107,7 @@ struct LocalDomainsSettingsSection: View {
                     .disabled(model.isBusy)
                     .controlSize(.small)
                     .confirmationDialog(
-                        "Reset the CodeEdit certificate authority?",
+                        "Reset the Nodal IDE certificate authority?",
                         isPresented: $confirmReset,
                         titleVisibility: .visible
                     ) {
@@ -127,7 +127,7 @@ struct LocalDomainsSettingsSection: View {
                     }
                     .disabled(model.isBusy || !model.mkcert.isInstalled)
                     .help(model.mkcert.isInstalled
-                          ? "Trust the CodeEdit CA; macOS asks for your password."
+                          ? "Trust the Nodal IDE CA; macOS asks for your password."
                           : "Install mkcert first.")
                     .controlSize(.small)
                 }

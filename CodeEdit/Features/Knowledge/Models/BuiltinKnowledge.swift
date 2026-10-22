@@ -13,7 +13,7 @@ enum BuiltinKnowledge {
     static var source: KnowledgeSource {
         KnowledgeSource(
             id: sourceID,
-            title: "CodeEdit",
+            title: "Nodal IDE",
             subtitle: "Built-in documentation",
             storage: .memory(pages: pages),
             index: index
@@ -21,7 +21,7 @@ enum BuiltinKnowledge {
     }
 
     static let index = KnowledgeIndex(
-        title: "CodeEdit",
+        title: "Nodal IDE",
         subtitle: "Built-in documentation",
         home: "Home.md",
         keywords: ["codeedit", "shortcuts", "extensions", "knowledge"],
@@ -41,7 +41,7 @@ enum BuiltinKnowledge {
 
     static let pages: [String: String] = [
         "Home.md": """
-        # CodeEdit
+        # Nodal IDE
 
         Welcome to the built-in documentation. Use the table of contents on the left, or search with
         **⌘F**.
@@ -83,7 +83,7 @@ enum BuiltinKnowledge {
         "Extensions/Overview.md": """
         # Extensions
 
-        CodeEdit extensions add knowledge and behaviour without changing the app:
+        Nodal IDE extensions add knowledge and behaviour without changing the app:
 
         - **Language packs** are data-only: symbols, signatures and docs (no code).
         - **Providers** are programs (any language) spoken to over JSON-RPC on stdio.

@@ -132,7 +132,7 @@ extension SyntaxContributionLoader {
             )
         default:
             issues.append(.error(
-                "Grammar kind '\(grammar.kind)' cannot be loaded in this version of CodeEdit.",
+                "Grammar kind '\(grammar.kind)' cannot be loaded in this version of Nodal IDE.",
                 at: "\(location).grammar"
             ))
             return nil

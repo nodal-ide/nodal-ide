@@ -139,7 +139,7 @@ struct AccountsSettingsDetailsView: View {
                             deleteConfirmationIsPresented.toggle()
                         }
                     } message: {
-                        Text("Deleting this account will remove it from CodeEdit.")
+                        Text("Deleting this account will remove it from Nodal IDE.")
                     }
 
                     Spacer()

@@ -82,8 +82,8 @@ struct LanguageServersView: View {
     }
 
     private func getInfoString() -> AttributedString {
-        let string = "CodeEdit makes use of the Mason Registry for language server installation. To install a package, "
-        + "CodeEdit uses the package manager directed by the Mason Registry, and installs a copy of "
+        let string = "Nodal IDE makes use of the Mason Registry for language server installation. "
+        + "To install a package, Nodal IDE uses the Mason Registry's package manager and installs a copy of "
         + "the language server in Application Support.\n\n"
         + "Once installed, a language server provides completion, diagnostics, hover, go-to-definition, "
         + "formatting, rename/refactor, references, call hierarchy, inlay hints and snippets. The installation "

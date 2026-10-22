@@ -25,7 +25,7 @@ struct HelpCommands: Commands {
 
             Divider()
 
-            Button("What's New in CodeEdit") {
+            Button("What's New in Nodal IDE") {
 
             }
             .disabled(true)

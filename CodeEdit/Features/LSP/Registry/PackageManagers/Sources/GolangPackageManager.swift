@@ -41,7 +41,7 @@ final class GolangPackageManager: PackageManagerProtocol {
     func isInstalled(method installationMethod: InstallationMethod) -> PackageManagerInstallStep {
         PackageManagerInstallStep(
             name: "",
-            confirmation: .required(message: "This package requires go to install. Allow CodeEdit to run go commands?")
+            confirmation: .required(message: "This package requires go to install. Allow Nodal IDE to run go commands?")
         ) { model in
             let versionOutput = try await model.runCommand("go version")
             let versionPattern = #"go version go\d+\.\d+"#
@@ -93,7 +93,7 @@ final class GolangPackageManager: PackageManagerProtocol {
             name: "Install Package Using go",
             confirmation: .required(
                 message: "This requires installing the go package \(installCommand)."
-                + "\nAllow CodeEdit to install this package?"
+                + "\nAllow Nodal IDE to install this package?"
             )
         ) { model in
             let gobinPath = packagePath.appending(path: "bin", directoryHint: .isDirectory).path

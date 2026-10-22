@@ -132,7 +132,7 @@ extension CEWorkspaceFileManager {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let projectName = configuredName.flatMap { $0.isEmpty ? nil : $0 } ?? fallbackProjectName
         let organization = settings.fileHeaderOrganization.isEmpty
-            ? (projectName.isEmpty ? "CodeEdit" : projectName)
+            ? (projectName.isEmpty ? "Nodal IDE" : projectName)
             : settings.fileHeaderOrganization
         return FileHeaderGenerator.generateHeaderData(
             for: fileURL,

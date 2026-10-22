@@ -24,7 +24,7 @@ struct AboutSubtitleView: View {
                 let macOSVersion = ProcessInfo.processInfo.operatingSystemVersion.semverString
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(
-                    "CodeEdit: \(appVersion) (\(appBuild))\nmacOS: \(macOSVersion)",
+                    "Nodal IDE: \(appVersion) (\(appBuild))\nmacOS: \(macOSVersion)",
                     forType: .string
                 )
                 didCopyVersion.toggle()

@@ -43,7 +43,7 @@
 
 //Editor Screen
 "Open file from sidebar"="Open file from sidebar";
-"CodeEdit cannot open this file because its file type is not supported." = "CodeEdit cannot open this file because its file type is not supported.";
+"Nodal IDE cannot open this file because its file type is not supported." = "Nodal IDE cannot open this file because its file type is not supported.";
 
 // Inspector Sidebar
 "File Inspector"="File Inspector";
@@ -60,7 +60,7 @@
 
 
 // Welcome Screen
-"Welcome to CodeEdit" = "Welcome to CodeEdit";
+"Welcome to Nodal IDE" = "Welcome to Nodal IDE";
 "Version %@ (%@)" = "Version %@ (%@)";
 "No Recent Projects" = "No Recent Projects";
 

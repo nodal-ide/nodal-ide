@@ -27,7 +27,7 @@ struct SourceControlFetchView: View {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Fetching changes for “\(projectName)”...")
                         .font(.headline)
-                    Text("CodeEdit is fetching changes and updating the status of files in the local repository.")
+                    Text("Nodal IDE is fetching changes and updating the status of files in the local repository.")
                         .font(.subheadline)
                         .fixedSize(horizontal: false, vertical: true)
                 }
