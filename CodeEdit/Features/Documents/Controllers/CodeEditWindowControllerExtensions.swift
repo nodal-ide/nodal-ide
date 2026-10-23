@@ -31,6 +31,13 @@ extension CodeEditWindowController {
             id: "toggle_right_sidebar",
             command: { [weak self] in self?.toggleLastPanel() }
         )
+
+        AppServices.commandManager.addCommand(
+            name: "Toggle Assistant",
+            title: "Toggle Assistant",
+            id: "toggle_assistant",
+            command: { [weak self] in self?.toggleAssistant() }
+        )
     }
 
     // Listen to changes in all tabs/files

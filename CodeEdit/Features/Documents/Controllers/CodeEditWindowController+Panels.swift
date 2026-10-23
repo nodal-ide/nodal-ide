@@ -44,6 +44,35 @@ extension CodeEditWindowController {
         toggleLastPanel(shouldAnimate: true)
     }
 
+    var isAssistantVisible: Bool {
+        splitViewController?.splitViewItems.last?.isCollapsed == false
+            && inspectorViewModel?.selectedTab == .assistant
+    }
+
+    func toggleAssistant() {
+        if isAssistantVisible {
+            toggleLastPanel()
+        } else {
+            revealAssistant()
+        }
+    }
+
+    func revealAssistant() {
+        guard let splitViewController, let inspectorViewModel else { return }
+        inspectorViewModel.setInspectorTab(tab: .assistant)
+
+        if splitViewController.splitViewItems.last?.isCollapsed == true {
+            splitViewController.splitViewItems.last?.isCollapsed = false
+            splitViewController.saveInspectorCollapsedState(isCollapsed: false)
+        }
+
+        splitViewController.splitView.layoutSubtreeIfNeeded()
+        splitViewController.ensureInspectorWidth(
+            atLeast: CodeEditSplitViewController.assistantRevealWidth
+        )
+        workspace?.assistantSession.requestComposerFocus()
+    }
+
     func toggleLastPanel(shouldAnimate: Bool = true) {
         guard let lastSplitView = splitViewController?.splitViewItems.last else {
             return

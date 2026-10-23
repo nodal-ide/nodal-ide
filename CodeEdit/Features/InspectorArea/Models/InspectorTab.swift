@@ -11,6 +11,7 @@ import ExtensionFoundation
 
 enum InspectorTab: WorkspacePanelTab {
     case file
+    case assistant
     case gitHistory
     case internalDevelopment
     case uiExtension(endpoint: AppExtensionIdentity, data: ResolvedSidebar.SidebarStore)
@@ -19,6 +20,8 @@ enum InspectorTab: WorkspacePanelTab {
         switch self {
         case .file:
             return "doc"
+        case .assistant:
+            return "sparkles"
         case .gitHistory:
             return "clock"
         case .internalDevelopment:
@@ -39,6 +42,8 @@ enum InspectorTab: WorkspacePanelTab {
         switch self {
         case .file:
             return "File Inspector"
+        case .assistant:
+            return "Assistant"
         case .gitHistory:
             return "History Inspector"
         case .internalDevelopment:
@@ -52,6 +57,8 @@ enum InspectorTab: WorkspacePanelTab {
         switch self {
         case .file:
             FileInspectorView()
+        case .assistant:
+            AssistantInspectorView()
         case .gitHistory:
             HistoryInspectorView()
         case .internalDevelopment:

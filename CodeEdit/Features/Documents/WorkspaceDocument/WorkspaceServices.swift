@@ -27,6 +27,7 @@ final class WorkspaceServices {
     let notificationPanel = NotificationPanelViewModel()
     let undoRegistration = UndoManagerRegistration()
     let taskNotificationHandler = TaskNotificationHandler()
+    let assistantSession = AssistantSession()
 
     // MARK: Lifecycle helpers
 

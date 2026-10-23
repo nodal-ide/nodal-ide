@@ -118,6 +118,10 @@ extension ViewCommands {
             windowController?.inspectorCollapsed ?? true
         }
 
+        var isAssistantVisible: Bool {
+            windowController?.isAssistantVisible ?? false
+        }
+
         var utilityAreaCollapsed: Bool {
             windowController?.workspace?.utilityAreaModel?.isCollapsed ?? true
         }
@@ -142,6 +146,12 @@ extension ViewCommands {
             }
             .disabled(windowController == nil)
             .keyboardShortcut("i", modifiers: [.control, .command])
+
+            Button("\(isAssistantVisible ? "Hide" : "Show") Assistant") {
+                windowController?.toggleAssistant()
+            }
+            .disabled(windowController == nil)
+            .keyboardShortcut("a", modifiers: [.option, .command])
 
             Button("\(utilityAreaCollapsed ? "Show" : "Hide") Utility Area") {
                 AppServices.commandManager.executeCommand("open.drawer")

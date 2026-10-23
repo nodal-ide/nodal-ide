@@ -33,6 +33,7 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
     var referencesPanel: SearchPanel?
     var callHierarchyPanel: CallHierarchyPanel?
     var navigatorSidebarViewModel: NavigatorAreaViewModel?
+    var inspectorViewModel: InspectorAreaViewModel? { splitViewController?.inspectorViewModel }
 
     internal var cancellables = [AnyCancellable]()
 

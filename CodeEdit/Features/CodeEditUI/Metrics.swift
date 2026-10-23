@@ -12,6 +12,8 @@ enum Metrics {
     /// Sidebar / navigator / inspector geometry.
     enum Sidebar {
         static let minWidth: CGFloat = 242
+        static let minInspectorWidth: CGFloat = 280
+        static let assistantRevealWidth: CGFloat = 380
         static let snapWidth: CGFloat = 272
         static let maxSnapWidth: CGFloat = snapWidth + 10
         static let minSnapWidth: CGFloat = snapWidth - 10
