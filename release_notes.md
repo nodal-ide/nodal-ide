@@ -1,20 +1,21 @@
 ---
-version: 0.21.0
-build: 76
+version: 0.22.0
+build: 77
 ---
-# Nodal IDE V0.21.0 (build 76)
+# Nodal IDE V0.22.0 (build 77)
 
-Nodal IDE 0.21.0 introduces the foundation for the AI Assistant Chat Panel, providing a native, local-first conversational interface for workspace architecture, code review, debugging, and implementation guidance without background file modifications or autonomous agent execution.
+Nodal IDE 0.22.0 ships the complete local AI Assistant implementation (phases AI2–AI4), adding live streaming with local and OpenAI-compatible providers, workspace-aware BM25 retrieval with clickable citations, secure Keychain API key storage, and workspace-scoped conversation history.
 
 ## Features & Improvements
 
-- **AI Assistant Chat Panel (AI0)**: Added a dedicated Assistant tab in the inspector area (`⌥⌘A`) with header controls, scrollable transcript, composer, and session clear/reset capabilities.
-- **Inspectable & Non-Agentic Design**: Structured for local RAG-assisted code analysis—designed strictly to explain, review, and suggest implementations without modifying workspace files or running agent loops.
-- **Polished Transcript UI**: Added streaming responses, stop execution, retry actions, dark/light/high-contrast macOS materials, and Markdown rendering with copyable code blocks.
-- **Local-First Mock Engine**: Integrated a zero-network mock transport layer for offline interface testing and state management before configuring external or local OpenAI-compatible endpoints.
-- **Window & Inspector State Restoration**: Maintained persistent inspector width and automatic tab layout restoration across window and session restarts.
+- **Live Streaming & Provider Settings (AI2)**: Integrated `OpenAICompatibleProvider` with real-time SSE streaming, supporting Ollama, LM Studio, and custom local or remote endpoints with local networking permissions (`NSAllowsLocalNetworking`).
+- **Secure Keychain Integration**: API keys and secrets are stored exclusively in the macOS Keychain (`CodeEditKeychain`) and are never written to settings, logs, or transcript files.
+- **Local BM25 Workspace Retrieval & Citations (AI3)**: Built a local, background BM25 retrieval engine that chunks workspace files and knowledge bases, injecting relevant code context into prompts with stable, clickable `[]` citations.
+- **Privacy & Safety Enforcements**: Implemented automatic exclusions for hidden/VCS/build directories, binary files, lockfiles, minified assets, files over 1 MiB, and sensitive/secret paths. Remote provider connections require explicit workspace-context consent.
+- **Workspace Conversation History (AI4)**: Added atomic, versioned local transcript storage per workspace under Application Support with retention limits (40 conversations, 90-day cap), chat renaming, deletion, and an optional history-off toggle.
+- **Editor & UI Integration**: Added active selection bridging, single-scroll performance optimizations for active streams, and read-only Tree-sitter syntax highlighting for code blocks in completed assistant messages.
 
 ## Notes
 
 - Requires macOS 14 or later.
-- AI Assistant phase AI0 runs entirely offline with no network requests or API key setup required.
+- Local endpoints like Ollama (`http://127.0.0.1:11434/v1`) or LM Studio work out of the box with zero cloud dependencies.
