@@ -15,6 +15,8 @@ struct ExtensionSource: Codable, Hashable, Identifiable, Sendable {
     var name: String
     var providerID: ExtensionSourceProviderID
     var location: URL
+    /// Optional branch, tag, or commit for Git repository sources.
+    var revision: String?
     var isEnabled: Bool
     var isTrusted: Bool
     var refreshInterval: TimeInterval?
@@ -27,6 +29,7 @@ struct ExtensionSource: Codable, Hashable, Identifiable, Sendable {
         name: String,
         providerID: ExtensionSourceProviderID,
         location: URL,
+        revision: String? = nil,
         isEnabled: Bool = true,
         isTrusted: Bool = false,
         refreshInterval: TimeInterval? = nil,
@@ -38,6 +41,7 @@ struct ExtensionSource: Codable, Hashable, Identifiable, Sendable {
         self.name = name
         self.providerID = providerID
         self.location = location
+        self.revision = revision
         self.isEnabled = isEnabled
         self.isTrusted = isTrusted
         self.refreshInterval = refreshInterval
@@ -78,17 +82,26 @@ struct ExtensionSourceCollection: Sendable {
 private struct SourceLocationKey: Hashable {
     let providerID: ExtensionSourceProviderID
     let location: String
+    let revision: String?
 
     init?(source: ExtensionSource) {
         guard var components = URLComponents(url: source.location, resolvingAgainstBaseURL: false),
-              components.user == nil,
               components.password == nil,
               components.query == nil,
               components.fragment == nil else { return nil }
-        if source.providerID == .httpsStaticIndex,
-           (components.scheme?.lowercased() != "https" || components.host == nil) {
-            return nil
+
+        switch source.providerID {
+        case .httpsStaticIndex:
+            guard components.scheme?.lowercased() == "https",
+                  components.host != nil,
+                  components.user == nil else { return nil }
+        case .gitRepository:
+            guard GitRepositoryLocation.isValid(source.location),
+                  GitRepositoryLocation.isValidRevision(source.revision) else { return nil }
+        default:
+            guard components.user == nil else { return nil }
         }
+
         components.scheme = components.scheme?.lowercased()
         components.host = components.host?.lowercased()
         if components.scheme == "https" && components.port == 443
@@ -101,6 +114,9 @@ private struct SourceLocationKey: Hashable {
         guard let normalizedURL = components.url else { return nil }
         self.providerID = source.providerID
         self.location = normalizedURL.absoluteString
+        self.revision = source.providerID == .gitRepository
+            ? GitRepositoryLocation.normalizedRevision(source.revision)
+            : nil
     }
 }
 
@@ -124,6 +140,7 @@ struct ExtensionSourceProviderID: RawRepresentable, Codable, Hashable, Sendable,
     }
 
     static let httpsStaticIndex: Self = "https-static-index"
+    static let gitRepository: Self = "git-repository"
 }
 
 struct ExtensionCatalog: Codable, Hashable, Sendable {
