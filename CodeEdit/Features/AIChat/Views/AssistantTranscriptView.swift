@@ -18,9 +18,11 @@ struct AssistantTranscriptView: View {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 14) {
                             ForEach(session.messages) { message in
-                                AssistantMessageView(message: message) {
-                                    session.retry(message.id)
-                                }
+                                AssistantMessageView(
+                                    message: message,
+                                    onRetry: { session.retry(message.id) },
+                                    onOpenCitation: { session.openCitation($0) }
+                                )
                             }
 
                             Color.clear

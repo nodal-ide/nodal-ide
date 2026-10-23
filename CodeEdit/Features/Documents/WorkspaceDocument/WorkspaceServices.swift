@@ -45,6 +45,7 @@ final class WorkspaceServices {
     private(set) var openQuicklyViewModel: OpenQuicklyViewModel?
     private(set) var commandsPaletteState: QuickActionsViewModel?
     private var assistantSettingsCancellable: AnyCancellable?
+    private var lastRetrievalSetting: Bool?
     private(set) var sourceControlCoordinator: SourceControlCoordinator?
     private(set) var workspaceFileManager: CEWorkspaceFileManager?
     private(set) var taskManager: TaskManager?
@@ -62,12 +63,26 @@ final class WorkspaceServices {
     /// Constructs the workspace-dependent services. Called once a workspace URL is known.
     func configure(workspace: WorkspaceDocument, url: URL) {
         assistantSession.configureContextProvider(WorkspaceAssistantContextProvider(workspace: workspace))
+        let retrieveExcerpts = AppServices.settings.preferences.assistant.retrieveWorkspaceExcerpts
+        lastRetrievalSetting = retrieveExcerpts
+        assistantSession.setRetrievalEnabled(retrieveExcerpts)
+        assistantSession.configureRetrieval(AssistantWorkspaceRetrievalService(rootURL: url))
+        assistantSession.citationOpener = { [weak workspace] citation in
+            guard let workspace else { return false }
+            return Self.openCitation(citation, in: workspace)
+        }
         assistantSession.refreshProviderConfiguration()
         assistantSettingsCancellable = AppServices.settings.objectWillChange
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 DispatchQueue.main.async {
-                    self?.assistantSession.refreshProviderConfiguration()
+                    guard let self else { return }
+                    let enabled = AppServices.settings.preferences.assistant.retrieveWorkspaceExcerpts
+                    if self.lastRetrievalSetting != enabled {
+                        self.lastRetrievalSetting = enabled
+                        self.assistantSession.setRetrievalEnabled(enabled)
+                    }
+                    self.assistantSession.refreshProviderConfiguration()
                 }
             }
 
@@ -175,5 +190,25 @@ final class WorkspaceServices {
         debugController = nil
         languageCatalogStore = nil
         assistantSettingsCancellable = nil
+        lastRetrievalSetting = nil
+        assistantSession.stopRetrieval()
+        assistantSession.citationOpener = nil
+    }
+
+    private static func openCitation(_ citation: AssistantCitation, in workspace: WorkspaceDocument) -> Bool {
+        if let sourceID = citation.knowledgeSourceID {
+            KnowledgeRouter.shared.requestOpen(sourceID: sourceID, path: citation.relativePath)
+            return true
+        }
+        guard let root = workspace.workspaceFileManager?.folderUrl ?? workspace.fileURL,
+              let url = AssistantPathUtilities.url(forRelativePath: citation.relativePath, root: root),
+              FileManager.default.fileExists(atPath: url.path(percentEncoded: false))
+        else { return false }
+        workspace.editorManager?.revealSourceLocation(
+            url: url,
+            line: citation.line ?? 1,
+            column: 1
+        )
+        return true
     }
 }

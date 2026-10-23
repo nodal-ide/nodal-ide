@@ -2,14 +2,24 @@ import SwiftUI
 
 struct AssistantMarkdownView: View {
     let content: String
+    var citations: [AssistantCitation] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ForEach(Array(AssistantMarkdownParser.parse(content).enumerated()), id: \.offset) { _, block in
+            ForEach(
+                Array(
+                    AssistantMarkdownParser.parse(displayContent).enumerated()
+                ),
+                id: \.offset
+            ) { _, block in
                 blockView(block)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var displayContent: String {
+        AssistantCitationParser.removingKnownCitations(from: content, citations: citations)
     }
 
     @ViewBuilder

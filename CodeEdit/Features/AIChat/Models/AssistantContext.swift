@@ -40,6 +40,8 @@ struct AssistantContextItem: Identifiable, Equatable, Sendable {
         case diagnostics
         case tasks
         case project
+        case retrievedCode
+        case knowledge
 
         var label: String {
             switch self {
@@ -55,6 +57,10 @@ struct AssistantContextItem: Identifiable, Equatable, Sendable {
                 return "Tasks"
             case .project:
                 return "Project"
+            case .retrievedCode:
+                return "Workspace excerpt"
+            case .knowledge:
+                return "Knowledge"
             }
         }
 
@@ -72,6 +78,10 @@ struct AssistantContextItem: Identifiable, Equatable, Sendable {
                 return "terminal"
             case .project:
                 return "folder"
+            case .retrievedCode:
+                return "doc.text.magnifyingglass"
+            case .knowledge:
+                return "book.closed"
             }
         }
     }
@@ -82,6 +92,7 @@ struct AssistantContextItem: Identifiable, Equatable, Sendable {
     var relativePath: String?
     var lineRange: ClosedRange<Int>?
     var languageID: String?
+    var knowledgeSourceID: String?
     var zones: [AssistantLanguageZone]
     var text: String
     var isTruncated: Bool
@@ -96,6 +107,7 @@ struct AssistantContextItem: Identifiable, Equatable, Sendable {
         relativePath: String? = nil,
         lineRange: ClosedRange<Int>? = nil,
         languageID: String? = nil,
+        knowledgeSourceID: String? = nil,
         zones: [AssistantLanguageZone] = [],
         text: String,
         isTruncated: Bool = false,
@@ -109,6 +121,7 @@ struct AssistantContextItem: Identifiable, Equatable, Sendable {
         self.relativePath = relativePath
         self.lineRange = lineRange
         self.languageID = languageID
+        self.knowledgeSourceID = knowledgeSourceID
         self.zones = zones
         self.text = text
         self.isTruncated = isTruncated

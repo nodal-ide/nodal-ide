@@ -18,19 +18,22 @@ struct AssistantCitation: Identifiable, Codable, Hashable, Sendable {
     var relativePath: String
     var line: Int?
     var endLine: Int?
+    var knowledgeSourceID: String?
 
     init(
         id: String,
         title: String,
         relativePath: String,
         line: Int? = nil,
-        endLine: Int? = nil
+        endLine: Int? = nil,
+        knowledgeSourceID: String? = nil
     ) {
         self.id = id
         self.title = title
         self.relativePath = relativePath
         self.line = line
         self.endLine = endLine
+        self.knowledgeSourceID = knowledgeSourceID
     }
 }
 

@@ -30,8 +30,14 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
     @Published var contextItems: [AssistantContextItem] = []
     @Published var selectionNeedsRefresh = false
     @Published var pendingSensitiveContext: AssistantContextItem?
+    @Published var retrievalEnabled: Bool
+    @Published var retrievalStatus = AssistantRetrievalStatus.idle
+    @Published var citationNotice: String?
 
     private var transport: any AssistantTransport
+    var retrievalProvider: (any AssistantRetrievalProviding)?
+    var activeContextItems: [AssistantContextItem] = []
+    var citationOpener: ((AssistantCitation) -> Bool)?
     var contextProvider: (any AssistantContextProviding)?
     private var streamTask: Task<Void, Never>?
     private var activeResponseID: UUID?
@@ -46,13 +52,15 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
         provider: AssistantProvider? = .mock,
         messages: [AssistantMessage] = [],
         phase: Phase = .idle,
-        contextProvider: (any AssistantContextProviding)? = nil
+        contextProvider: (any AssistantContextProviding)? = nil,
+        retrievalEnabled: Bool = true
     ) {
         self.transport = transport
         self.provider = provider
         self.messages = messages
         self.phase = phase
         self.contextProvider = contextProvider
+        self.retrievalEnabled = retrievalEnabled
 
         NotificationCenter.default.publisher(for: TextSelectionManager.selectionChangedNotification)
             .receive(on: DispatchQueue.main)
@@ -104,6 +112,7 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
         activeResponseID = nil
         phase = .idle
         markMessage(responseID, status: .stopped)
+        activeContextItems = []
         applyPendingProviderRefresh()
         requestComposerFocus()
     }
@@ -135,6 +144,7 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
         cancelStreaming()
         messages = []
         draft = ""
+        activeContextItems = []
         clearContext()
         contentRevision += 1
         phase = .idle
@@ -162,15 +172,18 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
     ) {
         phase = .streaming
         activeResponseID = responseID
-        let request = AssistantRequest(
-            prompt: prompt,
-            conversation: conversation,
-            systemInstructions: AssistantPromptComposer.systemInstructions,
-            context: context.items.isEmpty ? nil : context
-        )
 
         streamTask = Task { [weak self] in
             guard let self else { return }
+            let context = await self.contextWithRetrieval(base: context, prompt: prompt)
+            guard self.activeResponseID == responseID else { return }
+            self.activeContextItems = context.items
+            let request = AssistantRequest(
+                prompt: prompt,
+                conversation: conversation,
+                systemInstructions: AssistantPromptComposer.systemInstructions,
+                context: context.items.isEmpty ? nil : context
+            )
             do {
                 for try await event in self.transport.stream(request) {
                     try Task.checkCancellation()
@@ -212,6 +225,10 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
             updated[index].errorMessage = "The assistant returned an empty response."
         } else {
             updated[index].status = .complete
+            updated[index].citations = AssistantCitationParser.citations(
+                in: updated[index].content,
+                items: activeContextItems
+            )
         }
         messages = updated
         contentRevision += 1
@@ -240,6 +257,12 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
 
         var updated = messages
         updated[index].status = status
+        if status == .stopped {
+            updated[index].citations = AssistantCitationParser.citations(
+                in: updated[index].content,
+                items: activeContextItems
+            )
+        }
         messages = updated
         contentRevision += 1
     }
@@ -247,6 +270,7 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
     private func completeActiveRequest() {
         streamTask = nil
         activeResponseID = nil
+        activeContextItems = []
         phase = .idle
         applyPendingProviderRefresh()
         requestComposerFocus()

@@ -10,6 +10,7 @@ struct AssistantContextBarView: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 5) {
                 addMenu
+                retrievalMenu
 
                 if session.contextItems.isEmpty {
                     Text("Add context")
@@ -42,6 +43,8 @@ struct AssistantContextBarView: View {
                 .accessibilityIdentifier("AssistantPreviewContextButton")
             }
 
+            retrievalStatusRow
+
             if session.selectionNeedsRefresh {
                 Button {
                     session.refreshSelection()
@@ -55,10 +58,74 @@ struct AssistantContextBarView: View {
             }
         }
         .sheet(isPresented: $showingPreview) {
-            AssistantContextPreviewView(
-                preview: session.contextPreview,
+            AssistantContextPreviewLoader(
+                session: session,
                 destination: session.destinationHost
             )
+        }
+    }
+
+    private var retrievalMenu: some View {
+        Menu {
+            Toggle(
+                "Search workspace excerpts",
+                isOn: Binding(
+                    get: { session.retrievalEnabled },
+                    set: { session.setRetrievalEnabled($0) }
+                )
+            )
+            Divider()
+            Button("Reindex Workspace") {
+                session.rebuildRetrievalIndex()
+            }
+            Button("Clear Workspace Index", role: .destructive) {
+                session.clearRetrievalIndex()
+            }
+        } label: {
+            HStack(spacing: 3) {
+                Image(systemName: "text.magnifyingglass")
+                    .font(.system(size: 9, weight: .semibold))
+                Text("Workspace")
+                    .font(.system(size: 9.5, weight: .medium))
+                Circle()
+                    .fill(session.retrievalEnabled ? Color.green : Color.secondary.opacity(0.45))
+                    .frame(width: 4, height: 4)
+            }
+            .foregroundStyle(session.retrievalEnabled ? Color.accentColor : Color.secondary)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 3)
+            .background(
+                (session.retrievalEnabled ? Color.accentColor : Color.secondary).opacity(0.1),
+                in: Capsule()
+            )
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(session.retrievalStatus.label)
+        .accessibilityLabel("Workspace retrieval \(session.retrievalEnabled ? "on" : "off")")
+    }
+
+    @ViewBuilder private var retrievalStatusRow: some View {
+        if session.retrievalStatus.isIndexing {
+            HStack(spacing: 5) {
+                ProgressView()
+                    .controlSize(.mini)
+                Text(session.retrievalStatus.label)
+                    .font(.system(size: 9.5))
+                    .foregroundStyle(.secondary)
+                Button("Send without retrieval") {
+                    session.setRetrievalEnabled(false)
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 9.5, weight: .medium))
+                .foregroundStyle(Color.accentColor)
+            }
+        } else if case .failed(let message) = session.retrievalStatus {
+            Label(message, systemImage: "exclamationmark.triangle")
+                .font(.system(size: 9.5))
+                .foregroundStyle(Color.orange)
+                .lineLimit(2)
         }
     }
 
@@ -158,6 +225,33 @@ struct AssistantContextBarView: View {
             lines.append(contentsOf: item.warnings)
         }
         return lines.joined(separator: "\n")
+    }
+}
+
+private struct AssistantContextPreviewLoader: View {
+    @ObservedObject var session: AssistantSession
+    let destination: String
+
+    @State private var preview: AssistantContextPreview?
+
+    var body: some View {
+        Group {
+            if let preview {
+                AssistantContextPreviewView(preview: preview, destination: destination)
+            } else {
+                VStack(spacing: 10) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Preparing context…")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(width: 560, height: 540)
+            }
+        }
+        .task {
+            preview = await session.makeContextPreviewWithRetrieval()
+        }
     }
 }
 

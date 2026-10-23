@@ -8,6 +8,8 @@ struct AssistantContextBudget: Equatable, Sendable {
     var taskTokens = 500
     var openFilesTokens = 350
     var projectTokens = 250
+    var retrievalTokens = 1_400
+    var knowledgeTokens = 700
 
     func fit(_ items: [AssistantContextItem]) -> AssistantContextPacket {
         let ordered = items.sorted { lhs, rhs in
@@ -18,14 +20,17 @@ struct AssistantContextBudget: Equatable, Sendable {
         var omitted: [String] = []
         var warnings: [String] = []
         var remaining = maximumContextTokens
+        var usedByKind: [AssistantContextItem.Kind: Int] = [:]
 
         for var item in ordered {
-            let itemCap = min(cap(for: item.kind), remaining)
+            let categoryRemaining = cap(for: item.kind) - usedByKind[item.kind, default: 0]
+            let itemCap = min(categoryRemaining, remaining)
             let tokens = estimateTokens(item.text)
 
             if tokens <= itemCap {
                 included.append(item)
                 remaining -= tokens
+                usedByKind[item.kind, default: 0] += tokens
                 continue
             }
 
@@ -36,6 +41,7 @@ struct AssistantContextBudget: Equatable, Sendable {
                 included.append(item)
                 let used = min(itemCap, estimateTokens(item.text))
                 remaining -= used
+                usedByKind[item.kind, default: 0] += used
                 warnings.append("\(item.title) was truncated to fit the context limit.")
             } else {
                 omitted.append(item.title)
@@ -70,6 +76,10 @@ struct AssistantContextBudget: Equatable, Sendable {
             return openFilesTokens
         case .project:
             return projectTokens
+        case .retrievedCode:
+            return retrievalTokens
+        case .knowledge:
+            return knowledgeTokens
         }
     }
 
@@ -77,27 +87,35 @@ struct AssistantContextBudget: Equatable, Sendable {
         switch kind {
         case .selection:
             return 0
-        case .project:
-            return 1
         case .activeFile:
+            return 1
+        case .project:
             return 2
         case .diagnostics:
             return 3
         case .tasks:
             return 4
-        case .openFiles:
+        case .retrievedCode:
             return 5
+        case .knowledge:
+            return 6
+        case .openFiles:
+            return 7
         }
     }
 
     private func truncate(_ text: String, to maximumCharacters: Int) -> String {
         guard maximumCharacters > 1, text.count > maximumCharacters else { return text }
-        let headCount = maximumCharacters * 2 / 3
-        let tailCount = max(0, maximumCharacters - headCount)
+        let markerReserve = min(80, maximumCharacters / 2)
+        let contentBudget = max(2, maximumCharacters - markerReserve)
+        let headCount = contentBudget * 2 / 3
+        let tailCount = max(0, contentBudget - headCount)
         let head = text.prefix(headCount)
         let tail = text.suffix(tailCount)
         let removed = text.count - head.count - tail.count
-        return "\(head)\n… [truncated \(removed) characters] …\n\(tail)"
+        let marker = "\n… [truncated \(removed) characters] …\n"
+        let result = "\(head)\(marker)\(tail)"
+        return String(result.prefix(maximumCharacters))
     }
 
     private func unique(_ values: [String]) -> [String] {

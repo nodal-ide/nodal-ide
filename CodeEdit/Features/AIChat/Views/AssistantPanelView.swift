@@ -57,6 +57,19 @@ struct AssistantPanelView: View {
                 )
             }
         }
+        .alert(
+            "Source unavailable",
+            isPresented: Binding(
+                get: { session.citationNotice != nil },
+                set: { if !$0 { session.dismissCitationNotice() } }
+            )
+        ) {
+            Button("OK") {
+                session.dismissCitationNotice()
+            }
+        } message: {
+            Text(session.citationNotice ?? "")
+        }
         .alert(item: pendingSensitiveBinding) { item in
             Alert(
                 title: Text("Attach sensitive context?"),

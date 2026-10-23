@@ -82,10 +82,17 @@ struct AssistantSettingsView: View {
                 Text("The context window is used for budgeting. The provider's model limit still applies.")
             }
 
-            Section("Context") {
+            Section {
                 Toggle("Include diagnostics by default", isOn: $assistant.includeDiagnosticsByDefault)
                 Toggle("Include tasks by default", isOn: $assistant.includeTasksByDefault)
-                Toggle("Prepare workspace retrieval", isOn: $assistant.retrieveWorkspaceExcerpts)
+                Toggle("Retrieve workspace excerpts", isOn: $assistant.retrieveWorkspaceExcerpts)
+            } header: {
+                Text("Context")
+            } footer: {
+                Text(
+                    "Workspace retrieval is local and excludes secret, binary, hidden, and generated files. "
+                        + "Use the Workspace menu above the composer to reindex or clear it."
+                )
             }
 
             Section {

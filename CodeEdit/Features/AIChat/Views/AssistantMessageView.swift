@@ -4,6 +4,7 @@ import SwiftUI
 struct AssistantMessageView: View {
     let message: AssistantMessage
     let onRetry: () -> Void
+    let onOpenCitation: (AssistantCitation) -> Void
 
     @State private var copied = false
 
@@ -42,7 +43,11 @@ struct AssistantMessageView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 if !message.content.isEmpty {
-                    AssistantMarkdownView(content: message.content)
+                    AssistantMarkdownView(content: message.content, citations: message.citations)
+                }
+
+                if !message.citations.isEmpty {
+                    citationStrip
                 }
 
                 if message.status == .streaming {
@@ -66,6 +71,44 @@ struct AssistantMessageView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Assistant response")
+    }
+
+    private var citationStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 5) {
+                ForEach(message.citations) { citation in
+                    Button {
+                        onOpenCitation(citation)
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: citation.knowledgeSourceID == nil ? "doc.text" : "book.closed")
+                                .font(.system(size: 8.5, weight: .semibold))
+                            Text(citation.title)
+                                .font(.system(size: 9.5, weight: .medium))
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.accentColor.opacity(0.09), in: Capsule())
+                        .overlay {
+                            Capsule()
+                                .stroke(Color.accentColor.opacity(0.18), lineWidth: 0.5)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .help(citationTooltip(citation))
+                    .accessibilityLabel("Open source \(citation.title)")
+                }
+            }
+        }
+    }
+
+    private func citationTooltip(_ citation: AssistantCitation) -> String {
+        if citation.knowledgeSourceID != nil {
+            return "\(citation.title)\n\(citation.relativePath)"
+        }
+        return citation.relativePath
     }
 
     private var avatar: some View {
