@@ -240,11 +240,21 @@ final class ExtensionMarketplaceViewModel: ObservableObject {
         }
     }
 
-    func addSource(name: String, location: URL, trustImmediately: Bool) throws {
+}
+
+extension ExtensionMarketplaceViewModel {
+    func addSource(
+        name: String,
+        location: URL,
+        providerID: ExtensionSourceProviderID = .httpsStaticIndex,
+        revision: String? = nil,
+        trustImmediately: Bool
+    ) throws {
         var source = ExtensionSource(
             name: name,
-            providerID: .httpsStaticIndex,
+            providerID: providerID,
             location: location,
+            revision: GitRepositoryLocation.normalizedRevision(revision),
             isTrusted: false
         )
         if trustImmediately {
@@ -258,18 +268,28 @@ final class ExtensionMarketplaceViewModel: ObservableObject {
         rebuildIndex()
     }
 
-    func updateSource(_ source: ExtensionSource, name: String, location: URL) async throws {
+    func updateSource(
+        _ source: ExtensionSource,
+        name: String,
+        location: URL,
+        providerID: ExtensionSourceProviderID,
+        revision: String?
+    ) async throws {
         var updated = source
         updated.name = name
         updated.location = location
-        if source.location != location {
+        updated.providerID = providerID
+        updated.revision = GitRepositoryLocation.normalizedRevision(revision)
+        let identityChanged = Self.identityChanged(source, updated)
+        if identityChanged {
+            await removeCachedProviderData(for: source)
             try await catalogService.removeSource(source.id)
             catalogs.removeValue(forKey: source.id)
         }
         try sourceStore.update(updated)
         sourceNames[source.id] = name
-        if source.location != location {
-            sourceStates[source.id] = source.isTrusted ? .idle : .untrusted
+        if identityChanged {
+            sourceStates[source.id] = updated.isTrusted ? .idle : .untrusted
         }
         rebuildIndex()
     }
@@ -287,6 +307,7 @@ final class ExtensionMarketplaceViewModel: ObservableObject {
     }
 
     func remove(_ source: ExtensionSource) async throws {
+        await removeCachedProviderData(for: source)
         try await catalogService.removeSource(source.id)
         try await sourceStore.remove(source.id)
         sourceNames.removeValue(forKey: source.id)
@@ -317,5 +338,17 @@ final class ExtensionMarketplaceViewModel: ObservableObject {
 
     private func applySearchFilter() {
         candidates = catalogIndex.candidates(matching: searchText)
+    }
+
+    private func removeCachedProviderData(for source: ExtensionSource) async {
+        guard let provider = try? providers?.provider(for: source) else { return }
+        await provider.removeCache(for: source.id)
+    }
+
+    private static func identityChanged(_ old: ExtensionSource, _ new: ExtensionSource) -> Bool {
+        old.providerID != new.providerID
+            || old.location != new.location
+            || GitRepositoryLocation.normalizedRevision(old.revision)
+                != GitRepositoryLocation.normalizedRevision(new.revision)
     }
 }

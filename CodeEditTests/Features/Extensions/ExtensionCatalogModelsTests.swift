@@ -132,6 +132,60 @@ struct ExtensionCatalogModelsTests {
     }
 
     @Test
+    func sourceCollectionSupportsGitRevisionsAndRejectsInvalidRefs() throws {
+        let main = makeSource(
+            name: "Main",
+            location: "ssh://git@github.com/nodal-ide/registry.git",
+            providerID: .gitRepository
+        )
+        let pinned = makeSource(
+            name: "Pinned",
+            location: "ssh://git@github.com/nodal-ide/registry.git",
+            providerID: .gitRepository,
+            revision: " release/1.0 "
+        )
+
+        let collection = try ExtensionSourceCollection(sources: [main, pinned])
+        #expect(collection.sources.count == 2)
+        let normalizedDuplicate = makeSource(
+            name: "Normalized duplicate",
+            location: "ssh://git@github.com/nodal-ide/registry.git",
+            providerID: .gitRepository,
+            revision: "release/1.0"
+        )
+        #expect(throws: ExtensionSourceCollectionError.duplicateSourceLocation) {
+            try ExtensionSourceCollection(sources: [pinned, normalizedDuplicate])
+        }
+        #expect(throws: ExtensionSourceCollectionError.duplicateSourceLocation) {
+            try ExtensionSourceCollection(sources: [
+                main,
+                makeSource(
+                    name: "Duplicate",
+                    location: "ssh://git@github.com/nodal-ide/registry.git",
+                    providerID: .gitRepository
+                )
+            ])
+        }
+        let badRevision = makeSource(
+            name: "Bad revision",
+            location: "https://github.com/nodal-ide/registry",
+            providerID: .gitRepository,
+            revision: "../main"
+        )
+        #expect(throws: ExtensionSourceCollectionError.invalidSourceLocation(badRevision.id)) {
+            try ExtensionSourceCollection(sources: [badRevision])
+        }
+        let insecureGit = makeSource(
+            name: "Insecure Git",
+            location: "http://github.com/nodal-ide/registry",
+            providerID: .gitRepository
+        )
+        #expect(throws: ExtensionSourceCollectionError.invalidSourceLocation(insecureGit.id)) {
+            try ExtensionSourceCollection(sources: [insecureGit])
+        }
+    }
+
+    @Test
     func fixtureProviderFeedsValidatedCatalogThroughRegistry() async throws {
         let catalog = makeCatalog(version: "1.2.3", packageURL: URL(string: "1.2.3.zip")!)
         let provider = FixtureSourceProvider(catalog: catalog)
@@ -162,11 +216,17 @@ struct ExtensionCatalogModelsTests {
         return ExtensionCatalog(schemaVersion: 1, extensions: ["com.example.pack": entry])
     }
 
-    private func makeSource(name: String, location: String) -> ExtensionSource {
+    private func makeSource(
+        name: String,
+        location: String,
+        providerID: ExtensionSourceProviderID = .httpsStaticIndex,
+        revision: String? = nil
+    ) -> ExtensionSource {
         ExtensionSource(
             name: name,
-            providerID: .httpsStaticIndex,
-            location: URL(string: location)!
+            providerID: providerID,
+            location: URL(string: location)!,
+            revision: revision
         )
     }
 }

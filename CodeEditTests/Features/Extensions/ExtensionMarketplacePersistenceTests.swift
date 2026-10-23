@@ -43,7 +43,10 @@ struct ExtensionMarketplacePersistenceTests {
 
         #expect(store.sources.count == 1)
         #expect(store.sources[0].name == "Nodal IDE Extensions")
-        #expect(!store.sources[0].isTrusted)
+        #expect(store.sources[0].providerID == .gitRepository)
+        #expect(store.sources[0].location.absoluteString == "https://github.com/nodal-ide/extensions-registry")
+        #expect(store.sources[0].revision == "main")
+        #expect(store.sources[0].isTrusted)
         #expect(settings.preferences.extensions.hasSeededDefaultSource)
 
         try await store.remove(store.sources[0].id)
@@ -56,9 +59,11 @@ struct ExtensionMarketplacePersistenceTests {
     @MainActor
     func defaultSourceSeedingDoesNotDuplicateAnExistingRegistry() {
         let settings = MemorySettingsStore()
-        let existing = makeSource(
+        let existing = ExtensionSource(
             name: "Manual Registry",
-            location: "https://raw.githubusercontent.com/nodal-ide/extensions-registry/refs/heads/main/extensions.json"
+            providerID: .gitRepository,
+            location: URL(string: "https://github.com/nodal-ide/extensions-registry")!,
+            revision: "main"
         )
         var preferences = settings.preferences
         preferences.extensions.sources = [existing]
@@ -74,8 +79,7 @@ struct ExtensionMarketplacePersistenceTests {
     func sourceSettingsRoundTripPersistsOnlyTheKeychainReference() throws {
         var settings = SettingsData.ExtensionsSettings()
         let source = makeSource(
-            name: "Private",
-            location: "https://registry.example/extensions.json",
+            name: "Private", location: "https://registry.example/extensions.json",
             credentialReference: "extension-source/github-token"
         )
         settings.sources = [source]
@@ -85,8 +89,7 @@ struct ExtensionMarketplacePersistenceTests {
         let json = try #require(String(bytes: data, encoding: .utf8))
 
         #expect(decoded.sources == [source])
-        #expect(json.contains("extension-source\\/github-token"))
-        #expect(!json.contains("secret-token"))
+        #expect(json.contains("extension-source\\/github-token") && !json.contains("secret-token"))
     }
 
     @Test
@@ -272,6 +275,9 @@ struct ExtensionMarketplacePersistenceTests {
         )
     }
 
+}
+
+private extension ExtensionMarketplacePersistenceTests {
     private func makeSource(
         id: ExtensionSourceID = .init(),
         name: String,

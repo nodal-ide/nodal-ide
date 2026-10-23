@@ -198,57 +198,77 @@ enum ExtensionCatalogValidator {
         guard catalog.schemaVersion == 1 else {
             throw ExtensionCatalogValidationError.unsupportedSchemaVersion(catalog.schemaVersion)
         }
-
         for (extensionID, entry) in catalog.extensions {
-            guard isReverseDNSIdentifier(extensionID) else {
-                throw ExtensionCatalogValidationError.invalidExtensionID(extensionID)
-            }
-            guard !entry.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  entry.name.utf8.count <= 128,
-                  !entry.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  entry.description.utf8.count <= 4_096,
-                  !entry.publisher.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  entry.publisher.utf8.count <= 128 else {
-                throw ExtensionCatalogValidationError.invalidMetadata(extensionID)
-            }
-            if let homepage = entry.url {
-                guard homepage.scheme?.lowercased() == "https",
-                      homepage.host != nil,
-                      homepage.user == nil,
-                      homepage.password == nil else {
-                    throw ExtensionCatalogValidationError.invalidHomepageURL(extensionID)
-                }
-            }
-            guard isSemVer(entry.latest) else {
-                throw ExtensionCatalogValidationError.invalidVersion(entry.latest)
-            }
-            guard entry.versions[entry.latest] != nil else {
-                throw ExtensionCatalogValidationError.missingLatestVersion(extensionID)
-            }
+            try validate(entry, extensionID: extensionID)
+        }
+    }
 
-            for (version, package) in entry.versions {
-                guard isSemVer(version) else {
-                    throw ExtensionCatalogValidationError.invalidVersion(version)
-                }
-                let hasSHA256Digest = package.integrity.utf8.count == 64
-                    && package.integrity.utf8.allSatisfy(Self.isLowercaseHexDigit)
-                guard hasSHA256Digest else {
-                    throw ExtensionCatalogValidationError.invalidIntegrity(
-                        extensionID: extensionID,
-                        version: version
-                    )
-                }
-                let scheme = package.url.scheme?.lowercased()
-                guard scheme == nil || scheme == "https",
-                      scheme != nil || package.url.host == nil,
-                      package.url.user == nil,
-                      package.url.password == nil else {
-                    throw ExtensionCatalogValidationError.invalidPackageURL(
-                        extensionID: extensionID,
-                        version: version
-                    )
-                }
+    private static func validate(
+        _ entry: ExtensionCatalogEntry,
+        extensionID: String
+    ) throws {
+        guard isReverseDNSIdentifier(extensionID) else {
+            throw ExtensionCatalogValidationError.invalidExtensionID(extensionID)
+        }
+        try validateMetadata(entry, extensionID: extensionID)
+        guard isSemVer(entry.latest) else {
+            throw ExtensionCatalogValidationError.invalidVersion(entry.latest)
+        }
+        guard entry.versions[entry.latest] != nil else {
+            throw ExtensionCatalogValidationError.missingLatestVersion(extensionID)
+        }
+        for (version, package) in entry.versions {
+            try validate(version: version, package: package, extensionID: extensionID)
+        }
+    }
+
+    private static func validateMetadata(
+        _ entry: ExtensionCatalogEntry,
+        extensionID: String
+    ) throws {
+        guard !entry.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              entry.name.utf8.count <= 128,
+              !entry.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              entry.description.utf8.count <= 4_096,
+              !entry.publisher.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              entry.publisher.utf8.count <= 128 else {
+            throw ExtensionCatalogValidationError.invalidMetadata(extensionID)
+        }
+        if let homepage = entry.url {
+            guard homepage.scheme?.lowercased() == "https",
+                  homepage.host != nil,
+                  homepage.user == nil,
+                  homepage.password == nil else {
+                throw ExtensionCatalogValidationError.invalidHomepageURL(extensionID)
             }
+        }
+    }
+
+    private static func validate(
+        version: String,
+        package: ExtensionCatalogVersion,
+        extensionID: String
+    ) throws {
+        guard isSemVer(version) else {
+            throw ExtensionCatalogValidationError.invalidVersion(version)
+        }
+        let hasSHA256Digest = package.integrity.utf8.count == 64
+            && package.integrity.utf8.allSatisfy(Self.isLowercaseHexDigit)
+        guard hasSHA256Digest else {
+            throw ExtensionCatalogValidationError.invalidIntegrity(
+                extensionID: extensionID,
+                version: version
+            )
+        }
+        let scheme = package.url.scheme?.lowercased()
+        guard scheme == nil || scheme == "https",
+              scheme != nil || package.url.host == nil,
+              package.url.user == nil,
+              package.url.password == nil else {
+            throw ExtensionCatalogValidationError.invalidPackageURL(
+                extensionID: extensionID,
+                version: version
+            )
         }
     }
 

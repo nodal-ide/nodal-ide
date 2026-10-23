@@ -72,7 +72,10 @@ enum GitRepositoryLocation {
     }
 
     static func packagePath(from url: URL) -> String? {
-        guard url.scheme == nil, url.host == nil else { return nil }
+        guard url.scheme == nil,
+              url.host == nil,
+              url.query == nil,
+              url.fragment == nil else { return nil }
         let path = url.path(percentEncoded: false)
         guard !path.isEmpty,
               path.utf8.count <= 1_024,
@@ -102,24 +105,30 @@ enum GitRepositoryLocation {
             || byte == 95
     }
 
-    private static func scpStyleComponents(
-        _ input: String
-    ) -> (user: String, host: String, path: String)? {
+    private struct SCPStyleLocation {
+        let user: String
+        let host: String
+        let path: String
+    }
+
+    private static func scpStyleComponents(_ input: String) -> SCPStyleLocation? {
         guard !input.contains("://"),
-              let at = input.firstIndex(of: "@") else { return nil }
-        let afterAt = input.index(after: at)
+              let atIndex = input.firstIndex(of: "@") else { return nil }
+        let afterAt = input.index(after: atIndex)
         guard let colon = input[afterAt...].firstIndex(of: ":") else { return nil }
-        let user = String(input[..<at])
-        let host = String(input[afterAt..<colon])
-        let path = String(input[input.index(after: colon)...])
-        guard !user.isEmpty,
-              !host.isEmpty,
-              !path.isEmpty,
-              !user.contains("/"),
-              !host.contains("/"),
-              !host.contains(":") else {
+        let location = SCPStyleLocation(
+            user: String(input[..<atIndex]),
+            host: String(input[afterAt..<colon]),
+            path: String(input[input.index(after: colon)...])
+        )
+        guard !location.user.isEmpty,
+              !location.host.isEmpty,
+              !location.path.isEmpty,
+              !location.user.contains("/"),
+              !location.host.contains("/"),
+              !location.host.contains(":") else {
             return nil
         }
-        return (user, host, path)
+        return location
     }
 }

@@ -73,7 +73,10 @@ enum AppServices {
 
     private static func makeExtensionSourceProviders() -> ExtensionSourceProviderRegistry? {
         do {
-            return try ExtensionSourceProviderRegistry(providers: [HTTPSStaticIndexProvider()])
+            return try ExtensionSourceProviderRegistry(providers: [
+                HTTPSStaticIndexProvider(),
+                GitRepositoryProvider()
+            ])
         } catch {
             assertionFailure("Duplicate marketplace source provider identifier: \(error)")
             return nil

@@ -42,7 +42,7 @@ struct ExtensionManagerWindow: Scene {
             .environmentObject(languageManager)
             .environmentObject(marketplace)
             .environmentObject(installation)
-            .frame(minWidth: 820, minHeight: 520)
+            .frame(minWidth: 960, minHeight: 520)
             .task { await marketplace.loadCachedCatalogs() }
         }
     }

@@ -11,12 +11,11 @@ final class ExtensionSourceStore: ObservableObject {
     private let catalogCache: ExtensionCatalogCache
     private static let defaultSource = ExtensionSource(
         name: "Nodal IDE Extensions",
-        providerID: .httpsStaticIndex,
-        location: URL(
-            string: "https://raw.githubusercontent.com/nodal-ide/extensions-registry/refs/heads/main/extensions.json"
-        )!,
+        providerID: .gitRepository,
+        location: URL(string: "https://github.com/nodal-ide/extensions-registry")!,
+        revision: "main",
         isEnabled: true,
-        isTrusted: false
+        isTrusted: true
     )
 
     init(
@@ -38,7 +37,9 @@ final class ExtensionSourceStore: ObservableObject {
         var preferences = settings.preferences
         guard !preferences.extensions.hasSeededDefaultSource else { return }
         let alreadyConfigured = preferences.extensions.sources.contains {
-            $0.providerID == Self.defaultSource.providerID && $0.location == Self.defaultSource.location
+            $0.providerID == Self.defaultSource.providerID
+                && $0.location == Self.defaultSource.location
+                && $0.revision == Self.defaultSource.revision
         }
         if !alreadyConfigured {
             preferences.extensions.sources.append(Self.defaultSource)

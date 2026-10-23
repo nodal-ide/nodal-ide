@@ -29,8 +29,9 @@ struct ExtensionSourcesView: View {
                     ExtensionEmptyState(
                         systemImage: "externaldrive.badge.plus",
                         title: "No Extension Sources",
-                        message: "Add a static HTTPS catalog to browse extensions from a publisher " +
-                            "you choose. New sources stay untrusted until you review and trust them.",
+                        message: "Add a static HTTPS catalog or Git repository to browse extensions " +
+                            "from a publisher you choose. New sources stay untrusted until you review " +
+                            "and trust them.",
                         primaryAction: .init("Add Source…", systemImage: "plus") {
                             isShowingAddSource = true
                         }
@@ -205,7 +206,10 @@ private struct ExtensionSourceRow: View {
                 .textSelection(.enabled)
                 .lineLimit(1)
             HStack(spacing: 12) {
-                Label("HTTPS Static Index", systemImage: "globe")
+                Label(providerLabel, systemImage: providerSymbol)
+                if source.providerID == .gitRepository {
+                    Text(source.revision.map { "Revision \($0)" } ?? "Default branch")
+                }
                 stateDescription
                 Spacer()
                 Button("Edit", systemImage: "pencil", action: onEdit)
@@ -252,6 +256,22 @@ private struct ExtensionSourceRow: View {
         }
     }
 
+    private var providerLabel: String {
+        switch source.providerID {
+        case .httpsStaticIndex: "HTTPS Static Index"
+        case .gitRepository: "Git Repository"
+        default: source.providerID.rawValue
+        }
+    }
+
+    private var providerSymbol: String {
+        switch source.providerID {
+        case .httpsStaticIndex: "globe"
+        case .gitRepository: "arrow.triangle.branch"
+        default: "externaldrive"
+        }
+    }
+
     @ViewBuilder private var stateDescription: some View {
         switch state {
         case .fresh(_, let count):
@@ -279,107 +299,6 @@ private extension ExtensionCatalogFailure {
         case .unavailable: "Refresh unavailable"
         case .providerUnavailable: "Provider unavailable"
         case .cacheUnavailable: "Cache unavailable"
-        }
-    }
-}
-
-struct AddExtensionSourceSheet: View {
-    @EnvironmentObject private var marketplace: ExtensionMarketplaceViewModel
-    @Environment(\.dismiss)
-    private var dismiss
-    @State private var name = ""
-    @State private var location = ""
-    @State private var trustImmediately = false
-    @State private var errorMessage: String?
-    private let source: ExtensionSource?
-
-    init(source: ExtensionSource? = nil) {
-        self.source = source
-        _name = State(initialValue: source?.name ?? "")
-        _location = State(initialValue: source?.location.absoluteString ?? "")
-        _trustImmediately = State(initialValue: source?.isTrusted ?? false)
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text(source == nil ? "Add Extension Source" : "Edit Extension Source")
-                .font(.title2.weight(.semibold))
-            Form {
-                TextField("Name", text: $name, prompt: Text("Team Registry"))
-                TextField("Catalog URL", text: $location, prompt: Text("https://example.com/extensions.json"))
-                    .textFieldStyle(.roundedBorder)
-                if source == nil {
-                    Toggle("Trust this source", isOn: $trustImmediately)
-                }
-            }
-            Text(
-                "A trusted source can provide catalog metadata and package downloads. " +
-                    "Trust does not authenticate publishers or grant consent to native code. " +
-                    "You can add the source without trusting it and review it first."
-            )
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            if let errorMessage {
-                Label(errorMessage, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
-                    .font(.callout)
-            }
-            HStack {
-                Spacer()
-                Button("Cancel") { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-                Button(source == nil ? "Add Source" : "Save Changes") { saveSource() }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || location.isEmpty)
-            }
-        }
-        .padding(24)
-        .frame(width: 480)
-    }
-
-    private func saveSource() {
-        guard let url = URL(string: location.trimmingCharacters(in: .whitespacesAndNewlines)) else {
-            errorMessage = "Enter a valid HTTPS catalog URL."
-            return
-        }
-        if let source {
-            Task {
-                do {
-                    try await marketplace.updateSource(
-                        source,
-                        name: name.trimmingCharacters(in: .whitespacesAndNewlines),
-                        location: url
-                    )
-                    dismiss()
-                } catch ExtensionSourceCollectionError.invalidSourceLocation {
-                    errorMessage = "The catalog URL must use HTTPS and cannot contain " +
-                        "credentials, a query, or a fragment."
-                } catch ExtensionSourceCollectionError.invalidSourceConfiguration {
-                    errorMessage = "Choose a source name with 1–128 characters."
-                } catch ExtensionSourceCollectionError.duplicateSourceLocation {
-                    errorMessage = "A source with this catalog URL already exists."
-                } catch {
-                    errorMessage = error.localizedDescription
-                }
-            }
-            return
-        }
-        do {
-            try marketplace.addSource(
-                name: name.trimmingCharacters(in: .whitespacesAndNewlines),
-                location: url,
-                trustImmediately: trustImmediately
-            )
-            dismiss()
-        } catch ExtensionSourceCollectionError.invalidSourceLocation {
-            errorMessage = "The catalog URL must use HTTPS and cannot contain credentials, a query, or a fragment."
-        } catch ExtensionSourceCollectionError.invalidSourceConfiguration {
-            errorMessage = "Choose a source name with 1–128 characters."
-        } catch ExtensionSourceCollectionError.duplicateSourceLocation {
-            errorMessage = "A source with this catalog URL already exists."
-        } catch {
-            errorMessage = error.localizedDescription
         }
     }
 }

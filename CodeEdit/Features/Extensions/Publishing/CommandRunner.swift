@@ -43,13 +43,15 @@ struct CommandRunner: Sendable {
         arguments: [String],
         currentDirectory: URL? = nil,
         environment: [String: String] = [:],
+        stdoutDestination: URL? = nil,
         acceptedStatuses: Set<Int32> = [0]
     ) async throws -> CommandOutput {
         let prepared = try prepare(
             executable: executable,
             arguments: arguments,
             currentDirectory: currentDirectory,
-            environment: environment
+            environment: environment,
+            stdoutDestination: stdoutDestination
         )
         defer { try? FileManager.default.removeItem(at: prepared.temporaryRoot) }
         return try await wait(
@@ -71,36 +73,39 @@ struct CommandRunner: Sendable {
         executable: URL,
         arguments: [String],
         currentDirectory: URL?,
-        environment: [String: String]
+        environment: [String: String],
+        stdoutDestination: URL?
     ) throws -> PreparedProcess {
         let fileManager = FileManager.default
         let temporaryRoot = fileManager.temporaryDirectory
             .appending(path: "NodalCommand-\(UUID().uuidString)", directoryHint: .isDirectory)
         try fileManager.createDirectory(at: temporaryRoot, withIntermediateDirectories: true)
 
-        let stdoutURL = temporaryRoot.appending(path: "stdout")
+        let stdoutTarget = try makeOutputTarget(
+            destination: stdoutDestination,
+            temporaryRoot: temporaryRoot,
+            fileManager: fileManager
+        )
         let stderrURL = temporaryRoot.appending(path: "stderr")
-        guard fileManager.createFile(atPath: stdoutURL.path(percentEncoded: false), contents: nil),
-              fileManager.createFile(atPath: stderrURL.path(percentEncoded: false), contents: nil) else {
+        guard fileManager.createFile(atPath: stderrURL.path(percentEncoded: false), contents: nil) else {
             throw CommandRunnerError.launchFailed("Could not create temporary output files.")
         }
 
-        let stdoutHandle = try FileHandle(forWritingTo: stdoutURL)
         let stderrHandle = try FileHandle(forWritingTo: stderrURL)
         let process = Process()
         process.executableURL = executable
         process.arguments = arguments
         process.currentDirectoryURL = currentDirectory
-        process.standardOutput = stdoutHandle
+        process.standardOutput = stdoutTarget.handle
         process.standardError = stderrHandle
         process.standardInput = FileHandle.nullDevice
         process.environment = ProcessInfo.processInfo.environment.merging(environment) { _, new in new }
 
         let box = ProcessBox(
             process: process,
-            stdoutHandle: stdoutHandle,
+            stdoutHandle: stdoutTarget.handle,
             stderrHandle: stderrHandle,
-            stdoutURL: stdoutURL,
+            stdoutURL: stdoutTarget.url,
             stderrURL: stderrURL
         )
         return PreparedProcess(
@@ -109,6 +114,38 @@ struct CommandRunner: Sendable {
             temporaryRoot: temporaryRoot,
             commandName: executable.lastPathComponent
         )
+    }
+
+    private struct OutputTarget {
+        let handle: FileHandle
+        let url: URL?
+    }
+
+    private func makeOutputTarget(
+        destination: URL?,
+        temporaryRoot: URL,
+        fileManager: FileManager = .default
+    ) throws -> OutputTarget {
+        if let destination {
+            try fileManager.createDirectory(
+                at: destination.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            if !fileManager.fileExists(atPath: destination.path(percentEncoded: false)) {
+                guard fileManager.createFile(atPath: destination.path(percentEncoded: false), contents: nil) else {
+                    throw CommandRunnerError.launchFailed("Could not create the command output file.")
+                }
+            }
+            let handle = try FileHandle(forWritingTo: destination)
+            try handle.truncate(atOffset: 0)
+            return OutputTarget(handle: handle, url: nil)
+        }
+
+        let url = temporaryRoot.appending(path: "stdout")
+        guard fileManager.createFile(atPath: url.path(percentEncoded: false), contents: nil) else {
+            throw CommandRunnerError.launchFailed("Could not create temporary output files.")
+        }
+        return OutputTarget(handle: try FileHandle(forWritingTo: url), url: url)
     }
 
     private func wait(
@@ -160,7 +197,7 @@ private final class ProcessBox: @unchecked Sendable {
     private let process: Process
     private let stdoutHandle: FileHandle
     private let stderrHandle: FileHandle
-    private let stdoutURL: URL
+    private let stdoutURL: URL?
     private let stderrURL: URL
     private let lock = NSLock()
     private var didCloseHandles = false
@@ -169,7 +206,7 @@ private final class ProcessBox: @unchecked Sendable {
         process: Process,
         stdoutHandle: FileHandle,
         stderrHandle: FileHandle,
-        stdoutURL: URL,
+        stdoutURL: URL?,
         stderrURL: URL
     ) {
         self.process = process
@@ -196,9 +233,14 @@ private final class ProcessBox: @unchecked Sendable {
 
     func finish(status: Int32) -> Result<CommandOutput, CommandRunnerError> {
         closeHandles()
-        guard let stdout = read(stdoutURL), let stderr = read(stderrURL) else {
-            return .failure(.outputTooLarge)
+        let stdout: Data
+        if let stdoutURL {
+            guard let data = read(stdoutURL) else { return .failure(.outputTooLarge) }
+            stdout = data
+        } else {
+            stdout = Data()
         }
+        guard let stderr = read(stderrURL) else { return .failure(.outputTooLarge) }
         return .success(CommandOutput(
             status: status,
             stdout: String(bytes: stdout, encoding: .utf8) ?? "",

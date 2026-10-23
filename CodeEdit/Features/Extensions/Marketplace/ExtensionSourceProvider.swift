@@ -61,6 +61,12 @@ protocol ExtensionSourceProvider: Sendable {
         to destination: URL,
         progress: @escaping @Sendable (Int64, Int64?) -> Void
     ) async throws -> DownloadedExtensionPackage
+
+    func removeCache(for sourceID: ExtensionSourceID) async
+}
+
+extension ExtensionSourceProvider {
+    func removeCache(for sourceID: ExtensionSourceID) async {}
 }
 
 struct ExtensionSourceProviderRegistry: Sendable {
