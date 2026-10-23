@@ -31,7 +31,9 @@ struct AssistantEmptyStateView: View {
                     }
                 } else {
                     Label(
-                        provider == nil ? "Provider setup is unavailable in this build." : "Check the provider server.",
+                        provider == nil
+                            ? "Add a provider in Settings > AI Assistant."
+                            : "Finish provider setup in Settings > AI Assistant.",
                         systemImage: provider == nil ? "gearshape" : "wifi.exclamationmark"
                     )
                     .font(.system(size: 10.5))
@@ -64,10 +66,10 @@ struct AssistantEmptyStateView: View {
 
     private var message: String {
         guard let provider else {
-            return "A provider must be connected before the assistant can respond."
+            return "Add a provider in Settings > AI Assistant to start chatting."
         }
         if !provider.isUsable {
-            return "The configured provider is \(provider.connection.label.lowercased()). Reconnect it to continue."
+            return "Finish configuring \(provider.name) in Settings > AI Assistant."
         }
         return "Get help understanding, reviewing, or planning changes in this workspace."
     }

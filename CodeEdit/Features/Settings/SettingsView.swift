@@ -101,6 +101,13 @@ struct SettingsView: View {
         ),
         .init(
             SettingsPage(
+                .assistant,
+                baseColor: .indigo,
+                icon: .system("sparkles")
+            )
+        ),
+        .init(
+            SettingsPage(
                 .developer,
                 baseColor: .pink,
                 icon: .system("bolt")
@@ -209,6 +216,8 @@ struct SettingsView: View {
                     LanguageServersView()
                 case .phpDiagnostics:
                     PHPDiagnosticsSettingsView()
+                case .assistant:
+                    AssistantSettingsView()
                 case .developer:
                     DeveloperSettingsView()
                 default:

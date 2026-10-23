@@ -34,6 +34,7 @@ struct SettingsPage: Hashable, Equatable, Identifiable {
         case advanced = "Advanced"
         case languageServers = "Language Servers"
         case phpDiagnostics = "PHP Diagnostics"
+        case assistant = "AI Assistant"
         case developer = "Developer"
     }
 

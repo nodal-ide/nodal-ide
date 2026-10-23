@@ -3,7 +3,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AssistantSession: ObservableObject {
+final class AssistantSession: ObservableObject { // swiftlint:disable:this type_body_length
     enum Phase: Equatable {
         case idle
         case streaming
@@ -31,7 +31,7 @@ final class AssistantSession: ObservableObject {
     @Published var selectionNeedsRefresh = false
     @Published var pendingSensitiveContext: AssistantContextItem?
 
-    private let transport: any AssistantTransport
+    private var transport: any AssistantTransport
     var contextProvider: (any AssistantContextProviding)?
     private var streamTask: Task<Void, Never>?
     private var activeResponseID: UUID?
@@ -39,6 +39,7 @@ final class AssistantSession: ObservableObject {
     var pendingSelectionSnapshot: AssistantSelectionSnapshot?
     var selectionCheckTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
+    private var pendingProviderRefresh: (() -> Void)?
 
     init(
         transport: any AssistantTransport = MockAssistantTransport(),
@@ -103,6 +104,7 @@ final class AssistantSession: ObservableObject {
         activeResponseID = nil
         phase = .idle
         markMessage(responseID, status: .stopped)
+        applyPendingProviderRefresh()
         requestComposerFocus()
     }
 
@@ -136,6 +138,7 @@ final class AssistantSession: ObservableObject {
         clearContext()
         contentRevision += 1
         phase = .idle
+        applyPendingProviderRefresh()
         requestComposerFocus()
     }
 
@@ -245,7 +248,101 @@ final class AssistantSession: ObservableObject {
         streamTask = nil
         activeResponseID = nil
         phase = .idle
+        applyPendingProviderRefresh()
         requestComposerFocus()
+    }
+
+    func refreshProviderConfiguration() {
+        refreshProviderConfiguration(
+            settings: AppServices.settings.preferences.assistant,
+            keychain: AppServices.assistantKeychain,
+            session: AppServices.assistantURLSession
+        )
+    }
+
+    func refreshProviderConfiguration(
+        settings: AssistantSettings,
+        keychain: any AssistantKeychainStoring,
+        session: URLSession
+    ) {
+        let apply: () -> Void = { [weak self] in
+            guard let self else { return }
+            applyProviderConfiguration(settings: settings, keychain: keychain, session: session)
+        }
+        guard !isStreaming else {
+            pendingProviderRefresh = apply
+            return
+        }
+        apply()
+    }
+
+    // swiftlint:disable:next function_body_length
+    private func applyProviderConfiguration(
+        settings: AssistantSettings,
+        keychain: any AssistantKeychainStoring,
+        session: URLSession
+    ) {
+        guard let profile = settings.defaultProfile else {
+            transport = UnavailableAssistantTransport(
+                error: .invalidConfiguration("Add a provider in Settings > AI Assistant to start chatting.")
+            )
+            provider = nil
+            return
+        }
+
+        let displayHost = URLComponents(string: profile.baseURL)?.host ?? profile.baseURL
+        do {
+            let endpoint = try AssistantEndpoint(
+                baseURLString: profile.baseURL,
+                allowInsecureHTTP: profile.allowInsecureHTTP
+            )
+            let model = profile.model.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !model.isEmpty else {
+                transport = UnavailableAssistantTransport(
+                    error: .invalidConfiguration(
+                        "Choose a model for \(profile.name) in Settings > AI Assistant."
+                    )
+                )
+                provider = AssistantProvider(
+                    id: profile.id.uuidString,
+                    name: profile.name,
+                    model: "No model selected",
+                    connection: .needsSetup,
+                    host: endpoint.displayHost
+                )
+                return
+            }
+            transport = try OpenAICompatibleProvider(
+                profile: profile,
+                apiKey: keychain.apiKey(for: profile.id),
+                settings: settings,
+                session: session
+            )
+            provider = AssistantProvider(
+                id: profile.id.uuidString,
+                name: profile.name,
+                model: model,
+                connection: endpoint.isLoopback ? .local : .remote,
+                host: endpoint.displayHost
+            )
+        } catch {
+            let providerError = (error as? AssistantProviderError)
+                ?? .invalidConfiguration(error.localizedDescription)
+            transport = UnavailableAssistantTransport(error: providerError)
+            provider = AssistantProvider(
+                id: profile.id.uuidString,
+                name: profile.name,
+                model: profile.model,
+                connection: .needsSetup,
+                host: displayHost
+            )
+        }
+    }
+
+    private func applyPendingProviderRefresh() {
+        guard let pendingProviderRefresh else { return }
+        self.pendingProviderRefresh = nil
+        pendingProviderRefresh()
     }
 
     private func cancelStreaming() {

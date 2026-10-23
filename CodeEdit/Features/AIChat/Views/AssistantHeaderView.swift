@@ -79,7 +79,8 @@ struct AssistantHeaderView: View {
     }
 
     private var providerText: String {
-        session.provider?.subtitle ?? "No provider configured"
+        guard let provider = session.provider else { return "No provider configured" }
+        return "\(provider.name) · \(provider.host)"
     }
 
     private var statusColor: Color {
@@ -128,23 +129,28 @@ private struct AssistantProviderPopover: View {
                 LabeledContent("Connection") {
                     Text(provider.connection.label)
                 }
+                LabeledContent("Destination") {
+                    Text(provider.host)
+                }
             }
 
-            Text(
-                provider == nil
-                    ? "Configure a provider before sending a message."
-                    : "This build uses a deterministic mock provider to validate the chat experience."
-            )
-            .font(.system(size: 10.5))
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-
-            Text("Mock responses stay on this Mac.")
+            Text(destinationMessage)
                 .font(.system(size: 10.5))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .font(.system(size: 11))
         .padding(12)
         .frame(width: 280, alignment: .leading)
+    }
+
+    private var destinationMessage: String {
+        guard let provider else {
+            return "Add a provider in Settings > AI Assistant before sending a message."
+        }
+        if provider.connection == .local {
+            return "Requests go to \(provider.host). This loopback endpoint is local to this Mac."
+        }
+        return "Requests go to \(provider.host). Workspace context is sent only after you allow it for this provider."
     }
 }

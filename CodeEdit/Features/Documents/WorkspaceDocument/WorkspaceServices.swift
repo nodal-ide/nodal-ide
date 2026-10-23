@@ -6,6 +6,7 @@
 //  individual services through computed forwards, so call sites are unchanged.
 //
 
+import Combine
 import Foundation
 
 /// Owns the workspace-scoped services that used to be stored (and wired) directly on
@@ -43,6 +44,7 @@ final class WorkspaceServices {
     private(set) var searchState: WorkspaceSearchService?
     private(set) var openQuicklyViewModel: OpenQuicklyViewModel?
     private(set) var commandsPaletteState: QuickActionsViewModel?
+    private var assistantSettingsCancellable: AnyCancellable?
     private(set) var sourceControlCoordinator: SourceControlCoordinator?
     private(set) var workspaceFileManager: CEWorkspaceFileManager?
     private(set) var taskManager: TaskManager?
@@ -60,6 +62,14 @@ final class WorkspaceServices {
     /// Constructs the workspace-dependent services. Called once a workspace URL is known.
     func configure(workspace: WorkspaceDocument, url: URL) {
         assistantSession.configureContextProvider(WorkspaceAssistantContextProvider(workspace: workspace))
+        assistantSession.refreshProviderConfiguration()
+        assistantSettingsCancellable = AppServices.settings.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.assistantSession.refreshProviderConfiguration()
+                }
+            }
 
         let settingsManager = CEWorkspaceSettings(workspaceURL: url)
         workspaceSettingsManager = settingsManager
@@ -164,5 +174,6 @@ final class WorkspaceServices {
         breakpointStore = nil
         debugController = nil
         languageCatalogStore = nil
+        assistantSettingsCancellable = nil
     }
 }

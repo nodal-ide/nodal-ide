@@ -65,6 +65,9 @@ struct SettingsData: Codable, Hashable {
     /// Global preferences for local development domains
     var localDomains: LocalDomainsSettings = .init()
 
+    /// Global AI assistant settings
+    var assistant: AssistantSettings = .init()
+
     /// Default initializer
     init() {}
 
@@ -104,6 +107,10 @@ struct SettingsData: Codable, Hashable {
             LocalDomainsSettings.self,
             forKey: .localDomains
         ) ?? .init()
+        self.assistant = (try? container.decodeIfPresent(
+            AssistantSettings.self,
+            forKey: .assistant
+        )) ?? .init()
     }
     // swiftlint:disable cyclomatic_complexity
     func propertiesOf(_ name: SettingsPage.Name) -> [SettingsPage] {
@@ -136,6 +143,8 @@ struct SettingsData: Codable, Hashable {
             developerSettings.searchKeys.forEach { settings.append(.init(name, isSetting: true, settingName: $0)) }
         case .phpDiagnostics:
             phpDiagnostics.searchKeys.forEach { settings.append(.init(name, isSetting: true, settingName: $0)) }
+        case .assistant:
+            AssistantSettings.searchKeys.forEach { settings.append(.init(name, isSetting: true, settingName: $0)) }
         case .behavior: return [.init(name, settingName: "Error")]
         case .components: return [.init(name, settingName: "Error")]
         case .keybindings: return [.init(name, settingName: "Error")]

@@ -20,6 +20,18 @@ enum AppServices {
     /// non-view code) reads and writes through it, so tests/previews can substitute their own store.
     static var settings: any SettingsProviding = Settings.shared
 
+    /// The app-wide assistant API-key store.
+    static var assistantKeychain: any AssistantKeychainStoring = AssistantKeychainStore()
+
+    /// The app-wide URL session used by assistant providers.
+    static var assistantURLSession: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.urlCache = nil
+        configuration.httpCookieStorage = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        return URLSession(configuration: configuration)
+    }()
+
     /// The app-wide notification manager (in-app banners + system notifications).
     static var notificationManager: NotificationManager = .shared
 

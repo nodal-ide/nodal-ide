@@ -44,7 +44,7 @@ struct AssistantComposerView: View {
                     HStack(spacing: 4) {
                         Text(session.destinationLabel)
                         Text("·")
-                        Text(session.provider?.id == "mock" ? "No network requests" : "Explicit send")
+                        Text(destinationDetail)
                     }
                     Text(session.destinationLabel)
                 }
@@ -99,6 +99,11 @@ struct AssistantComposerView: View {
         .help(session.isStreaming ? "Stop" : "Send")
         .accessibilityLabel(session.isStreaming ? "Stop" : "Send")
         .accessibilityIdentifier("AssistantSendButton")
+    }
+
+    private var destinationDetail: String {
+        guard let provider = session.provider else { return "No destination" }
+        return provider.id == "mock" ? "No network requests" : "to \(session.destinationHost)"
     }
 
     private var statusColor: Color {
