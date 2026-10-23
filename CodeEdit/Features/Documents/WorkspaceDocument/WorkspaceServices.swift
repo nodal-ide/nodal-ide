@@ -59,6 +59,8 @@ final class WorkspaceServices {
 
     /// Constructs the workspace-dependent services. Called once a workspace URL is known.
     func configure(workspace: WorkspaceDocument, url: URL) {
+        assistantSession.configureContextProvider(WorkspaceAssistantContextProvider(workspace: workspace))
+
         let settingsManager = CEWorkspaceSettings(workspaceURL: url)
         workspaceSettingsManager = settingsManager
         searchState = WorkspaceSearchService(workspace)

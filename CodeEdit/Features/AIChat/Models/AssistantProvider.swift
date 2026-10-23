@@ -32,24 +32,28 @@ struct AssistantProvider: Identifiable, Codable, Hashable, Sendable {
     var name: String
     var model: String
     var connection: AssistantConnectionState
+    var host: String
 
     init(
         id: String,
         name: String,
         model: String,
-        connection: AssistantConnectionState
+        connection: AssistantConnectionState,
+        host: String = "Not configured"
     ) {
         self.id = id
         self.name = name
         self.model = model
         self.connection = connection
+        self.host = host
     }
 
     static let mock = AssistantProvider(
         id: "mock",
         name: "Mock Provider",
         model: "Local preview",
-        connection: .local
+        connection: .local,
+        host: "Local mock"
     )
 
     var isUsable: Bool {

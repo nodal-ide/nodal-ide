@@ -1,3 +1,4 @@
+import CodeEditTextView
 import Combine
 import Foundation
 
@@ -26,21 +27,38 @@ final class AssistantSession: ObservableObject {
     @Published private(set) var provider: AssistantProvider?
     @Published private(set) var focusRequest = 0
     @Published private(set) var contentRevision = 0
+    @Published var contextItems: [AssistantContextItem] = []
+    @Published var selectionNeedsRefresh = false
+    @Published var pendingSensitiveContext: AssistantContextItem?
 
     private let transport: any AssistantTransport
+    var contextProvider: (any AssistantContextProviding)?
     private var streamTask: Task<Void, Never>?
     private var activeResponseID: UUID?
+    var attachedSelectionSnapshot: AssistantSelectionSnapshot?
+    var pendingSelectionSnapshot: AssistantSelectionSnapshot?
+    var selectionCheckTask: Task<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
 
     init(
         transport: any AssistantTransport = MockAssistantTransport(),
         provider: AssistantProvider? = .mock,
         messages: [AssistantMessage] = [],
-        phase: Phase = .idle
+        phase: Phase = .idle,
+        contextProvider: (any AssistantContextProviding)? = nil
     ) {
         self.transport = transport
         self.provider = provider
         self.messages = messages
         self.phase = phase
+        self.contextProvider = contextProvider
+
+        NotificationCenter.default.publisher(for: TextSelectionManager.selectionChangedNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.scheduleSelectionCheck()
+            }
+            .store(in: &cancellables)
     }
 
     var isStreaming: Bool {
@@ -54,22 +72,7 @@ final class AssistantSession: ObservableObject {
     }
 
     var canStartNewChat: Bool {
-        !messages.isEmpty || !draft.isEmpty
-    }
-
-    var destinationLabel: String {
-        guard let provider else {
-            return "No provider configured"
-        }
-        return "\(provider.name) · \(provider.connection.label)"
-    }
-
-    var transcript: String {
-        messages.map { message in
-            let name = message.isUser ? "You" : "Assistant"
-            return "\(name)\n\(message.content)"
-        }
-        .joined(separator: "\n\n")
+        !messages.isEmpty || !draft.isEmpty || !contextItems.isEmpty
     }
 
     func send() {
@@ -80,10 +83,16 @@ final class AssistantSession: ObservableObject {
         messages.append(AssistantMessage(role: .user, content: prompt))
         contentRevision += 1
         let conversation = messages
+        let packet = makeContextPacket()
         let assistantMessage = AssistantMessage(role: .assistant, content: "", status: .streaming)
         messages.append(assistantMessage)
         contentRevision += 1
-        startStreaming(prompt: prompt, conversation: conversation, responseID: assistantMessage.id)
+        startStreaming(
+            prompt: prompt,
+            conversation: conversation,
+            context: packet,
+            responseID: assistantMessage.id
+        )
     }
 
     func stop() {
@@ -112,13 +121,19 @@ final class AssistantSession: ObservableObject {
         let response = AssistantMessage(role: .assistant, content: "", status: .streaming)
         messages.append(response)
         contentRevision += 1
-        startStreaming(prompt: prompt, conversation: conversation, responseID: response.id)
+        startStreaming(
+            prompt: prompt,
+            conversation: conversation,
+            context: makeContextPacket(),
+            responseID: response.id
+        )
     }
 
     func startNewConversation() {
         cancelStreaming()
         messages = []
         draft = ""
+        clearContext()
         contentRevision += 1
         phase = .idle
         requestComposerFocus()
@@ -136,10 +151,20 @@ final class AssistantSession: ObservableObject {
         transcript
     }
 
-    private func startStreaming(prompt: String, conversation: [AssistantMessage], responseID: UUID) {
+    private func startStreaming(
+        prompt: String,
+        conversation: [AssistantMessage],
+        context: AssistantContextPacket,
+        responseID: UUID
+    ) {
         phase = .streaming
         activeResponseID = responseID
-        let request = AssistantRequest(prompt: prompt, conversation: conversation)
+        let request = AssistantRequest(
+            prompt: prompt,
+            conversation: conversation,
+            systemInstructions: AssistantPromptComposer.systemInstructions,
+            context: context.items.isEmpty ? nil : context
+        )
 
         streamTask = Task { [weak self] in
             guard let self else { return }

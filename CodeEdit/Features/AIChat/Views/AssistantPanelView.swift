@@ -57,8 +57,40 @@ struct AssistantPanelView: View {
                 )
             }
         }
+        .alert(item: pendingSensitiveBinding) { item in
+            Alert(
+                title: Text("Attach sensitive context?"),
+                message: Text(sensitiveMessage(for: item)),
+                primaryButton: .destructive(Text("Attach")) {
+                    session.confirmSensitiveContext()
+                },
+                secondaryButton: .cancel {
+                    session.cancelSensitiveContext()
+                }
+            )
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Assistant")
+    }
+
+    private var pendingSensitiveBinding: Binding<AssistantContextItem?> {
+        Binding(
+            get: { session.pendingSensitiveContext },
+            set: { value in
+                if value == nil {
+                    session.cancelSensitiveContext()
+                }
+            }
+        )
+    }
+
+    private func sensitiveMessage(for item: AssistantContextItem) -> String {
+        var message = "\(item.title) looks like it may contain secrets. "
+            + "Common secret patterns have been redacted, but review the context preview before sending."
+        if !item.warnings.isEmpty {
+            message += "\n\n" + item.warnings.joined(separator: "\n")
+        }
+        return message
     }
 
     private func requestNewChat() {

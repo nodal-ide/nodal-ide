@@ -109,6 +109,13 @@ struct EditorCommands: Commands {
 
             Divider()
 
+            Button("Ask Assistant About Selection") {
+                windowController?.askAssistantAboutSelection()
+            }
+            .keyboardShortcut("a", modifiers: [.control, .command])
+
+            Divider()
+
             Button("Format Document") {
                 LSPEditorActions.formatDocument(workspace: windowController?.workspace)
             }

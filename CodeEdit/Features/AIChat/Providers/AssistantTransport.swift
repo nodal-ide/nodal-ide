@@ -3,6 +3,8 @@ import Foundation
 struct AssistantRequest: Equatable, Sendable {
     var prompt: String
     var conversation: [AssistantMessage]
+    var systemInstructions: String?
+    var context: AssistantContextPacket?
 }
 
 enum AssistantTransportEvent: Equatable, Sendable {

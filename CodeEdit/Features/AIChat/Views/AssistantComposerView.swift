@@ -11,6 +11,8 @@ struct AssistantComposerView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
+            AssistantContextBarView(session: session)
+
             ZStack(alignment: .topLeading) {
                 AssistantComposerTextView(
                     text: $session.draft,

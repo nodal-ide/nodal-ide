@@ -57,6 +57,12 @@ extension CodeEditWindowController {
         }
     }
 
+    func askAssistantAboutSelection() {
+        guard let session = workspace?.assistantSession else { return }
+        session.addCurrentSelectionOrActiveFile()
+        revealAssistant()
+    }
+
     func revealAssistant() {
         guard let splitViewController, let inspectorViewModel else { return }
         inspectorViewModel.setInspectorTab(tab: .assistant)

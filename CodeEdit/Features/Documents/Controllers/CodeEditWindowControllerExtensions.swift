@@ -38,6 +38,13 @@ extension CodeEditWindowController {
             id: "toggle_assistant",
             command: { [weak self] in self?.toggleAssistant() }
         )
+
+        AppServices.commandManager.addCommand(
+            name: "Ask Assistant About Selection",
+            title: "Ask Assistant About Selection",
+            id: "ask_assistant_about_selection",
+            command: { [weak self] in self?.askAssistantAboutSelection() }
+        )
     }
 
     // Listen to changes in all tabs/files
