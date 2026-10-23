@@ -29,12 +29,19 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
     @Published private(set) var contentRevision = 0
     @Published var contextItems: [AssistantContextItem] = []
     @Published var selectionNeedsRefresh = false
+    var includeDiagnosticsByDefault = true
+    var includeTasksByDefault = true
     @Published var pendingSensitiveContext: AssistantContextItem?
     @Published var retrievalEnabled: Bool
     @Published var retrievalStatus = AssistantRetrievalStatus.idle
     @Published var citationNotice: String?
+    @Published var conversations: [AssistantConversation] = []
+    @Published var activeConversationID: UUID?
+    @Published var isHistoryEnabled = true
+    @Published var historyNotice: String?
 
     private var transport: any AssistantTransport
+    var conversationStore: AssistantConversationStore?
     var retrievalProvider: (any AssistantRetrievalProviding)?
     var activeContextItems: [AssistantContextItem] = []
     var citationOpener: ((AssistantCitation) -> Bool)?
@@ -70,20 +77,6 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
             .store(in: &cancellables)
     }
 
-    var isStreaming: Bool {
-        phase.isStreaming
-    }
-
-    var canSend: Bool {
-        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && provider?.isUsable == true
-            && !isStreaming
-    }
-
-    var canStartNewChat: Bool {
-        !messages.isEmpty || !draft.isEmpty || !contextItems.isEmpty
-    }
-
     func send() {
         let prompt = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard canSend else { return }
@@ -96,6 +89,7 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
         let assistantMessage = AssistantMessage(role: .assistant, content: "", status: .streaming)
         messages.append(assistantMessage)
         contentRevision += 1
+        persistCurrentConversation()
         startStreaming(
             prompt: prompt,
             conversation: conversation,
@@ -112,6 +106,7 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
         activeResponseID = nil
         phase = .idle
         markMessage(responseID, status: .stopped)
+        persistCurrentConversation()
         activeContextItems = []
         applyPendingProviderRefresh()
         requestComposerFocus()
@@ -132,6 +127,7 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
         let response = AssistantMessage(role: .assistant, content: "", status: .streaming)
         messages.append(response)
         contentRevision += 1
+        persistCurrentConversation()
         startStreaming(
             prompt: prompt,
             conversation: conversation,
@@ -140,28 +136,13 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
         )
     }
 
-    func startNewConversation() {
-        cancelStreaming()
-        messages = []
-        draft = ""
-        activeContextItems = []
-        clearContext()
-        contentRevision += 1
-        phase = .idle
-        applyPendingProviderRefresh()
-        requestComposerFocus()
-    }
-
-    func clearConversation() {
-        startNewConversation()
-    }
-
     func requestComposerFocus() {
         focusRequest += 1
     }
 
-    func copyTranscript() -> String {
-        transcript
+    func finishConversationTransition() {
+        applyPendingProviderRefresh()
+        requestComposerFocus()
     }
 
     private func startStreaming(
@@ -178,6 +159,7 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
             let context = await self.contextWithRetrieval(base: context, prompt: prompt)
             guard self.activeResponseID == responseID else { return }
             self.activeContextItems = context.items
+            self.setContextDescriptors(context.items, for: responseID)
             let request = AssistantRequest(
                 prompt: prompt,
                 conversation: conversation,
@@ -197,6 +179,7 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
             } catch is CancellationError {
                 guard self.activeResponseID == responseID else { return }
                 self.markMessage(responseID, status: .stopped)
+                self.persistCurrentConversation()
                 self.completeActiveRequest()
             } catch {
                 guard self.activeResponseID == responseID else { return }
@@ -232,6 +215,7 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
         }
         messages = updated
         contentRevision += 1
+        persistCurrentConversation()
         completeActiveRequest()
     }
 
@@ -246,6 +230,7 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
         updated[index].errorMessage = error.localizedDescription
         messages = updated
         contentRevision += 1
+        persistCurrentConversation()
         completeActiveRequest()
     }
 
@@ -373,6 +358,30 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
         streamTask?.cancel()
         streamTask = nil
         activeResponseID = nil
+    }
+
+    func replaceConversationState(
+        messages newMessages: [AssistantMessage],
+        activeConversationID id: UUID?
+    ) {
+        cancelStreaming()
+        messages = newMessages
+        activeConversationID = id
+        draft = ""
+        activeContextItems = []
+        contentRevision += 1
+        phase = .idle
+    }
+
+    func applyContextDescriptors(
+        _ descriptors: [AssistantContextDescriptor],
+        to messageID: UUID
+    ) {
+        guard let index = messages.firstIndex(where: { $0.id == messageID }) else { return }
+        var updated = messages
+        updated[index].contextDescriptors = descriptors
+        messages = updated
+        contentRevision += 1
     }
 
     static func preview(

@@ -44,6 +44,7 @@ struct AssistantMessage: Identifiable, Codable, Hashable, Sendable {
     var createdAt: Date
     var status: AssistantMessageStatus
     var citations: [AssistantCitation]
+    var contextDescriptors: [AssistantContextDescriptor]
     var errorMessage: String?
 
     init(
@@ -53,6 +54,7 @@ struct AssistantMessage: Identifiable, Codable, Hashable, Sendable {
         createdAt: Date = Date(),
         status: AssistantMessageStatus = .complete,
         citations: [AssistantCitation] = [],
+        contextDescriptors: [AssistantContextDescriptor] = [],
         errorMessage: String? = nil
     ) {
         self.id = id
@@ -61,7 +63,32 @@ struct AssistantMessage: Identifiable, Codable, Hashable, Sendable {
         self.createdAt = createdAt
         self.status = status
         self.citations = citations
+        self.contextDescriptors = contextDescriptors
         self.errorMessage = errorMessage
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case role
+        case content
+        case createdAt
+        case status
+        case citations
+        case contextDescriptors
+        case errorMessage
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        role = try container.decode(AssistantMessageRole.self, forKey: .role)
+        content = try container.decode(String.self, forKey: .content)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        status = try container.decodeIfPresent(AssistantMessageStatus.self, forKey: .status) ?? .complete
+        citations = try container.decodeIfPresent([AssistantCitation].self, forKey: .citations) ?? []
+        contextDescriptors =
+            try container.decodeIfPresent([AssistantContextDescriptor].self, forKey: .contextDescriptors) ?? []
+        errorMessage = try container.decodeIfPresent(String.self, forKey: .errorMessage)
     }
 
     var isUser: Bool {

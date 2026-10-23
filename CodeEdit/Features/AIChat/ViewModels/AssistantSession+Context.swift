@@ -29,6 +29,11 @@ extension AssistantSession {
         contextProvider = provider
     }
 
+    func configureDefaultContext(includeDiagnostics: Bool, includeTasks: Bool) {
+        includeDiagnosticsByDefault = includeDiagnostics
+        includeTasksByDefault = includeTasks
+    }
+
     @discardableResult
     func attachCurrentSelection() -> Bool {
         guard let snapshot = contextProvider?.currentSelection() else { return false }
@@ -165,13 +170,40 @@ extension AssistantSession {
     }
 
     func makeContextPacket() -> AssistantContextPacket {
-        let project = contextProvider?.workspaceSnapshot()?.project
-        return AssistantContextBuilder.packet(items: contextItems, project: project)
+        guard let snapshot = contextProvider?.workspaceSnapshot() else {
+            return AssistantContextBuilder.packet(items: contextItems, project: nil)
+        }
+        return AssistantContextBuilder.packet(
+            items: itemsIncludingDefaults(from: snapshot),
+            project: snapshot.project
+        )
     }
 
     func makeContextPreview() -> AssistantContextPreview {
-        let project = contextProvider?.workspaceSnapshot()?.project
-        return AssistantContextBuilder.preview(items: contextItems, project: project)
+        guard let snapshot = contextProvider?.workspaceSnapshot() else {
+            return AssistantContextBuilder.preview(items: contextItems, project: nil)
+        }
+        return AssistantContextBuilder.preview(
+            items: itemsIncludingDefaults(from: snapshot),
+            project: snapshot.project
+        )
+    }
+
+    private func itemsIncludingDefaults(
+        from snapshot: AssistantWorkspaceSnapshot
+    ) -> [AssistantContextItem] {
+        var items = contextItems
+        if includeDiagnosticsByDefault,
+           !items.contains(where: { $0.kind == .diagnostics }),
+           let diagnostics = AssistantContextBuilder.diagnosticsItem(from: snapshot) {
+            items.append(diagnostics)
+        }
+        if includeTasksByDefault,
+           !items.contains(where: { $0.kind == .tasks }),
+           let tasks = AssistantContextBuilder.tasksItem(from: snapshot) {
+            items.append(tasks)
+        }
+        return items
     }
 
     func scheduleSelectionCheck() {

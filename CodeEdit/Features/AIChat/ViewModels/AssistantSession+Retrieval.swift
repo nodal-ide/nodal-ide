@@ -20,7 +20,7 @@ extension AssistantSession {
         )
         let result = await retrievalProvider.retrieve(query)
         guard !result.isEmpty else { return base }
-        let items = contextItems
+        let items = base.items.filter { $0.kind != .project }
             + AssistantContextBuilder.retrievalItems(from: result)
             + AssistantContextBuilder.knowledgeItems(from: result)
         return AssistantContextBuilder.packet(

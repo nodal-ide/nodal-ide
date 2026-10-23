@@ -7,6 +7,7 @@ struct AssistantHeaderView: View {
     let onClear: () -> Void
 
     @State private var showingProviderInfo = false
+    @State private var showingHistory = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
@@ -14,6 +15,18 @@ struct AssistantHeaderView: View {
                 Text("Assistant")
                     .font(.system(size: 13, weight: .semibold))
                 Spacer(minLength: 6)
+
+                Button {
+                    showingHistory.toggle()
+                } label: {
+                    Image(systemName: "clock.arrow.circlepath")
+                }
+                .buttonStyle(.icon(size: 24))
+                .help("Conversation History")
+                .accessibilityLabel("Conversation History")
+                .popover(isPresented: $showingHistory, arrowEdge: .bottom) {
+                    AssistantHistoryView(session: session, onNewChat: onNewChat)
+                }
 
                 Button {
                     onNewChat()

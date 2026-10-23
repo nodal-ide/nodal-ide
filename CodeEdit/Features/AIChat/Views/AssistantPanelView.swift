@@ -17,8 +17,9 @@ struct AssistantPanelView: View {
 
             Group {
                 if session.messages.isEmpty {
-                    AssistantEmptyStateView(provider: session.provider) { prompt in
-                        session.draft = prompt
+                    AssistantEmptyStateView(provider: session.provider) { suggestion in
+                        attachContext(for: suggestion)
+                        session.draft = suggestion.prompt
                         session.requestComposerFocus()
                     }
                 } else {
@@ -40,7 +41,7 @@ struct AssistantPanelView: View {
             case .newChat:
                 return Alert(
                     title: Text("Start a new chat?"),
-                    message: Text("The current conversation will be cleared."),
+                    message: Text(newChatMessage),
                     primaryButton: .destructive(Text("New Chat")) {
                         session.startNewConversation()
                     },
@@ -49,7 +50,7 @@ struct AssistantPanelView: View {
             case .clear:
                 return Alert(
                     title: Text("Clear this conversation?"),
-                    message: Text("This cannot be undone."),
+                    message: Text(clearMessage),
                     primaryButton: .destructive(Text("Clear")) {
                         session.clearConversation()
                     },
@@ -69,6 +70,19 @@ struct AssistantPanelView: View {
             }
         } message: {
             Text(session.citationNotice ?? "")
+        }
+        .alert(
+            "Conversation history",
+            isPresented: Binding(
+                get: { session.historyNotice != nil },
+                set: { if !$0 { session.dismissHistoryNotice() } }
+            )
+        ) {
+            Button("OK") {
+                session.dismissHistoryNotice()
+            }
+        } message: {
+            Text(session.historyNotice ?? "")
         }
         .alert(item: pendingSensitiveBinding) { item in
             Alert(
@@ -104,6 +118,32 @@ struct AssistantPanelView: View {
             message += "\n\n" + item.warnings.joined(separator: "\n")
         }
         return message
+    }
+
+    private var newChatMessage: String {
+        session.isHistoryEnabled
+            ? "The current conversation will be saved in History."
+            : "The current conversation will be cleared because history is off."
+    }
+
+    private var clearMessage: String {
+        session.isHistoryEnabled
+            ? "This conversation will be removed from History. This cannot be undone."
+            : "This cannot be undone."
+    }
+
+    private func attachContext(for suggestion: AssistantSuggestion) {
+        switch suggestion.context {
+        case .selection:
+            _ = session.addCurrentSelectionOrActiveFile()
+        case .fileIssues:
+            _ = session.addActiveFile()
+            _ = session.addDiagnostics()
+        case .activeFile:
+            _ = session.addActiveFile()
+        case .openFiles:
+            _ = session.addOpenFiles()
+        }
     }
 
     private func requestNewChat() {

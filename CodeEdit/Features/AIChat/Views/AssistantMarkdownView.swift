@@ -3,6 +3,7 @@ import SwiftUI
 struct AssistantMarkdownView: View {
     let content: String
     var citations: [AssistantCitation] = []
+    var isStreaming = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -51,7 +52,7 @@ struct AssistantMarkdownView: View {
                     .textSelection(.enabled)
             }
         case let .code(language, content):
-            AssistantCodeBlockView(language: language, content: content)
+            AssistantCodeBlockView(language: language, content: content, isStreaming: isStreaming)
         case .divider:
             Rectangle()
                 .fill(Color(nsColor: .separatorColor))

@@ -46,6 +46,7 @@ final class WorkspaceServices {
     private(set) var commandsPaletteState: QuickActionsViewModel?
     private var assistantSettingsCancellable: AnyCancellable?
     private var lastRetrievalSetting: Bool?
+    private var lastHistorySetting: Bool?
     private(set) var sourceControlCoordinator: SourceControlCoordinator?
     private(set) var workspaceFileManager: CEWorkspaceFileManager?
     private(set) var taskManager: TaskManager?
@@ -67,6 +68,13 @@ final class WorkspaceServices {
         lastRetrievalSetting = retrieveExcerpts
         assistantSession.setRetrievalEnabled(retrieveExcerpts)
         assistantSession.configureRetrieval(AssistantWorkspaceRetrievalService(rootURL: url))
+        let saveHistory = AppServices.settings.preferences.assistant.saveHistory
+        lastHistorySetting = saveHistory
+        assistantSession.configureConversationHistory(
+            store: AssistantConversationStore(workspaceURL: url),
+            enabled: saveHistory
+        )
+        configureAssistantDefaults()
         assistantSession.citationOpener = { [weak workspace] citation in
             guard let workspace else { return false }
             return Self.openCitation(citation, in: workspace)
@@ -82,6 +90,12 @@ final class WorkspaceServices {
                         self.lastRetrievalSetting = enabled
                         self.assistantSession.setRetrievalEnabled(enabled)
                     }
+                    let saveHistory = AppServices.settings.preferences.assistant.saveHistory
+                    if self.lastHistorySetting != saveHistory {
+                        self.lastHistorySetting = saveHistory
+                        self.assistantSession.setHistoryEnabled(saveHistory)
+                    }
+                    self.configureAssistantDefaults()
                     self.assistantSession.refreshProviderConfiguration()
                 }
             }
@@ -191,8 +205,18 @@ final class WorkspaceServices {
         languageCatalogStore = nil
         assistantSettingsCancellable = nil
         lastRetrievalSetting = nil
+        lastHistorySetting = nil
+        assistantSession.prepareForWorkspaceClose()
         assistantSession.stopRetrieval()
         assistantSession.citationOpener = nil
+    }
+
+    private func configureAssistantDefaults() {
+        let assistant = AppServices.settings.preferences.assistant
+        assistantSession.configureDefaultContext(
+            includeDiagnostics: assistant.includeDiagnosticsByDefault,
+            includeTasks: assistant.includeTasksByDefault
+        )
     }
 
     private static func openCitation(_ citation: AssistantCitation, in workspace: WorkspaceDocument) -> Bool {

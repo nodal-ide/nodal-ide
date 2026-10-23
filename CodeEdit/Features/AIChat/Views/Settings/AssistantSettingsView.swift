@@ -108,7 +108,11 @@ struct AssistantSettingsView: View {
             } header: {
                 Text("Privacy")
             } footer: {
-                Text("Provider profiles and API keys are global. API keys are stored in the macOS Keychain.")
+                Text(
+                    "Provider profiles and API keys are global. API keys are stored in the macOS Keychain. "
+                        + "Conversation history is local to each workspace; turning it off stops new writes. "
+                        + "Manage saved conversations from the History button above the composer."
+                )
             }
         }
         .sheet(item: $editingProfile) { profile in

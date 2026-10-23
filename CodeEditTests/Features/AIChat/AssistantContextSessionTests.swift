@@ -108,6 +108,43 @@ struct AssistantContextSessionTests {
     }
 
     @Test
+    func defaultContextIncludesDiagnosticsAndTasksWithoutDuplicates() {
+        let provider = AssistantTestContextProvider()
+        provider.snapshot = AssistantTestData.workspaceSnapshot(rootName: "Workspace")
+        let session = AssistantSession(
+            transport: MockAssistantTransport(chunkDelayNanoseconds: 0),
+            provider: .mock,
+            contextProvider: provider
+        )
+
+        let packet = session.makeContextPacket()
+
+        #expect(packet.items.filter { $0.kind == .diagnostics }.count == 1)
+        #expect(packet.items.filter { $0.kind == .tasks }.count == 1)
+        #expect(packet.items.first { $0.kind == .diagnostics }?.text.contains("active error") == true)
+    }
+
+    @Test
+    func defaultContextCanBeDisabledAndExplicitItemsAreNotDuplicated() {
+        let provider = AssistantTestContextProvider()
+        provider.snapshot = AssistantTestData.workspaceSnapshot(rootName: "Workspace")
+        let session = AssistantSession(
+            transport: MockAssistantTransport(chunkDelayNanoseconds: 0),
+            provider: .mock,
+            contextProvider: provider
+        )
+        session.configureDefaultContext(includeDiagnostics: false, includeTasks: false)
+        #expect(session.makeContextPacket().items.contains { $0.kind == .diagnostics } == false)
+        #expect(session.makeContextPacket().items.contains { $0.kind == .tasks } == false)
+
+        #expect(session.addDiagnostics())
+        #expect(session.makeContextPacket().items.filter { $0.kind == .diagnostics }.count == 1)
+
+        session.configureDefaultContext(includeDiagnostics: true, includeTasks: true)
+        #expect(session.makeContextPacket().items.filter { $0.kind == .diagnostics }.count == 1)
+    }
+
+    @Test
     func removingSelectionClearsStaleIndicator() {
         let provider = AssistantTestContextProvider()
         provider.selection = AssistantTestData.selectionSnapshot()

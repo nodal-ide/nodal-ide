@@ -43,7 +43,11 @@ struct AssistantMessageView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 if !message.content.isEmpty {
-                    AssistantMarkdownView(content: message.content, citations: message.citations)
+                    AssistantMarkdownView(
+                        content: message.content,
+                        citations: message.citations,
+                        isStreaming: message.status == .streaming
+                    )
                 }
 
                 if !message.citations.isEmpty {

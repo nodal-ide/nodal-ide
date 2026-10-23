@@ -33,7 +33,7 @@ struct AssistantSelectionSnapshot: Equatable, Sendable {
 }
 
 struct AssistantContextItem: Identifiable, Equatable, Sendable {
-    enum Kind: String, Equatable, Sendable {
+    enum Kind: String, Codable, Equatable, Sendable {
         case selection
         case activeFile
         case openFiles

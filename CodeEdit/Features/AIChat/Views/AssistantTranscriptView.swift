@@ -7,6 +7,7 @@ struct AssistantTranscriptView: View {
     private var reduceMotion
 
     @State private var isNearBottom = true
+    @State private var pendingScroll: Task<Void, Never>?
 
     private let bottomID = "assistant-transcript-bottom"
     private let coordinateSpace = "assistant-transcript"
@@ -16,7 +17,7 @@ struct AssistantTranscriptView: View {
             ScrollViewReader { proxy in
                 ZStack(alignment: .bottomTrailing) {
                     ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 14) {
+                        VStack(alignment: .leading, spacing: 14) {
                             ForEach(session.messages) { message in
                                 AssistantMessageView(
                                     message: message,
@@ -56,9 +57,10 @@ struct AssistantTranscriptView: View {
                         scrollToBottom(proxy, animated: false)
                     }
                     .onAppear {
-                        DispatchQueue.main.async {
-                            scrollToBottom(proxy, animated: false)
-                        }
+                        scrollToBottom(proxy, animated: false)
+                    }
+                    .onDisappear {
+                        pendingScroll?.cancel()
                     }
 
                     if !isNearBottom {
@@ -88,12 +90,17 @@ struct AssistantTranscriptView: View {
     }
 
     private func scrollToBottom(_ proxy: ScrollViewProxy, animated: Bool) {
-        if animated {
-            withAnimation(.easeOut(duration: 0.2)) {
+        pendingScroll?.cancel()
+        pendingScroll = Task { @MainActor in
+            await Task.yield()
+            guard !Task.isCancelled else { return }
+            if animated {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    proxy.scrollTo(bottomID, anchor: .bottom)
+                }
+            } else {
                 proxy.scrollTo(bottomID, anchor: .bottom)
             }
-        } else {
-            proxy.scrollTo(bottomID, anchor: .bottom)
         }
     }
 }

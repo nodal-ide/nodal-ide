@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AssistantEmptyStateView: View {
     let provider: AssistantProvider?
-    let onSuggestion: (String) -> Void
+    let onSuggestion: (AssistantSuggestion) -> Void
 
     var body: some View {
         ScrollView {
@@ -76,7 +76,7 @@ struct AssistantEmptyStateView: View {
 
     private func suggestionButton(_ suggestion: AssistantSuggestion) -> some View {
         Button {
-            onSuggestion(suggestion.prompt)
+            onSuggestion(suggestion)
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: suggestion.systemImage)
@@ -107,36 +107,48 @@ struct AssistantEmptyStateView: View {
     }
 }
 
-private struct AssistantSuggestion: Identifiable {
+struct AssistantSuggestion: Identifiable {
+    enum Context {
+        case selection
+        case fileIssues
+        case activeFile
+        case openFiles
+    }
+
     let id: String
     let title: String
     let prompt: String
     let systemImage: String
+    let context: Context
 
     static let all = [
         AssistantSuggestion(
             id: "selection",
             title: "Review the current selection",
             prompt: "Review the current selection and suggest improvements.",
-            systemImage: "text.cursor"
+            systemImage: "text.cursor",
+            context: .selection
         ),
         AssistantSuggestion(
             id: "error",
-            title: "Explain the current error",
-            prompt: "Explain the current error and propose a focused fix.",
-            systemImage: "exclamationmark.triangle"
+            title: "Explain issues in the current file",
+            prompt: "Explain the issues in the current file and propose focused fixes.",
+            systemImage: "exclamationmark.triangle",
+            context: .fileIssues
         ),
         AssistantSuggestion(
             id: "feature",
             title: "Plan a feature",
             prompt: "Help me plan a feature for this workspace.",
-            systemImage: "list.bullet.clipboard"
+            systemImage: "list.bullet.clipboard",
+            context: .openFiles
         ),
         AssistantSuggestion(
             id: "performance",
             title: "Find a Big-O improvement",
             prompt: "Look for a meaningful Big-O improvement in the current code.",
-            systemImage: "speedometer"
+            systemImage: "speedometer",
+            context: .activeFile
         )
     ]
 }
