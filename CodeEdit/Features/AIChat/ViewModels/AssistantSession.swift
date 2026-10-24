@@ -135,6 +135,16 @@ final class AssistantSession: ObservableObject { // swiftlint:disable:this type_
             responseID: response.id
         )
     }
+    
+    func onNewChat()
+    {
+        startNewConversation()
+    }
+    
+    func onClear()
+    {
+        clearConversation()
+    }
 
     func requestComposerFocus() {
         focusRequest += 1

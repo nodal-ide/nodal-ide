@@ -106,6 +106,7 @@ final class WorkspaceServices {
         openQuicklyViewModel = OpenQuicklyViewModel(fileURL: url)
         commandsPaletteState = QuickActionsViewModel()
 
+
         let coordinator = SourceControlCoordinator(
             workspaceURL: url,
             editorManager: editorManager,

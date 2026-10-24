@@ -4,6 +4,7 @@ struct AssistantPanelView: View {
     @ObservedObject var session: AssistantSession
 
     @State private var pendingReset: ResetAction?
+    
 
     var body: some View {
         VStack(spacing: 0) {
@@ -43,7 +44,7 @@ struct AssistantPanelView: View {
                     title: Text("Start a new chat?"),
                     message: Text(newChatMessage),
                     primaryButton: .destructive(Text("New Chat")) {
-                        session.startNewConversation()
+                        session.onNewChat()
                     },
                     secondaryButton: .cancel()
                 )
@@ -52,7 +53,7 @@ struct AssistantPanelView: View {
                     title: Text("Clear this conversation?"),
                     message: Text(clearMessage),
                     primaryButton: .destructive(Text("Clear")) {
-                        session.clearConversation()
+                        session.onClear()
                     },
                     secondaryButton: .cancel()
                 )
@@ -159,7 +160,9 @@ struct AssistantInspectorView: View {
     @EnvironmentObject private var workspace: WorkspaceDocument
 
     var body: some View {
-        AssistantPanelView(session: workspace.assistantSession)
+        AssistantPanelView(
+                    session: workspace.assistantSession,
+                )
     }
 }
 
