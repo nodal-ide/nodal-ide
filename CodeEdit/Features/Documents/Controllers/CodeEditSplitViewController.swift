@@ -257,10 +257,14 @@ final class CodeEditSplitViewController: NSSplitViewController {
     func ensureInspectorWidth(atLeast minimumWidth: CGFloat) {
         guard splitViewItems.last?.isCollapsed == false, splitView.bounds.width > 0 else { return }
         guard inspectorWidth < minimumWidth else { return }
-        splitView.setPosition(
-            max(Self.minInspectorWidth, splitView.bounds.width - minimumWidth),
-            ofDividerAt: 1
-        )
+        let targetPosition = max(Self.minInspectorWidth, splitView.bounds.width - minimumWidth)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            context.allowsImplicitAnimation = true
+            splitView.setPosition(targetPosition, ofDividerAt: 1)
+        }
+        splitView.adjustSubviews()
     }
 
     func saveNavigatorCollapsedState(isCollapsed: Bool) {

@@ -5,13 +5,12 @@ struct AssistantPanelView: View {
 
     @State private var pendingReset: ResetAction?
     
-
     var body: some View {
         VStack(spacing: 0) {
             AssistantHeaderView(
                 session: session,
-                onNewChat: requestNewChat,
-                onClear: { pendingReset = .clear }
+                onNewChat: { session.startNewConversation() },
+                onClear: { session.clearConversation() }
             )
 
             Divider()
@@ -25,6 +24,7 @@ struct AssistantPanelView: View {
                     }
                 } else {
                     AssistantTranscriptView(session: session)
+                        .id(session.activeConversationID ?? UUID())
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -11,6 +11,7 @@ struct AssistantTranscriptView: View {
 
     private let bottomID = "assistant-transcript-bottom"
     private let coordinateSpace = "assistant-transcript"
+    private var displayedMessages: [AssistantMessage] { session.messages.suffix(200).map { $0 } }
 
     var body: some View {
         GeometryReader { geometry in
@@ -18,7 +19,9 @@ struct AssistantTranscriptView: View {
                 ZStack(alignment: .bottomTrailing) {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 14) {
-                            ForEach(session.messages) { message in
+                            // Only render the most recent 200 messages to keep scrolling fast;
+                            // the conversation itself is still complete in the model.
+                            ForEach(displayedMessages) { message in
                                 AssistantMessageView(
                                     message: message,
                                     onRetry: { session.retry(message.id) },

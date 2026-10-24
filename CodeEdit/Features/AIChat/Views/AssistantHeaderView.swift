@@ -37,6 +37,17 @@ struct AssistantHeaderView: View {
                 .help("New Chat")
                 .accessibilityLabel("New Chat")
 
+                if !session.messages.isEmpty {
+                    Button {
+                        onClear()
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .buttonStyle(.icon(size: 24))
+                    .help("Clear Conversation")
+                    .accessibilityLabel("Clear Conversation")
+                }
+
                 Menu {
                     Button("Copy Transcript") {
                         copyTranscript()
