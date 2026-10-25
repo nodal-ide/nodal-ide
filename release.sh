@@ -5,6 +5,12 @@ IFS=$'\n\t'
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
+# The running IDE and Xcode both poll `git status` in this repository. Their short-lived
+# `.git/index.lock` can race with the release's add/commit/push, which forced a second run.
+# Keep read-only git operations lock-free and retry mutating ones while the lock clears.
+export GIT_OPTIONAL_LOCKS=0
+GIT_LOCK_RETRY_ATTEMPTS="${GIT_LOCK_RETRY_ATTEMPTS:-10}"
+
 REPOSITORY="nodal-ide/nodal-ide"
 REPOSITORY_URL="https://github.com/${REPOSITORY}"
 NOTES_FILE="$ROOT_DIR/release_notes.md"
@@ -16,6 +22,29 @@ PLIST_BUDDY=/usr/libexec/PlistBuddy
 fail() {
   printf 'release.sh: %s\n' "$*" >&2
   exit 1
+}
+
+# Runs a git command and retries only when the failure is lock contention. Commands that
+# failed for any other reason keep their original exit status and output.
+git_retry_on_lock() {
+  local attempt=1 output status
+  while true; do
+    if output="$(git "$@" 2>&1)"; then
+      [[ -z "$output" ]] || printf '%s\n' "$output"
+      return 0
+    fi
+    status=$?
+    [[ -z "$output" ]] || printf '%s\n' "$output" >&2
+    case "$output" in
+      *"index.lock"*|*"Another git process"*|*"cannot lock ref"*) ;;
+      *) return "$status" ;;
+    esac
+    if (( attempt >= GIT_LOCK_RETRY_ATTEMPTS )); then
+      fail "Git is locked by another process. Close other git clients (including Nodal/Xcode source control) or remove a stale .git/index.lock, then retry."
+    fi
+    attempt=$((attempt + 1))
+    sleep 1
+  done
 }
 
 for required_command in git gh jq xcodebuild xcrun perl plutil ditto shasum xmllint grep; do
@@ -46,7 +75,27 @@ VERSION="$(metadata_value version)" || fail "release_notes.md needs exactly one 
 BUILD="$(metadata_value build)" || fail "release_notes.md needs exactly one 'build: N' field."
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "Version must use numeric semantic versioning (X.Y.Z)."
 [[ "$BUILD" =~ ^[1-9][0-9]*$ ]] || fail "Build must be a positive integer without leading zeroes."
-NOTES_STATUS="$(git status --porcelain --untracked-files=all)"
+
+# Sparkle renders the release notes HTML referenced by the appcast. Render the Markdown body
+# through GitHub so the update window shows the same changelog as the GitHub release instead of
+# following a redirect page to the release URL.
+render_release_notes_html() {
+  local markdown_file="$1" html
+  if html="$(
+    jq -Rs '{text: ., mode: "gfm", context: "nodal-ide/nodal-ide"}' <"$markdown_file" |
+      gh api --method POST markdown --input - 2>/dev/null
+  )" && [[ -n "$html" ]]; then
+    printf '%s\n' "$html"
+    return 0
+  fi
+
+  # Keep the update window useful even if the rendering API is temporarily unavailable.
+  printf '<pre>%s</pre>\n' "$(
+    sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' "$markdown_file"
+  )"
+}
+
+NOTES_STATUS="$(git_retry_on_lock status --porcelain --untracked-files=all)"
 while IFS= read -r status_line; do
   [[ -z "$status_line" ]] && continue
   [[ "${status_line:3}" == "release_notes.md" ]] || fail "Only release_notes.md may be uncommitted when running a release."
@@ -74,7 +123,7 @@ esac
 [[ "$(git branch --show-current)" == "main" ]] || fail "Run releases from the main branch."
 gh auth status --hostname github.com >/dev/null 2>&1 || fail "Authenticate gh with access to $REPOSITORY."
 
-git fetch origin main --tags
+git_retry_on_lock fetch origin main --tags
 read -r REMOTE_ONLY LOCAL_ONLY < <(git rev-list --left-right --count origin/main...HEAD)
 if [[ "$LOCAL_ONLY" == "1" ]]; then
   LAST_COMMIT="$(git log -1 --format=%s)"
@@ -82,7 +131,7 @@ if [[ "$LOCAL_ONLY" == "1" ]]; then
     "Release Nodal IDE ${TAG} (build ${BUILD})"|"Update release notes for Nodal IDE ${TAG}") ;;
     *) fail "Local main has unpushed commits." ;;
   esac
-  git push origin main
+  git_retry_on_lock push origin main
 elif [[ "$REMOTE_ONLY" != "0" || "$LOCAL_ONLY" != "0" ]]; then
   fail "main and origin/main must match before releasing."
 fi
@@ -102,9 +151,9 @@ CURRENT_VERSION="$("$PLIST_BUDDY" -c 'Print :CFBundleShortVersionString' "$APP_P
 CURRENT_BUILD="$("$PLIST_BUDDY" -c 'Print :CFBundleVersion' "$APP_PLIST")"
 if [[ "$CURRENT_VERSION" == "$VERSION" && "$CURRENT_BUILD" == "$BUILD" ]]; then
   if [[ -n "$NOTES_STATUS" ]]; then
-    git add "$NOTES_FILE"
-    git commit -m "Update release notes for Nodal IDE ${TAG}"
-    git push origin main
+    git_retry_on_lock add "$NOTES_FILE"
+    git_retry_on_lock commit -m "Update release notes for Nodal IDE ${TAG}"
+    git_retry_on_lock push origin main
   fi
 else
   VERSION_IS_NEWER="$(awk -v release_version="$VERSION" -v current="$CURRENT_VERSION" 'BEGIN {
@@ -127,12 +176,12 @@ else
     s/(MARKETING_VERSION\s*=\s*)"Change in Info.plist";/$1"$ENV{NODAL_RELEASE_VERSION}";/g;
   ' "$PROJECT_FILE"
 
-  git add "$APP_PLIST" "$FINDER_PLIST" "$PROJECT_FILE" "$NOTES_FILE"
-  git commit -m "Release Nodal IDE ${TAG} (build ${BUILD})"
-  git push origin main
+  git_retry_on_lock add "$APP_PLIST" "$FINDER_PLIST" "$PROJECT_FILE" "$NOTES_FILE"
+  git_retry_on_lock commit -m "Release Nodal IDE ${TAG} (build ${BUILD})"
+  git_retry_on_lock push origin main
 fi
 
-[[ -z "$(git status --porcelain --untracked-files=all)" ]] || fail "Worktree changed during release preparation."
+[[ -z "$(git_retry_on_lock status --porcelain --untracked-files=all)" ]] || fail "Worktree changed during release preparation."
 
 STAGE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/nodal-release.XXXXXX")"
 ARCHIVE_PATH="$STAGE_DIR/Nodal.xcarchive"
@@ -190,13 +239,10 @@ ZIP_PATH="$ASSET_DIR/Nodal-${VERSION}.zip"
 HTML_PATH="$ASSET_DIR/Nodal-${VERSION}.html"
 APPCAST_PATH="$ASSET_DIR/appcast.xml"
 ditto -c -k --sequesterRsrc --keepParent "$ASSET_DIR/Nodal.app" "$ZIP_PATH"
-cat >"$HTML_PATH" <<HTML
-<!DOCTYPE html>
-<meta charset="utf-8">
-<meta http-equiv="refresh" content="0;url=${REPOSITORY_URL}/releases/tag/${TAG}">
-<title>Nodal IDE ${VERSION} release notes</title>
-<p><a href="${REPOSITORY_URL}/releases/tag/${TAG}">View Nodal IDE ${VERSION} release notes</a></p>
-HTML
+
+RELEASE_NOTES_HTML="$(render_release_notes_html "$NOTES_BODY_FILE")"
+[[ -n "$RELEASE_NOTES_HTML" ]] || fail "Could not render release notes HTML."
+printf '%s\n' "$RELEASE_NOTES_HTML" >"$HTML_PATH"
 
 DERIVED_DATA="$HOME/Library/Developer/Xcode/DerivedData"
 if [[ -n "${NODAL_SPARKLE_BIN:-}" ]]; then
@@ -233,12 +279,12 @@ xmllint --noout "$APPCAST_PATH"
 REMOTE_TAG="$(git ls-remote --tags origin "refs/tags/${TAG}" | awk 'NR == 1 { print $1 }')"
 if [[ -z "$REMOTE_TAG" ]]; then
   if ! git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
-    git tag -a "$TAG" -m "Nodal IDE ${TAG}"
+    git_retry_on_lock tag -a "$TAG" -m "Nodal IDE ${TAG}"
   fi
   [[ "$(git rev-parse "${TAG}^{commit}")" == "$(git rev-parse HEAD)" ]] || fail "Local tag $TAG points to a different commit."
-  git push origin "$TAG"
+  git_retry_on_lock push origin "$TAG"
 else
-  git fetch origin "refs/tags/${TAG}:refs/tags/${TAG}"
+  git_retry_on_lock fetch origin "refs/tags/${TAG}:refs/tags/${TAG}"
   [[ "$(git rev-parse "${TAG}^{commit}")" == "$(git rev-parse HEAD)" ]] || fail "Remote tag $TAG points to a different commit."
 fi
 

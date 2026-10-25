@@ -188,6 +188,9 @@ struct CodeFileView: View {
             disabledBreakpointLines: currentDisabledBreakpointLines,
             onToggleBreakpoint: toggleBreakpoint(line:),
             onBreakpointMenu: breakpointMenu(line:),
+            onContextMenuItems: { controller, _ in
+                AssistantEditorContextMenu.items(for: controller.textView)
+            },
             debugLine: currentDebugLine
         )
         // This view needs to refresh when the codefile changes. The file URL is too stable.

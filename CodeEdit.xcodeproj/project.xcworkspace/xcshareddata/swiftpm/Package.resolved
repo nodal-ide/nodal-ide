@@ -1,5 +1,5 @@
 {
-  "originHash" : "854fc795446d5ab7c65d6e8130762082058682c511db1f640f1c227ec2170b5c",
+  "originHash" : "ece4d8880661571076ec5a7fb9944911ad121c31e8f5d5ba7cc71432ab7ef3fa",
   "pins" : [
     {
       "identity" : "aboutwindow",
@@ -43,27 +43,11 @@
       }
     },
     {
-      "identity" : "codeeditsourceeditor",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nodal-ide/CodeEditSourceEditor.git",
-      "state" : {
-        "revision" : "d67543ba928cf7f845f2edf3f57e60c732151025"
-      }
-    },
-    {
       "identity" : "codeeditsymbols",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nodal-ide/CodeEditSymbols.git",
       "state" : {
         "revision" : "247200521218bc1cc0ec962012c407a5ef8460d7"
-      }
-    },
-    {
-      "identity" : "codeedittextview",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/nodal-ide/CodeEditTextView.git",
-      "state" : {
-        "revision" : "eb9820c2384ce5f6661d29846a147390f6ff538e"
       }
     },
     {

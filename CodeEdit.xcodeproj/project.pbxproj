@@ -522,7 +522,7 @@
 				30ED7B722DD299E600ACC922 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 				5EACE6202DF4BF08005E08B8 /* XCRemoteSwiftPackageReference "WelcomeWindow" */,
 				5E44855F2DF600D9008BBE69 /* XCRemoteSwiftPackageReference "AboutWindow" */,
-				6C76D6D22E15B91E00EF52C3 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */,
+				6C76D6D22E15B91E00EF52C3 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSourceEditor" */,
 				6CCF73CE2E26DE3200B94F75 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
 				CE1A0000000000000000A1B2 /* XCRemoteSwiftPackageReference "CodeEditLang" */,
 			);
@@ -1878,6 +1878,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		6C76D6D22E15B91E00EF52C3 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSourceEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../codeedit-deps/CodeEditSourceEditor";
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		2816F592280CF50500DD548B /* XCRemoteSwiftPackageReference "CodeEditSymbols" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1893,11 +1900,6 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/nodal-ide/WelcomeWindow.git";
 			requirement = { kind = revision; revision = "1baf6c4075ec05e2a8e64a6b62750c62d15692bc"; };
-		};
-		6C76D6D22E15B91E00EF52C3 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nodal-ide/CodeEditSourceEditor.git";
-			requirement = { kind = revision; revision = "d67543ba928cf7f845f2edf3f57e60c732151025"; };
 		};
 		6C85BB3E2C2105ED00EB5DEF /* XCRemoteSwiftPackageReference "CodeEditKit" */ = {
 			isa = XCRemoteSwiftPackageReference;

@@ -63,6 +63,13 @@ extension CodeEditWindowController {
         revealAssistant()
     }
 
+    /// Native editor context-menu entry point. The menu item uses a nil target, so AppKit resolves this
+    /// through the responder chain to the window controller that owns the right-clicked editor.
+    @objc
+    func askAssistantAboutSelectionFromContextMenu(_ sender: Any?) {
+        askAssistantAboutSelection()
+    }
+
     func revealAssistant() {
         guard let splitViewController, let inspectorViewModel else { return }
         inspectorViewModel.setInspectorTab(tab: .assistant)

@@ -4,7 +4,7 @@ struct AssistantPanelView: View {
     @ObservedObject var session: AssistantSession
 
     @State private var pendingReset: ResetAction?
-    
+
     var body: some View {
         VStack(spacing: 0) {
             AssistantHeaderView(
