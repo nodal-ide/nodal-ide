@@ -178,9 +178,13 @@ final class ExtensionLanguageProvider: LanguageProvider {
     let supportedLanguageIDs: Set<String>
     let priority: LanguageProviderPriority = .languageExtension
 
+    /// Providers written before `completionTriggers` existed keep the original PHP-oriented triggers.
+    static let legacyCompletionTriggers: Set<String> = ["\\", ">", ":"]
+
     private let fileURL: URL
     private let server: StdioLanguageServer
     private let openLinkHandler: (JumpToDefinitionLink) -> Void
+    private let completionTriggers: Set<String>
 
     private var lastItems: [ExtensionCompletionItem] = []
     private var lastItemsPrefix = ""
@@ -189,6 +193,7 @@ final class ExtensionLanguageProvider: LanguageProvider {
         languageIDs: Set<String>,
         fileURL: URL,
         server: StdioLanguageServer,
+        completionTriggers: [String]? = nil,
         openLink: @escaping (JumpToDefinitionLink) -> Void
     ) {
         let languageID = languageIDs.sorted().first ?? ""
@@ -196,7 +201,14 @@ final class ExtensionLanguageProvider: LanguageProvider {
         self.supportedLanguageIDs = languageIDs
         self.fileURL = fileURL
         self.server = server
+        self.completionTriggers = Self.resolvedCompletionTriggers(completionTriggers)
         self.openLinkHandler = openLink
+    }
+
+    /// `nil` keeps legacy behavior; an explicit empty array disables automatic triggers.
+    static func resolvedCompletionTriggers(_ configured: [String]?) -> Set<String> {
+        guard let configured else { return legacyCompletionTriggers }
+        return Set(configured)
     }
 
     private var filePath: String { fileURL.path(percentEncoded: false) }
@@ -422,7 +434,7 @@ final class ExtensionLanguageProvider: LanguageProvider {
     // MARK: CodeSuggestionDelegate
 
     @MainActor
-    func completionTriggerCharacters() -> Set<String> { ["\\", ">", ":"] }
+    func completionTriggerCharacters() -> Set<String> { completionTriggers }
 
     @MainActor
     func completionSuggestionsRequested(

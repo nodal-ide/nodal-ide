@@ -43,13 +43,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                     let path = CommandLine.arguments[index+1]
                     let url = URL(fileURLWithPath: path)
 
-                    CodeEditDocumentController.shared.reopenDocument(
-                        for: url,
-                        withContentsOf: url,
-                        display: true
-                    ) { document, _, _ in
-                        document?.windowControllers.first?.synchronizeWindowTitleWithDocumentName()
-                    }
+                    (CodeEditDocumentController.shared as? CodeEditDocumentController)?
+                        .openDocumentInStandaloneWindow(withContentsOf: url, display: true) { document, _, _ in
+                            document?.windowControllers.first?.synchronizeWindowTitleWithDocumentName()
+                        }
 
                     needToHandleOpen = false
                 }
@@ -126,8 +123,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             let line = file.count > 1 ? Int(file[1]) ?? 0 : 0
             let column = file.count > 2 ? Int(file[2]) ?? 1 : 1
 
-            CodeEditDocumentController.shared
-                .openDocument(withContentsOf: filePath, display: true) { document, _, error in
+            (CodeEditDocumentController.shared as? CodeEditDocumentController)?
+                .openDocumentInStandaloneWindow(withContentsOf: filePath, display: true) { document, _, error in
                     if let error {
                         NSAlert(error: error).runModal()
                         return
@@ -241,13 +238,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
             for filePath in files {
                 let fileURL = URL(fileURLWithPath: String(filePath))
-                CodeEditDocumentController.shared.reopenDocument(
-                    for: fileURL,
-                    withContentsOf: fileURL,
-                    display: true
-                ) { document, _, _ in
-                    document?.windowControllers.first?.synchronizeWindowTitleWithDocumentName()
-                }
+                (CodeEditDocumentController.shared as? CodeEditDocumentController)?
+                    .openDocumentInStandaloneWindow(withContentsOf: fileURL, display: true) { document, _, _ in
+                        document?.windowControllers.first?.synchronizeWindowTitleWithDocumentName()
+                    }
             }
 
             defaults.removeObject(forKey: "openInCEFiles")

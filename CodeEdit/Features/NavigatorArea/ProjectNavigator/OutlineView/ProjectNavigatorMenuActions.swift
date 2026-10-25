@@ -85,28 +85,40 @@ extension ProjectNavigatorMenu {
         NSWorkspace.shared.activateFileViewerSelecting(selectedItems().map { $0.url })
     }
 
-    /// Action that opens the item, identical to clicking it.
-    @objc
-    func openInTab() {
-        /// Sort the selected items first by their parent and then by name.
-        let sortedItems = selectedItems().sorted { (item1, item2) -> Bool in
-            /// Get the parents of both items.
+    /// Selected items in outline order: parent row first, then name.
+    private func sortedSelectedItems() -> [CEWorkspaceFile] {
+        selectedItems().sorted { (item1, item2) -> Bool in
             let parent1 = sender.outlineView.parent(forItem: item1) as? CEWorkspaceFile
             let parent2 = sender.outlineView.parent(forItem: item2) as? CEWorkspaceFile
 
-            /// Compare by parent.
             if parent1 != parent2 {
-                /// If the parents are different, use their row position in the outline view.
                 return sender.outlineView.row(forItem: parent1) < sender.outlineView.row(forItem: parent2)
-            } else {
-                /// If both items have the same parent, sort them by name.
-                return item1.name < item2.name
             }
+            return item1.name < item2.name
         }
+    }
 
+    /// Action that opens the item, identical to clicking it.
+    @objc
+    func openInTab() {
         /// Open the items in order.
-        sortedItems.forEach { item in
+        sortedSelectedItems().forEach { item in
             workspace?.editorManager?.openTab(item: item)
+        }
+    }
+
+    /// Opens the selected files in their own windows. Folders still open as workspaces; an already-open
+    /// workspace is focused rather than duplicated.
+    @objc
+    func openInNewWindow() {
+        guard let controller = CodeEditDocumentController.shared as? CodeEditDocumentController else { return }
+
+        for item in sortedSelectedItems() {
+            if item.isFolder {
+                controller.openDocument(withContentsOf: item.url, display: true) { _, _, _ in }
+            } else {
+                controller.openDocumentInStandaloneWindow(withContentsOf: item.url, display: true) { _, _, _ in }
+            }
         }
     }
 

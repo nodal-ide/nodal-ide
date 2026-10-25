@@ -22,8 +22,9 @@ struct SourceControlNavigatorChangesContextMenu: View {
                 Button("Open in New Tab") {
                     open(file)
                 }
-                Button("Open in New Window") {}
-                    .disabled(true)
+                Button("Open in New Window") {
+                    openInNewWindow(file)
+                }
                 Divider()
                 Button("Show Diff") {
                     AppServices.diffViewerPresenter.show(file: file, manager: sourceControlManager)
@@ -54,5 +55,10 @@ struct SourceControlNavigatorChangesContextMenu: View {
         DispatchQueue.main.async {
             workspace.editorManager?.openTab(item: ceFile, asTemporary: true)
         }
+    }
+
+    private func openInNewWindow(_ file: GitChangedFile) {
+        (CodeEditDocumentController.shared as? CodeEditDocumentController)?
+            .openDocumentInStandaloneWindow(withContentsOf: file.fileURL.absoluteURL, display: true) { _, _, _ in }
     }
 }

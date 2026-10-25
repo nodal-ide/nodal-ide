@@ -118,10 +118,69 @@ final class CodeEditDocumentController: NSDocumentController {
         display displayDocument: Bool,
         completionHandler: @escaping (NSDocument?, Bool, Error?) -> Void
     ) {
-        guard !openFileInExistingWorkspace(url: url) else {
+        if let document = openFileInExistingWorkspace(url: url) {
+            RecentsStore.documentOpened(at: url)
+            completionHandler(document, true, nil)
             return
         }
 
+        openDocumentWindow(
+            withContentsOf: url,
+            display: displayDocument,
+            completionHandler: completionHandler
+        )
+    }
+
+    /// Opens a file supplied from outside the app (Finder, Open With, `--open`) in its own window.
+    ///
+    /// Internal navigation (`openDocument`) keeps the existing workspace-reuse behavior so Open Quickly,
+    /// references, problems, and assistant citations continue to open tabs in the workspace. External
+    /// opens must not silently attach the file to an unrelated workspace.
+    ///
+    /// A file already open in a workspace is focused there instead of creating a second editor over the
+    /// same `NSDocument`. A file already open in a standalone window is brought forward.
+    func openDocumentInStandaloneWindow(
+        withContentsOf url: URL,
+        display displayDocument: Bool,
+        completionHandler: @escaping (NSDocument?, Bool, Error?) -> Void
+    ) {
+        guard !url.isFolder else {
+            openDocument(
+                withContentsOf: url,
+                display: displayDocument,
+                completionHandler: completionHandler
+            )
+            return
+        }
+
+        if let existing = document(for: url) as? CodeFileDocument {
+            RecentsStore.documentOpened(at: url)
+            if existing.windowControllers.isEmpty {
+                // The document is hosted by a workspace tab rather than its own NSWindowController.
+                if !focusExistingWorkspaceTab(for: url) {
+                    existing.makeWindowControllers()
+                    existing.showWindows()
+                }
+            } else {
+                existing.showWindows()
+            }
+            completionHandler(existing, true, nil)
+            return
+        }
+
+        openDocumentWindow(
+            withContentsOf: url,
+            display: displayDocument,
+            completionHandler: completionHandler
+        )
+    }
+
+    /// Creates a document/window through AppKit without the workspace-reuse check.
+    private func openDocumentWindow(
+        withContentsOf url: URL,
+        display displayDocument: Bool,
+        completionHandler: @escaping (NSDocument?, Bool, Error?) -> Void
+    ) {
         super.openDocument(withContentsOf: url, display: displayDocument) { document, documentWasAlreadyOpen, error in
             // `NSDocumentController` always invokes this completion handler on the main thread, so
             // assuming main-actor isolation here is sound and avoids an extra async hop that could
@@ -142,9 +201,10 @@ final class CodeEditDocumentController: NSDocumentController {
 
     /// Attempt to open the file URL in an open workspace, finding the nearest workspace to open it in if possible.
     /// - Parameter url: The file URL to open.
-    /// - Returns: True, if the document was opened in a workspace.
-    private func openFileInExistingWorkspace(url: URL) -> Bool {
-        guard !url.isFolder else { return false }
+    /// - Returns: The opened document, or `nil` if no workspace could host it.
+    @discardableResult
+    private func openFileInExistingWorkspace(url: URL) -> CodeFileDocument? {
+        guard !url.isFolder else { return nil }
         let workspaces = documents.compactMap({ $0 as? WorkspaceDocument })
 
         // Check open workspaces for the file being opened. Sorted by shared components with the url so we
@@ -161,8 +221,31 @@ final class CodeEditDocumentController: NSDocumentController {
                 } else {
                     workspace.listenerModel.highlightedFileItem = newFile
                 }
-                return true
+                return newFile.fileDocument
             }
+        }
+        return nil
+    }
+
+    /// Selects text from `url` in an existing workspace tab, without creating a second document.
+    private func focusExistingWorkspaceTab(for url: URL) -> Bool {
+        let workspaces = documents.compactMap({ $0 as? WorkspaceDocument })
+            .sorted(by: {
+                ($0.fileURL?.sharedComponents(url) ?? 0) > ($1.fileURL?.sharedComponents(url) ?? 0)
+            })
+
+        for workspace in workspaces {
+            guard let file = workspace.workspaceFileManager?.getFile(url.absolutePath),
+                  file.fileDocument != nil
+            else { continue }
+            workspace.editorManager?.openTab(item: file)
+            workspace.showWindows()
+            if let windowController = workspace.windowControllers.first as? CodeEditWindowController {
+                windowController.revealInProjectNavigator(file)
+            } else {
+                workspace.listenerModel.highlightedFileItem = file
+            }
+            return true
         }
         return false
     }

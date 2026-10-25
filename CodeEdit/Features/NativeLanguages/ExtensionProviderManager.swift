@@ -47,6 +47,7 @@ final class ExtensionProviderManager {
                     languageIDs: Set(languages),
                     fileURL: file,
                     server: server,
+                    completionTriggers: contribution.completionTriggers,
                     openLink: openLink
                 )
             )

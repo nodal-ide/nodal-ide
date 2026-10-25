@@ -524,7 +524,7 @@
 				5E44855F2DF600D9008BBE69 /* XCRemoteSwiftPackageReference "AboutWindow" */,
 				6C76D6D22E15B91E00EF52C3 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSourceEditor" */,
 				6CCF73CE2E26DE3200B94F75 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
-				CE1A0000000000000000A1B2 /* XCRemoteSwiftPackageReference "CodeEditLang" */,
+				CE1A0000000000000000A1B2 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditLang" */,
 			);
 			preferredProjectObjectVersion = 55;
 			productRefGroup = B658FB2D27DA9E0F00EA4DBD /* Products */;
@@ -1883,6 +1883,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../codeedit-deps/CodeEditSourceEditor";
 		};
+		CE1A0000000000000000A1B2 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditLang" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../codeedit-deps/CodeEditLang";
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1905,11 +1909,6 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/nodal-ide/CodeEditKit.git";
 			requirement = { kind = revision; revision = "e897337ce0f16dd3612cb89edacb055aa2cd65de"; };
-		};
-		CE1A0000000000000000A1B2 /* XCRemoteSwiftPackageReference "CodeEditLang" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nodal-ide/CodeEditLang.git";
-			requirement = { kind = revision; revision = "c0e4ded4d51ae4123ca00866621528b388a790cc"; };
 		};
 		287136B1292A407E00E9F5F4 /* XCRemoteSwiftPackageReference "SwiftLintPlugin" */ = {
 			isa = XCRemoteSwiftPackageReference;

@@ -52,7 +52,7 @@ final class ProjectNavigatorMenu: NSMenu {
         let showInFinder = menuItem("Show in Finder", action: #selector(showInFinder))
 
         let openInTab = menuItem("Open in Tab", action: #selector(openInTab))
-        let openInNewWindow = menuItem("Open in New Window", action: nil)
+        let openInNewWindow = menuItem("Open in New Window", action: #selector(openInNewWindow))
         let openExternalEditor = menuItem("Open with External Editor", action: #selector(openWithExternalEditor))
         let openAs = menuItem("Open As", action: nil)
 
