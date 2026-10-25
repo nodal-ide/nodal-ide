@@ -1,10 +1,10 @@
 ---
-version: 0.22.3
-build: 80
+version: 0.22.4
+build: 81
 ---
-# Nodal IDE V0.22.3 (build 80)
+# Nodal IDE V0.22.4 (build 81)
 
-Nodal IDE 0.22.3 ships critical syntax highlighting fixes for Swift and Dart, wires up standalone window actions from the file navigator and external openers, and resolves workspace document completion handlers.
+Nodal IDE 0.22.4 ships critical syntax highlighting fixes for Swift and Dart, wires up standalone window actions from the file navigator and external openers, and resolves workspace document completion handlers.
 
 ## Fixes & Improvements
 
