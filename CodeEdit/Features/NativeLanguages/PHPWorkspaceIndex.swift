@@ -115,6 +115,7 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
     }
 
     /// Returns a cached PHP provider for a file, stable across SwiftUI view recreations.
+    @MainActor
     func provider(
         for file: URL,
         root: URL,
@@ -122,13 +123,19 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
     ) -> PHPProvider {
         // Resolve the index first (it takes the lock internally) to avoid nested locking.
         let symbolIndex = index(for: root)
+        let referenceIndex: PHPReferenceIndex
+        if let indexer = indexers[root.path(percentEncoded: false)] {
+            referenceIndex = indexer.referenceIndex
+        } else {
+            referenceIndex = PHPReferenceIndex()
+        }
 
         lock.lock()
         defer { lock.unlock() }
         if let existing = providers[file] {
             return existing
         }
-        let provider = PHPProvider(fileURL: file, index: symbolIndex, openLink: openLink)
+        let provider = PHPProvider(fileURL: file, index: symbolIndex, referenceIndex: referenceIndex, openLink: openLink)
         providers[file] = provider
         return provider
     }
