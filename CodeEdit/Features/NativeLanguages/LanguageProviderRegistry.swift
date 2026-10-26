@@ -94,7 +94,7 @@ final class LanguageProviderRegistry {
         LanguageExtensionActivation.invalidate(root: root)
         let index = AppServices.phpWorkspaceIndex.index(for: root)
         for url in AppServices.workspaceLanguageExtensions.takeInjectedStubURLs(for: root) {
-            index.removeFile(url)
+            AppServices.phpWorkspaceIndex.removeFile(url, root: root)
         }
         AppServices.workspaceLanguageExtensions.reload(root: root)
         AppServices.workspaceLanguageExtensions.inject(into: index, root: root, language: "php")
@@ -113,9 +113,8 @@ final class LanguageProviderRegistry {
 
         let roots = AppServices.phpWorkspaceIndex.allRoots
         for root in roots {
-            let index = AppServices.phpWorkspaceIndex.index(for: root)
             for url in AppServices.workspaceLanguageExtensions.takeInjectedStubURLs(for: root) {
-                index.removeFile(url)
+                AppServices.phpWorkspaceIndex.removeFile(url, root: root)
             }
         }
         AppServices.workspaceLanguageExtensions.reload()

@@ -149,6 +149,20 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
         }
     }
 
+    /// Removes a file's symbols and reference postings for a workspace root.
+    func removeFile(_ file: URL, root: URL) {
+        let key = root.path(percentEncoded: false)
+        lock.lock()
+        let indexer = indexers[key]
+        let symbolIndex = indexes[key]
+        lock.unlock()
+        if let indexer {
+            indexer.removeFile(file)
+        } else {
+            symbolIndex?.removeFile(file)
+        }
+    }
+
     /// Re-indexes a single file (call after saving).
     func refresh(file: URL) {
         let path = file.path(percentEncoded: false)
