@@ -11,6 +11,7 @@ import AppKit
 import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
+import CodeEditLang
 import CodeEditLangPHP
 import LanguageServerProtocol
 
@@ -53,6 +54,10 @@ final class LSPLanguageProvider: LanguageProvider {
     var completionItems: [CompletionItem] = []
 
     var documentURI: String { fileURL.lspURI }
+
+    var sourceTextProvider: any SourceTextProviding = DiskSourceTextProvider()
+
+    nonisolated var supportsReferences: Bool { true }
 
     init(
         languageID: String,
@@ -118,6 +123,51 @@ final class LSPLanguageProvider: LanguageProvider {
         guard let hover = try? await server.requestHover(for: documentURI, position),
               let content = LSPHoverMapper.content(hover.contents) else { return nil }
         return HoverInfo(contents: content.plainText, range: range)
+    }
+
+    // MARK: - References
+
+    func references(for query: ReferenceQuery) async -> ReferenceQueryOutcome {
+        guard let server else {
+            return .failed(.notReady("The \(languageID) language server is still starting."))
+        }
+        guard server.serverCapabilities.referencesProvider != nil else {
+            return .unsupported(reason: "The \(languageID) language server doesn't support find references.")
+        }
+        guard let position = ReferenceLocationMapper.position(
+            forOffset: query.target.range.location,
+            in: query.source
+        ) else {
+            return .unsupported(reason: "Place the cursor on a symbol to find its references.")
+        }
+
+        let locations: [Location]
+        do {
+            locations = try await server.requestFindReferences(
+                for: query.target.fileURL.lspURI,
+                Position(line: position.line, character: position.character),
+                query.includeDeclaration
+            ) ?? []
+        } catch is CancellationError {
+            return .failed(.cancelled)
+        } catch {
+            return .failed(.transport(error.localizedDescription))
+        }
+
+        let refs = locations.map {
+            ReferenceLocationMapper.LocationRef(
+                uri: $0.uri,
+                startLine: $0.range.start.line,
+                startCharacter: $0.range.start.character,
+                endLine: $0.range.end.line,
+                endCharacter: $0.range.end.character
+            )
+        }
+        let textProvider = sourceTextProvider
+        let limit = query.maxResults
+        return await Task.detached(priority: .userInitiated) {
+            ReferenceLocationMapper.outcome(for: refs, textProvider: textProvider, limit: limit)
+        }.value
     }
 
     // MARK: - Diagnostics

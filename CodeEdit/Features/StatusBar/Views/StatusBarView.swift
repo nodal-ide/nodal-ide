@@ -61,6 +61,7 @@ struct StatusBarView: View {
                let settingsManager = workspace.workspaceSettingsManager {
                 StatusBarLocalSiteView(coordinator: coordinator, settingsManager: settingsManager)
             }
+            StatusBarReferencesView()
             StatusBarDivider()
             Spacer()
             StatusBarFileInfoView()

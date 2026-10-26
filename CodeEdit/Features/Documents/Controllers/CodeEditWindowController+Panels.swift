@@ -22,6 +22,14 @@ extension CodeEditWindowController {
         workspace?.listenerModel.highlightedFileItem = file
     }
 
+    /// Shows the References navigator tab, expanding the navigator when it is collapsed.
+    func showReferencesNavigator() {
+        if splitViewController?.splitViewItems.first?.isCollapsed == true {
+            toggleFirstPanel(shouldAnimate: false)
+        }
+        navigatorSidebarViewModel?.setNavigatorTab(tab: .references)
+    }
+
     /// Toggles the navigator pane, optionally without animation.
     func toggleFirstPanel(shouldAnimate: Bool = true) {
         guard let firstSplitView = splitViewController?.splitViewItems.first else { return }
@@ -68,6 +76,12 @@ extension CodeEditWindowController {
     @objc
     func askAssistantAboutSelectionFromContextMenu(_ sender: Any?) {
         askAssistantAboutSelection()
+    }
+
+    /// Native editor context-menu entry point (nil target, resolved through the responder chain).
+    @objc
+    func findReferencesFromContextMenu(_ sender: Any?) {
+        findReferences()
     }
 
     func revealAssistant() {

@@ -190,6 +190,7 @@ struct CodeFileView: View {
             onBreakpointMenu: breakpointMenu(line:),
             onContextMenuItems: { controller, _ in
                 AssistantEditorContextMenu.items(for: controller.textView)
+                    + ReferencesEditorContextMenu.items(for: controller.textView)
             },
             debugLine: currentDebugLine
         )

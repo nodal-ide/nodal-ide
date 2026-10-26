@@ -30,7 +30,6 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
     var commandPalettePanel: SearchPanel?
     var commandCenterPanel: SearchPanel?
     var knowledgePanel: SearchPanel?
-    var referencesPanel: SearchPanel?
     var callHierarchyPanel: CallHierarchyPanel?
     var navigatorSidebarViewModel: NavigatorAreaViewModel?
     var inspectorViewModel: InspectorAreaViewModel? { splitViewController?.inspectorViewModel }
@@ -322,39 +321,11 @@ final class CodeEditWindowController: NSWindowController, NSToolbarDelegate, Obs
 // MARK: - Reference & Call-Hierarchy Panels
 
 extension CodeEditWindowController {
-    /// Finds references to the symbol under the cursor and shows them in a results panel.
     @MainActor
     func findReferences() {
         guard let workspace else { return }
-        Task { @MainActor in
-            let items = await LSPEditorActions.referenceItems(workspace: workspace)
-            showReferences(items)
-        }
-    }
-
-    /// Shows previously computed reference items in the Find References panel.
-    @MainActor
-    func showReferences(_ items: [PaletteItem]) {
-        guard workspace != nil else { return }
-
-        if let referencesPanel {
-            referencesPanel.close()
-            self.referencesPanel = nil
-            self.panelOpen = false
-        }
-
-        let panel = SearchPanel()
-        self.referencesPanel = panel
-        let state = ReferencesViewModel(items: items)
-        let contentView = ReferencesView(state: state) {
-            panel.close()
-            self.panelOpen = false
-            self.referencesPanel = nil
-        }
-        panel.contentView = NSHostingView(rootView: SettingsInjector { contentView })
-        window?.addChildWindow(panel, ordered: .above)
-        panel.makeKeyAndOrderFront(self)
-        self.panelOpen = true
+        workspace.referencesSession.findReferences()
+        showReferencesNavigator()
     }
 
     /// Shows the call hierarchy for the symbol at the cursor in a dedicated panel.

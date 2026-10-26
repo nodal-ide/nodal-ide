@@ -170,7 +170,7 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
         for (root, indexer) in candidates where path.hasPrefix(root) {
             Task.detached(priority: .utility) {
                 let info = await PHPParseCache.shared.infoAsync(for: file, source: source)
-                indexer.replace(file: file, with: info.symbols)
+                indexer.replace(file: file, with: info)
             }
         }
     }

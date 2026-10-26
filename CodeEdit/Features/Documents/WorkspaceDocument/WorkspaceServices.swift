@@ -29,6 +29,7 @@ final class WorkspaceServices {
     let undoRegistration = UndoManagerRegistration()
     let taskNotificationHandler = TaskNotificationHandler()
     let assistantSession = AssistantSession()
+    let referencesSession = ReferencesSession()
 
     // MARK: Lifecycle helpers
 
@@ -63,6 +64,7 @@ final class WorkspaceServices {
 
     /// Constructs the workspace-dependent services. Called once a workspace URL is known.
     func configure(workspace: WorkspaceDocument, url: URL) {
+        referencesSession.configure(workspace: workspace)
         assistantSession.configureContextProvider(WorkspaceAssistantContextProvider(workspace: workspace))
         let retrieveExcerpts = AppServices.settings.preferences.assistant.retrieveWorkspaceExcerpts
         lastRetrievalSetting = retrieveExcerpts
@@ -210,6 +212,7 @@ final class WorkspaceServices {
         assistantSession.prepareForWorkspaceClose()
         assistantSession.stopRetrieval()
         assistantSession.citationOpener = nil
+        referencesSession.clear()
     }
 
     private func configureAssistantDefaults() {

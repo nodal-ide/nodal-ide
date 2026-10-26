@@ -14,6 +14,7 @@ enum NavigatorTab: WorkspacePanelTab {
     case sourceControl
     case search
     case problems
+    case references
     case breakpoints
     case tests
     case uiExtension(endpoint: AppExtensionIdentity, data: ResolvedSidebar.SidebarStore)
@@ -28,6 +29,8 @@ enum NavigatorTab: WorkspacePanelTab {
             return "magnifyingglass"
         case .problems:
             return "exclamationmark.triangle"
+        case .references:
+            return "arrow.turn.up.right"
         case .breakpoints:
             return "smallcircle.filled.circle"
         case .tests:
@@ -54,6 +57,8 @@ enum NavigatorTab: WorkspacePanelTab {
             return "Search"
         case .problems:
             return "Problems"
+        case .references:
+            return "References"
         case .breakpoints:
             return "Breakpoints"
         case .tests:
@@ -73,6 +78,8 @@ enum NavigatorTab: WorkspacePanelTab {
             FindNavigatorView()
         case .problems:
             ProblemsView()
+        case .references:
+            ReferencesNavigatorView()
         case .breakpoints:
             BreakpointsView()
         case .tests:
@@ -96,6 +103,8 @@ enum NavigatorTab: WorkspacePanelTab {
             FindNavigatorToolbarBottom()
         case .problems:
             ProblemsNavigatorToolbarBottom()
+        case .references:
+            ReferencesNavigatorToolbarBottom()
         case .breakpoints:
             BreakpointsNavigatorToolbarBottom()
         case .tests:

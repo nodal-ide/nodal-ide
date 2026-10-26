@@ -49,6 +49,7 @@ final class WorkspaceDocument: NSDocument, ObservableObject, NSToolbarDelegate {
     var undoRegistration: UndoManagerRegistration { services.undoRegistration }
     var taskNotificationHandler: TaskNotificationHandler { services.taskNotificationHandler }
     var assistantSession: AssistantSession { services.assistantSession }
+    var referencesSession: ReferencesSession { services.referencesSession }
 
     // Workspace-dependent services (created once the URL is known).
     var workspaceFileManager: CEWorkspaceFileManager? { services.workspaceFileManager }

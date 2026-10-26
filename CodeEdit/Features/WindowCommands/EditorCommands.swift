@@ -137,6 +137,8 @@ struct EditorCommands: Commands {
             Button("Find All References") {
                 windowController?.findReferences()
             }
+            .keyboardShortcut(KeyEquivalent("\u{F70D}"), modifiers: [.shift])
+            .disabled(windowController?.workspace == nil)
 
             Button("Show Call Hierarchy") {
                 windowController?.showCallHierarchy()
