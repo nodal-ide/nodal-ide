@@ -1,23 +1,17 @@
 ---
-version: 0.23.0
-build: 82
+version: 0.23.1
+build: 83
 ---
-# Nodal IDE V0.23.0 (build 82)
+# Nodal IDE V0.23.1 (build 83)
 
-Nodal IDE 0.23.0 introduces an experimental native Find References workspace engine, complete with LSP and native query integration, a dedicated navigator panel, keyboard navigation, and symbol context controls.
+Nodal IDE 0.23.1 is a maintenance update for the 0.23.0 Find References release. It fixes an idle performance regression from the AI assistant's workspace retrieval and restores the app test suite.
 
-## Features & Improvements
+## Fixes & Improvements
 
-- **Find References Engine (RF0–RF4)**: Added a native, multi-provider Find References implementation with single-pass file reading, candidate bounds protection, and cancellation tokens.
-- **Dedicated References Navigator Tab (RF2)**: Added a new References tab to the sidebar navigator featuring grouped file lists, target headers, line/column metadata, and distinct iconography for declarations, writes, and reads.
-- **Editor & Context Menu Integration**: Bound `⇧F12` to "Find All References" and added an editor right-click menu item alongside the AI Assistant actions.
-- **Keyboard Navigation & Instant Reveal**: Single-click or arrow key navigation keeps the References panel open while jumping to source locations in the editor; double-click or `⌘↩` shifts focus directly to the editor buffer.
-- **Native PHP & LSP Resolution**: Integrated language server protocol (LSP) and native PHP indexer resolution with support for exact vs. heuristic candidate matches.
-- **Bounded & Accessible Results**: Enforced a hard 2,000-row result cap with clear state feedback (`searching`, `results`, `empty`, `partial`, `unsupported`, `failed`, and `stale`), fully labeled for VoiceOver and high-contrast modes.
-
-## Under the Hood
-
-- Introduced `CodeEditLang` shared primitives including `SourceLineIndex`, `SourceTextProviding`, and `PHPReferenceEngine` for O(1) line table lookups and thread-safe reference resolution.
+- **Idle CPU & Memory**: Opening a workspace no longer keeps the app working after launch. The assistant's workspace retrieval no longer saturates two cores for over a minute and no longer drives peak memory to roughly 1.9 GB; the app settles to idle within seconds at about a third less peak memory.
+- **Workspace Retrieval Tokenization**: Indexing now splits identifiers in a single pass instead of running a regular expression per identifier and rebuilding character sets per term, making retrieval indexing about 20x faster while producing identical search terms.
+- **Repeated Index Builds**: The retrieval index is rebuilt at most once per change to the indexed content instead of twice on every launch.
+- **App Test Target**: Removed an unused `ReferencesSession` overload that prevented the test target from compiling, so the suite builds and runs again.
 
 ## Notes
 
