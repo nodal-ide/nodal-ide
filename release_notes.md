@@ -1,17 +1,14 @@
 ---
-version: 0.23.1
-build: 83
+version: 0.23.2
+build: 84
 ---
-# Nodal IDE V0.23.1 (build 83)
+# Nodal IDE V0.23.2 (build 84)
 
-Nodal IDE 0.23.1 is a maintenance update for the 0.23.0 Find References release. It fixes an idle performance regression from the AI assistant's workspace retrieval and restores the app test suite.
+Nodal IDE 0.23.2 is a maintenance update that fixes the symbol hover cards regressed by the 0.23 releases.
 
 ## Fixes & Improvements
 
-- **Idle CPU & Memory**: Opening a workspace no longer keeps the app working after launch. The assistant's workspace retrieval no longer saturates two cores for over a minute and no longer drives peak memory to roughly 1.9 GB; the app now settles to idle in about 15 seconds with peak memory down about 60%.
-- **Workspace Retrieval Tokenization**: Indexing now splits identifiers in a single pass instead of running a regular expression per identifier and rebuilding character sets per term, making retrieval indexing about 20x faster while producing identical search terms.
-- **Repeated Index Builds**: The retrieval index is rebuilt at most once per change to the indexed content instead of twice on every launch.
-- **App Test Target**: Removed an unused `ReferencesSession` overload that prevented the test target from compiling, so the suite builds and runs again.
+- **Hover Cards**: Hovering a symbol shows the structured card again — the symbol name with its container or namespace, kind icon, visibility and deprecation badges, a monospaced signature, formatted documentation sections, parameter lists, and syntax-highlighted code. Hover had been reduced to plain text for both PHP and language servers, which flattened the whole card into a single paragraph; language-server hovers also printed raw Markdown code fences and backticks.
 
 ## Notes
 
