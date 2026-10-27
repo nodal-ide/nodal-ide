@@ -27,7 +27,7 @@ struct WindowCodeFileView: View {
 
     var body: some View {
         if let utType = codeFile.utType, utType.conforms(to: .text) {
-            CodeFileView(editorInstance: editorInstance, codeFile: codeFile)
+            CodeFileView(editorInstance: editorInstance, codeFile: codeFile, workspace: nil)
                 .environmentObject(undoRegistration)
         } else {
             NonTextFileView(fileDocument: codeFile)

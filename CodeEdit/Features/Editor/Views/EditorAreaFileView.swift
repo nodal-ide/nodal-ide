@@ -17,6 +17,7 @@ struct EditorAreaFileView: View {
     @EnvironmentObject private var editorManager: EditorManager
     @EnvironmentObject private var editor: Editor
     @EnvironmentObject private var statusBarViewModel: StatusBarViewModel
+    @EnvironmentObject private var workspace: WorkspaceDocument
 
     @Environment(\.edgeInsets)
     private var edgeInsets
@@ -33,7 +34,8 @@ struct EditorAreaFileView: View {
             let catalog = codeFile.workspaceLanguageCatalog()
             CodeFileView(
                 editorInstance: editorInstance,
-                codeFile: codeFile
+                codeFile: codeFile,
+                workspace: workspace
             )
             .id(
                 "\(ObjectIdentifier(codeFile))-" +

@@ -16,7 +16,8 @@ final class ReferencesSession: ObservableObject {
 
     private weak var workspace: WorkspaceDocument?
     private let providerOverride: ((ReferenceQuery) -> (any ReferenceProviding)?)?
-    private let nativeProviderForQuery: ((ReferenceQuery) -> (any ReferenceProviding)?)?
+    private(set) var nativeProviderForQuery: ((ReferenceQuery) -> (any ReferenceProviding)?)?
+
     private let timeout: TimeInterval
     private var queryTask: Task<ReferenceQueryOutcome, Never>?
     private var timeoutTask: Task<Void, Never>?
@@ -26,6 +27,7 @@ final class ReferencesSession: ObservableObject {
 
     init(
         providerOverride: ((ReferenceQuery) -> (any ReferenceProviding)?)? = nil,
+        nativeProviderForQuery: ((ReferenceQuery) -> (any ReferenceProviding)?)? = nil,
         timeout: TimeInterval = ReferencesSession.timeout
     ) {
         self.providerOverride = providerOverride
@@ -35,6 +37,27 @@ final class ReferencesSession: ObservableObject {
 
     func configure(workspace: WorkspaceDocument) {
         self.workspace = workspace
+    }
+
+    func setNativeProviderForQuery(_ nativeProviderForQuery: ((ReferenceQuery) -> (any ReferenceProviding)?)?) {
+        self.nativeProviderForQuery = nativeProviderForQuery
+    }
+
+    func references(for fileURL: URL) async -> [EditorReference] {
+        guard let query = buildQuery(for: fileURL),
+              let provider = nativeProviderForQuery?(query)
+        else { return [] }
+        return await provider.references(for: query).references ?? []
+    }
+
+    private func buildQuery(for fileURL: URL) -> ReferenceQuery? {
+        guard let workspace else { return nil }
+        switch ReferencesTargetCapture.capture(in: workspace) {
+        case .captured(let query):
+            return query.target.fileURL == fileURL ? query : nil
+        case .unavailable:
+            return nil
+        }
     }
 
     func findReferences() {

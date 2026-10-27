@@ -109,24 +109,28 @@ struct CodeFileView: View {
     /// diagnostics + the debounced index refresh.
     private let nativeProvider: PHPProvider?
     /// The current file's native reference resolver, when the workspace native index is ready.
-    private var nativeReferenceEngine: (any ReferenceProviding)?
-
-    /// The reference emphasis coordinator, installed only for PHP editors.
+    private var nativeReferenceEngine: (any ReferenceProviding)?    /// The reference emphasis coordinator, installed only for PHP editors.
     private var referenceHighlightCoordinator: ReferenceHighlightCoordinator?
 
     /// The delegate object passed to the editor: either a single provider or an aggregator that
     /// merges several (extensions + built-in engine).
     private let languageDelegate: (any LanguageDelegate)?
 
+    /// The workspace document that owns this editor, when one is available.
+    /// Used to attach the reference emphasis coordinator to the live references session.
+    private let workspace: WorkspaceDocument?
+
     init(
         editorInstance: EditorInstance,
         codeFile: CodeFileDocument,
+        workspace: WorkspaceDocument? = nil,
         textViewCoordinators: [TextViewCoordinator] = [],
         isEditable: Bool = true,
         isPreview: Bool = false
     ) {
         self.editorInstance = editorInstance
         self._codeFile = .init(wrappedValue: codeFile)
+        self.workspace = workspace
 
         // Contributed languages resolve their grammar and queries through the workspace catalog, so the
         // syntax highlighter must be created with it rather than the built-in default.
@@ -138,22 +142,6 @@ struct CodeFileView: View {
             + [editorInstance.rangeTranslator]
             + [codeFile.contentCoordinator]
             + [codeFile.languageServerObjects.textCoordinator]
-
-        if nativeProvider != nil {
-            let session = AppServices.workspace?.referencesSession
-            if let session {
-                referenceHighlightCoordinator = ReferenceHighlightCoordinator(
-                    workspace: AppServices.workspace,
-                    fileURL: codeFile.fileURL,
-                    session: session
-                )
-                coordinators.append(referenceHighlightCoordinator!)
-            }
-        }
-
-        self.textViewCoordinators = coordinators
-        self.isEditable = isEditable
-        self.isPreview = isPreview
 
         // Route jump-to-definition through the app, which owns the editor/document model.
         let openLink: (JumpToDefinitionLink) -> Void = { link in
@@ -174,13 +162,30 @@ struct CodeFileView: View {
         self.nativeReferenceEngine = pipeline.provider?.nativeReferenceEngine
         self.languageDelegate = pipeline.delegate
 
+        self.textViewCoordinators = coordinators
+        self.isEditable = isEditable
+        self.isPreview = isPreview
+
+        if nativeProvider != nil, let session = workspace?.referencesSession {
+            if let fileURL = codeFile.fileURL {
+                referenceHighlightCoordinator = ReferenceHighlightCoordinator(
+                    workspace: workspace,
+                    fileURL: fileURL,
+                    session: session
+                )
+                coordinators.append(referenceHighlightCoordinator!)
+            }
+        }
+
         if let openOptions = codeFile.openOptions {
             codeFile.openOptions = nil
             editorInstance.cursorPositions = openOptions.cursorPositions
         }
+
+        installSessionOverrideIfNecessary()
     }
 
-    @State var font: NSFont = AppServices.settings[\.textEditing].font.current
+@State var font: NSFont = AppServices.settings[\.textEditing].font.current
 
     @Environment(\.edgeInsets)
     var edgeInsets
@@ -230,14 +235,25 @@ struct CodeFileView: View {
                 EffectView(.contentBackground)
             }
         }
-        .colorScheme(currentTheme.appearance == .dark ? .dark : .light)                    // minHeight zero fixes a bug where the app would freeze if the contents of the file are empty.
+        .colorScheme(currentTheme.appearance == .dark ? .dark : .light)
                     .frame(minHeight: .zero, maxHeight: .infinity)
         .onChange(of: settingsFont) { _, newFontSetting in
             font = newFontSetting.current
         }
     }
 
-    deinit {
-        referenceHighlightCoordinator = nil
+    private func installSessionOverrideIfNecessary() {
+        guard let session = workspace?.referencesSession, nativeProvider != nil else { return }
+        installSessionOverrideIfNecessary(session: session)
+    }
+
+    private func installSessionOverrideIfNecessary(session: ReferencesSession) {
+        guard session.nativeProviderForQuery == nil else { return }
+        session.setNativeProviderForQuery { [self] query in
+            guard let fileURL = self.codeFile.fileURL
+            else { return nil }
+            guard query.target.fileURL == fileURL else { return nil }
+            return self.nativeProvider?.nativeReferenceEngine
+        }
     }
 }
