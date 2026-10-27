@@ -122,7 +122,7 @@ final class LSPLanguageProvider: LanguageProvider {
               let position = textView.textView.lspRangeFrom(nsRange: range)?.start else { return nil }
         guard let hover = try? await server.requestHover(for: documentURI, position),
               let content = LSPHoverMapper.content(hover.contents) else { return nil }
-        return HoverInfo(contents: content.plainText, range: range)
+        return HoverInfo(content: content, range: range)
     }
 
     // MARK: - References
