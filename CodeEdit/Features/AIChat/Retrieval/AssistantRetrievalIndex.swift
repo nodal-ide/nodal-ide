@@ -24,6 +24,9 @@ actor AssistantRetrievalIndex {
     private var documentFrequency: [String: Int] = [:]
     private var averageLength = 0.0
     private var fileRecords: [String: AssistantRetrievalFileRecord] = [:]
+    /// Tokenizing every chunk is the expensive part of a build, so the inverted index is rebuilt at
+    /// most once per mutation of ``chunks`` instead of once per entry point.
+    private var invertedIndexIsStale = true
 
     init(rootURL: URL, storageRoot: URL? = nil) {
         let standardizedRoot = rootURL.standardizedFileURL
@@ -51,6 +54,7 @@ actor AssistantRetrievalIndex {
         documentFrequency = [:]
         averageLength = 0
         fileRecords = [:]
+        invertedIndexIsStale = true
         removeSnapshot()
         return await refresh(progress: progress)
     }
@@ -61,12 +65,14 @@ actor AssistantRetrievalIndex {
         documentFrequency = [:]
         averageLength = 0
         fileRecords = [:]
+        invertedIndexIsStale = true
         removeSnapshot()
         try? FileManager.default.removeItem(at: storageDirectory)
     }
 
     func search(_ query: AssistantRetrievalQuery, limit: Int = 10) -> [AssistantRetrievedExcerpt] {
         guard !chunks.isEmpty else { return [] }
+        ensureInvertedIndex()
         let weights = queryWeights(for: query)
         guard !weights.isEmpty else { return [] }
 
@@ -218,7 +224,8 @@ actor AssistantRetrievalIndex {
 
         chunks = newChunks
         fileRecords = newRecords
-        rebuildInvertedIndex()
+        invertedIndexIsStale = true
+        ensureInvertedIndex()
         saveSnapshot()
         return .ready(indexedFiles: fileRecords.count, chunkCount: chunks.count)
     }
@@ -263,6 +270,12 @@ actor AssistantRetrievalIndex {
         indexedChunks = indexed
         documentFrequency = frequencies
         averageLength = indexed.isEmpty ? 0 : Double(totalLength) / Double(indexed.count)
+        invertedIndexIsStale = false
+    }
+
+    private func ensureInvertedIndex() {
+        guard invertedIndexIsStale else { return }
+        rebuildInvertedIndex()
     }
 
     private func boost(
@@ -323,7 +336,7 @@ actor AssistantRetrievalIndex {
 
         chunks = snapshot.chunks.filter { !SecretRedactor.isSecretPath($0.relativePath) }
         fileRecords = snapshot.files
-        rebuildInvertedIndex()
+        invertedIndexIsStale = true
     }
 
     private func saveSnapshot() {

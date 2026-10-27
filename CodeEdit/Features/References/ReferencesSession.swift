@@ -43,23 +43,6 @@ final class ReferencesSession: ObservableObject {
         self.nativeProviderForQuery = nativeProviderForQuery
     }
 
-    func references(for fileURL: URL) async -> [EditorReference] {
-        guard let query = buildQuery(for: fileURL),
-              let provider = nativeProviderForQuery?(query)
-        else { return [] }
-        return await provider.references(for: query).references ?? []
-    }
-
-    private func buildQuery(for fileURL: URL) -> ReferenceQuery? {
-        guard let workspace else { return nil }
-        switch ReferencesTargetCapture.capture(in: workspace) {
-        case .captured(let query):
-            return query.target.fileURL == fileURL ? query : nil
-        case .unavailable:
-            return nil
-        }
-    }
-
     func findReferences() {
         guard let workspace else { return }
         switch ReferencesTargetCapture.capture(in: workspace) {
