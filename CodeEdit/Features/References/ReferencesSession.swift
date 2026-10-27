@@ -16,6 +16,7 @@ final class ReferencesSession: ObservableObject {
 
     private weak var workspace: WorkspaceDocument?
     private let providerOverride: ((ReferenceQuery) -> (any ReferenceProviding)?)?
+    private let nativeProviderForQuery: ((ReferenceQuery) -> (any ReferenceProviding)?)?
     private let timeout: TimeInterval
     private var queryTask: Task<ReferenceQueryOutcome, Never>?
     private var timeoutTask: Task<Void, Never>?
@@ -28,6 +29,7 @@ final class ReferencesSession: ObservableObject {
         timeout: TimeInterval = ReferencesSession.timeout
     ) {
         self.providerOverride = providerOverride
+        self.nativeProviderForQuery = nativeProviderForQuery
         self.timeout = timeout
     }
 
@@ -93,6 +95,7 @@ final class ReferencesSession: ObservableObject {
         phase = .searching
 
         let provider = providerOverride?(query)
+            ?? nativeProviderForQuery?(query)
             ?? workspace.flatMap { makeProvider(for: query, workspace: $0) }
         guard let provider else {
             phase = .unsupported("Find references isn't available for \(query.languageID).")

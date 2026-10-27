@@ -842,7 +842,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = "0.19.0";
+				MARKETING_VERSION = 0.19.0;
 				PRODUCT_BUNDLE_IDENTIFIER = do.upper.nodalide;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1044,7 +1044,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = "0.19.0";
+				MARKETING_VERSION = 0.19.0;
 				PRODUCT_BUNDLE_IDENTIFIER = do.upper.nodalide;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1337,7 +1337,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = "0.19.0";
+				MARKETING_VERSION = 0.19.0;
 				PRODUCT_BUNDLE_IDENTIFIER = do.upper.nodalide;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1630,7 +1630,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = "0.19.0";
+				MARKETING_VERSION = 0.19.0;
 				PRODUCT_BUNDLE_IDENTIFIER = do.upper.nodalide;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1675,7 +1675,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = "0.19.0";
+				MARKETING_VERSION = 0.19.0;
 				PRODUCT_BUNDLE_IDENTIFIER = do.upper.nodalide;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1893,22 +1893,10 @@
 		2816F592280CF50500DD548B /* XCRemoteSwiftPackageReference "CodeEditSymbols" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/nodal-ide/CodeEditSymbols.git";
-			requirement = { kind = revision; revision = "247200521218bc1cc0ec962012c407a5ef8460d7"; };
-		};
-		5E44855F2DF600D9008BBE69 /* XCRemoteSwiftPackageReference "AboutWindow" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nodal-ide/AboutWindow.git";
-			requirement = { kind = revision; revision = "9225786ce6e8487d149ac1b998287fccc67b3abe"; };
-		};
-		5EACE6202DF4BF08005E08B8 /* XCRemoteSwiftPackageReference "WelcomeWindow" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nodal-ide/WelcomeWindow.git";
-			requirement = { kind = revision; revision = "1baf6c4075ec05e2a8e64a6b62750c62d15692bc"; };
-		};
-		6C85BB3E2C2105ED00EB5DEF /* XCRemoteSwiftPackageReference "CodeEditKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nodal-ide/CodeEditKit.git";
-			requirement = { kind = revision; revision = "e897337ce0f16dd3612cb89edacb055aa2cd65de"; };
+			requirement = {
+				kind = revision;
+				revision = 247200521218bc1cc0ec962012c407a5ef8460d7;
+			};
 		};
 		287136B1292A407E00E9F5F4 /* XCRemoteSwiftPackageReference "SwiftLintPlugin" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -1982,6 +1970,22 @@
 				version = 2.3.0;
 			};
 		};
+		5E44855F2DF600D9008BBE69 /* XCRemoteSwiftPackageReference "AboutWindow" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nodal-ide/AboutWindow.git";
+			requirement = {
+				kind = revision;
+				revision = 9225786ce6e8487d149ac1b998287fccc67b3abe;
+			};
+		};
+		5EACE6202DF4BF08005E08B8 /* XCRemoteSwiftPackageReference "WelcomeWindow" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nodal-ide/WelcomeWindow.git";
+			requirement = {
+				kind = revision;
+				revision = 1baf6c4075ec05e2a8e64a6b62750c62d15692bc;
+			};
+		};
 		6C0617D42BDB4432008C9C42 /* XCRemoteSwiftPackageReference "LogStream" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Wouter01/LogStream";
@@ -2012,6 +2016,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 0.2.0;
+			};
+		};
+		6C85BB3E2C2105ED00EB5DEF /* XCRemoteSwiftPackageReference "CodeEditKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nodal-ide/CodeEditKit.git";
+			requirement = {
+				kind = revision;
+				revision = e897337ce0f16dd3612cb89edacb055aa2cd65de;
 			};
 		};
 		6C85BB422C210EFD00EB5DEF /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */ = {
@@ -2119,7 +2131,7 @@
 		};
 		6C76D6D32E15B91E00EF52C3 /* CodeEditSourceEditor */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 6C76D6D22E15B91E00EF52C3 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */;
+			package = 6C76D6D22E15B91E00EF52C3 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSourceEditor" */;
 			productName = CodeEditSourceEditor;
 		};
 		6C7B1C752A1D57CE005CBBFC /* SwiftLint */ = {
@@ -2144,7 +2156,7 @@
 		};
 		6C9DB9E32D55656300ACD86E /* CodeEditSourceEditor */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 6C76D6D22E15B91E00EF52C3 /* XCRemoteSwiftPackageReference "CodeEditSourceEditor" */;
+			package = 6C76D6D22E15B91E00EF52C3 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditSourceEditor" */;
 			productName = CodeEditSourceEditor;
 		};
 		6CB4463F2B6DFF3A00539ED0 /* CodeEditSourceEditor */ = {
@@ -2183,12 +2195,12 @@
 		};
 		CE1A0000000000000000C1D2 /* CodeEditLang */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CE1A0000000000000000A1B2 /* XCRemoteSwiftPackageReference "CodeEditLang" */;
+			package = CE1A0000000000000000A1B2 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditLang" */;
 			productName = CodeEditLang;
 		};
 		CE1A0000000000000000C3D4 /* CodeEditLangPHP */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CE1A0000000000000000A1B2 /* XCRemoteSwiftPackageReference "CodeEditLang" */;
+			package = CE1A0000000000000000A1B2 /* XCLocalSwiftPackageReference "../codeedit-deps/CodeEditLang" */;
 			productName = CodeEditLangPHP;
 		};
 /* End XCSwiftPackageProductDependency section */

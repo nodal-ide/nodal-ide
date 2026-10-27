@@ -111,6 +111,9 @@ struct CodeFileView: View {
     /// The current file's native reference resolver, when the workspace native index is ready.
     private var nativeReferenceEngine: (any ReferenceProviding)?
 
+    /// The reference emphasis coordinator, installed only for PHP editors.
+    private var referenceHighlightCoordinator: ReferenceHighlightCoordinator?
+
     /// The delegate object passed to the editor: either a single provider or an aggregator that
     /// merges several (extensions + built-in engine).
     private let languageDelegate: (any LanguageDelegate)?
@@ -131,10 +134,24 @@ struct CodeFileView: View {
         self.catalog = catalog
         self._treeSitterClient = State(wrappedValue: TreeSitterClient(catalog: catalog))
 
-        self.textViewCoordinators = textViewCoordinators
+        var coordinators = textViewCoordinators
             + [editorInstance.rangeTranslator]
             + [codeFile.contentCoordinator]
             + [codeFile.languageServerObjects.textCoordinator]
+
+        if nativeProvider != nil {
+            let session = AppServices.workspace?.referencesSession
+            if let session {
+                referenceHighlightCoordinator = ReferenceHighlightCoordinator(
+                    workspace: AppServices.workspace,
+                    fileURL: codeFile.fileURL,
+                    session: session
+                )
+                coordinators.append(referenceHighlightCoordinator!)
+            }
+        }
+
+        self.textViewCoordinators = coordinators
         self.isEditable = isEditable
         self.isPreview = isPreview
 
@@ -218,5 +235,9 @@ struct CodeFileView: View {
         .onChange(of: settingsFont) { _, newFontSetting in
             font = newFontSetting.current
         }
+    }
+
+    deinit {
+        referenceHighlightCoordinator = nil
     }
 }

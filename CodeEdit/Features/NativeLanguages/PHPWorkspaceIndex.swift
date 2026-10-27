@@ -20,6 +20,8 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
 
     private let lock = NSLock()
     private var indexes: [String: SymbolIndex] = [:]
+    /// The PHP reference engine that was built while indexing this workspace root, if any.
+    private var referenceIndex: PHPReferenceIndex?
     private var indexers: [String: PHPProjectIndexer] = [:]
     private var providers: [URL: PHPProvider] = [:]
     private var pendingDiagnostics: [URL: [PHPDiagnostic]] = [:]
@@ -43,6 +45,10 @@ final class PHPWorkspaceIndex: @unchecked Sendable {
         }
         let symbolIndex = SymbolIndex()
         let indexer = PHPProjectIndexer(index: symbolIndex)
+        // Expose the live reference engine once the workspace index is ready for editor queries.
+        referenceIndex = indexer.referenceIndex
+        // Expose the live reference engine once the workspace index is ready for editor queries.
+        referenceIndex = indexer.referenceIndex
         // Deliver project-wide diagnostics to the Problems panel as files are indexed.
         indexer.diagnosticsConfig = Self.currentDiagnosticsConfig()
         indexer.onDiagnostics = { [weak self] url, issues in
