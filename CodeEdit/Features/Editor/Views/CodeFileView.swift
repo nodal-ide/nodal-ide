@@ -14,10 +14,11 @@ import CodeEditLang
 import CodeEditLangPHP
 import Combine
 
-/// CodeFileView is just a wrapper of the `CodeEditor` dependency
+/// CodeFileView is just a wrapper of the `CodeEditor` dependency
 struct CodeFileView: View {
     let editorInstance: EditorInstance
     @ObservedObject var codeFile: CodeFileDocument
+
 
     /// The workspace language catalog (built-ins + enabled extension syntax packs) used for detection
     /// and syntax highlighting. Resolved once when the view is created.
@@ -107,6 +108,8 @@ struct CodeFileView: View {
     /// Native language provider for this file, if one exists (currently PHP). Kept for wiring
     /// diagnostics + the debounced index refresh.
     private let nativeProvider: PHPProvider?
+    /// The current file's native reference resolver, when the workspace native index is ready.
+    private var nativeReferenceEngine: (any ReferenceProviding)?
 
     /// The delegate object passed to the editor: either a single provider or an aggregator that
     /// merges several (extensions + built-in engine).
@@ -151,6 +154,7 @@ struct CodeFileView: View {
         // Build the language-provider pipeline (extensions + built-in engine).
         let pipeline = CodeFileLanguagePipeline.build(for: codeFile, openLink: openLink)
         self.nativeProvider = pipeline.provider
+        self.nativeReferenceEngine = pipeline.provider?.nativeReferenceEngine
         self.languageDelegate = pipeline.delegate
 
         if let openOptions = codeFile.openOptions {
@@ -190,7 +194,7 @@ struct CodeFileView: View {
             onBreakpointMenu: breakpointMenu(line:),
             onContextMenuItems: { controller, _ in
                 AssistantEditorContextMenu.items(for: controller.textView)
-                    + ReferencesEditorContextMenu.items(for: controller.textView)
+                    + ReferencesEditorContextMenu.items(for: controller.textView, referenceProvider: nativeReferenceEngine)
             },
             debugLine: currentDebugLine
         )
@@ -209,9 +213,8 @@ struct CodeFileView: View {
                 EffectView(.contentBackground)
             }
         }
-        .colorScheme(currentTheme.appearance == .dark ? .dark : .light)
-        // minHeight zero fixes a bug where the app would freeze if the contents of the file are empty.
-        .frame(minHeight: .zero, maxHeight: .infinity)
+        .colorScheme(currentTheme.appearance == .dark ? .dark : .light)                    // minHeight zero fixes a bug where the app would freeze if the contents of the file are empty.
+                    .frame(minHeight: .zero, maxHeight: .infinity)
         .onChange(of: settingsFont) { _, newFontSetting in
             font = newFontSetting.current
         }
