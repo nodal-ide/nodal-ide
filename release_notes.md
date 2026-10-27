@@ -1,21 +1,23 @@
 ---
-version: 0.22.4
-build: 81
+version: 0.23.0
+build: 82
 ---
-# Nodal IDE V0.22.4 (build 81)
+# Nodal IDE V0.23.0 (build 82)
 
-Nodal IDE 0.22.4 ships critical syntax highlighting fixes for Swift and Dart, wires up standalone window actions from the file navigator and external openers, and resolves workspace document completion handlers.
+Nodal IDE 0.23.0 introduces an experimental native Find References workspace engine, complete with LSP and native query integration, a dedicated navigator panel, keyboard navigation, and symbol context controls.
 
-## Fixes & Improvements
+## Features & Improvements
 
-- **Tree-sitter Syntax Highlighting Fix**: Fixed a issue where Swift and Dart syntax highlighting was completely missing. `TreeSitterModel` now merges only actual highlight and injection query overlays (`highlights-*`, `injections`, `injections-*`), excluding non-highlight queries (`folds`, `indents`, `locals`, `tags`) that caused compiled query failures.
-- **Navigator & External Open Actions**: Wired up "Open in New Window" in the file navigator context menu and added a dedicated external open path in `CodeEditDocumentController` for Finder "Open With", FinderSync, and CLI `--open` flags to launch standalone windows.
-- **Workspace Document Lifecycle Fix**: Fixed a bug where opening a file in an existing workspace failed to invoke the `openDocument` completion handler, ensuring opened documents are returned correctly.
-- **Expanded Highlight Test Suite**: Added `SwiftHighlightQueryTests` to validate highlighting queries across Swift, PHP, JavaScript, JSX, TypeScript, CSS, HTML, Markdown, and JSON.
+- **Find References Engine (RF0–RF4)**: Added a native, multi-provider Find References implementation with single-pass file reading, candidate bounds protection, and cancellation tokens.
+- **Dedicated References Navigator Tab (RF2)**: Added a new References tab to the sidebar navigator featuring grouped file lists, target headers, line/column metadata, and distinct iconography for declarations, writes, and reads.
+- **Editor & Context Menu Integration**: Bound `⇧F12` to "Find All References" and added an editor right-click menu item alongside the AI Assistant actions.
+- **Keyboard Navigation & Instant Reveal**: Single-click or arrow key navigation keeps the References panel open while jumping to source locations in the editor; double-click or `⌘↩` shifts focus directly to the editor buffer.
+- **Native PHP & LSP Resolution**: Integrated language server protocol (LSP) and native PHP indexer resolution with support for exact vs. heuristic candidate matches.
+- **Bounded & Accessible Results**: Enforced a hard 2,000-row result cap with clear state feedback (`searching`, `results`, `empty`, `partial`, `unsupported`, `failed`, and `stale`), fully labeled for VoiceOver and high-contrast modes.
 
 ## Under the Hood
 
-- Consumes updated local `CodeEditLanguages` packages to support refined language zone abstractions and grammar query filtering.
+- Introduced `CodeEditLang` shared primitives including `SourceLineIndex`, `SourceTextProviding`, and `PHPReferenceEngine` for O(1) line table lookups and thread-safe reference resolution.
 
 ## Notes
 
