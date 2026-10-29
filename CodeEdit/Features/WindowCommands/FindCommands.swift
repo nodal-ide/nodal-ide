@@ -13,8 +13,11 @@ struct FindCommands: Commands {
 
     static let selector = #selector(NSTextView.performFindPanelAction(_:))
 
+    /// Checks the whole responder chain (the editor answers through its text view controller), not just the
+    /// current first responder. `responder` is still read so the menu revalidates when focus changes.
     var hasResponder: Bool {
-        responder?.responds(to: Self.selector) ?? false
+        guard responder != nil else { return false }
+        return NSApp.target(forAction: Self.selector, to: nil, from: nil) != nil
     }
 
     var body: some Commands {
@@ -26,7 +29,7 @@ struct FindCommands: Commands {
                 .keyboardShortcut("f")
 
                 Button("Find and Replace...") {
-                    send(.init(rawValue: 12)!)
+                    send(.replace)
                 }
                 .keyboardShortcut("f", modifiers: [.option, .command])
 
@@ -57,6 +60,6 @@ struct FindCommands: Commands {
     func send(_ action: NSFindPanelAction) {
         let item = NSMenuItem()
         item.tag = Int(action.rawValue)
-        responder?.perform(Self.selector, with: item)
+        NSApp.sendAction(Self.selector, to: nil, from: item)
     }
 }
