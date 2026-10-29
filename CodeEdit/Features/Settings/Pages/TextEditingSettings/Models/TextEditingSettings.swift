@@ -26,6 +26,7 @@ extension SettingsData {
                 "Letter Spacing",
                 "Autocomplete braces",
                 "Enable type-over completion",
+                "Completion Source Priority",
                 "Bracket Pair Emphasis",
                 "Bracket Pair Highlight",
                 "Show Gutter",
@@ -55,6 +56,26 @@ extension SettingsData {
 
         /// A flag indicating whether type-over completion is enabled
         var enableTypeOverCompletion: Bool = true
+
+        /// Which provider wins when several can complete the current document.
+        var completionSourcePolicy: CompletionSourcePolicy = .automatic
+
+        enum CompletionSourcePolicy: String, Codable, CaseIterable, Identifiable {
+            /// Built-in engine, then language server, then extensions.
+            case automatic
+            case languageServerFirst
+            case extensionFirst
+
+            var id: String { rawValue }
+
+            var title: String {
+                switch self {
+                case .automatic: return "Built-in first"
+                case .languageServerFirst: return "Language server first"
+                case .extensionFirst: return "Extension first"
+                }
+            }
+        }
 
         /// A flag indicating whether braces are automatically completed
         var autocompleteBraces: Bool = true
@@ -123,6 +144,10 @@ extension SettingsData {
                 Bool.self,
                 forKey: .enableTypeOverCompletion
             ) ?? true
+            self.completionSourcePolicy = try container.decodeIfPresent(
+                CompletionSourcePolicy.self,
+                forKey: .completionSourcePolicy
+            ) ?? .automatic
             self.autocompleteBraces = try container.decodeIfPresent(
                 Bool.self,
                 forKey: .autocompleteBraces

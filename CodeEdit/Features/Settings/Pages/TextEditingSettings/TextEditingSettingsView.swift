@@ -40,6 +40,7 @@ struct TextEditingSettingsView: View {
             Section {
                 autocompleteBraces
                 enableTypeOverCompletion
+                completionSourcePolicy
                 formatOnSave
             }
             Section {
@@ -84,6 +85,16 @@ private extension TextEditingSettingsView {
 
     @ViewBuilder private var enableTypeOverCompletion: some View {
         Toggle("Enable type-over completion", isOn: $textEditing.enableTypeOverCompletion)
+    }
+
+    @ViewBuilder private var completionSourcePolicy: some View {
+        Picker("Completion Source Priority", selection: $textEditing.completionSourcePolicy) {
+            ForEach(SettingsData.TextEditingSettings.CompletionSourcePolicy.allCases) { policy in
+                Text(policy.title).tag(policy)
+            }
+        }
+        .help("Which provider supplies completions when a built-in engine, language server and "
+              + "extension can all answer. Disable a provider to remove it from the list.")
     }
 
     @ViewBuilder private var formatOnSave: some View {

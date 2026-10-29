@@ -44,9 +44,22 @@ enum CodeFileLanguagePipeline {
         switch providers.count {
         case 0: delegate = nil
         case 1: delegate = providers[0]
-        default: delegate = LanguageProviderAggregator(providers: providers)
+        default:
+            delegate = LanguageProviderAggregator(
+                providers: providers,
+                completionPolicy: completionPolicy()
+            )
         }
         return Result(delegate: delegate, provider: phpProvider)
+    }
+
+    /// Maps the user's completion source preference onto the merge policy.
+    static func completionPolicy() -> CompletionMergePolicy {
+        switch AppServices.settings.preferences.textEditing.completionSourcePolicy {
+        case .automatic: return CompletionMergePolicy(preference: .automatic)
+        case .languageServerFirst: return CompletionMergePolicy(preference: .languageServerFirst)
+        case .extensionFirst: return CompletionMergePolicy(preference: .extensionFirst)
+        }
     }
 
     /// Maps the app's PHP diagnostics settings to the engine's configuration.

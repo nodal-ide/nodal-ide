@@ -91,6 +91,11 @@ private struct RPCCompletionItem: Decodable {
     let detail: String?
     let documentation: String?
     let insertText: String?
+    let kind: String?
+    let filterText: String?
+    let sortText: String?
+    let preselect: Bool?
+    let snippet: Bool?
 }
 
 private struct RPCHover: Decodable {
@@ -161,12 +166,23 @@ private struct ExtensionCompletionItem: CodeSuggestionEntry {
     let detail: String?
     let documentation: String?
     let insertText: String
+    let kind: CompletionItemKind
+    let filterText: String?
+    let sortText: String?
+    let preselect: Bool
+    let isSnippet: Bool
 
     var pathComponents: [String]? { nil }
     var targetPosition: CursorPosition? { nil }
     var sourcePreview: String? { nil }
-    var image: Image { Image(systemName: "puzzlepiece.extension") }
-    var imageColor: Color { Color(NSColor.systemTeal) }
+    var image: Image {
+        kind == .unknown
+            ? Image(systemName: "puzzlepiece.extension")
+            : CompletionItemIcon.image(for: kind)
+    }
+    var imageColor: Color {
+        kind == .unknown ? Color(NSColor.systemTeal) : CompletionItemIcon.color(for: kind)
+    }
     var deprecated: Bool { false }
 }
 
@@ -430,17 +446,49 @@ final class ExtensionLanguageProvider: LanguageProvider {
             )
         }
     }
+}
+
+extension ExtensionLanguageProvider {
 
     // MARK: CodeSuggestionDelegate
 
     @MainActor
     func completionTriggerCharacters() -> Set<String> { completionTriggers }
 
+    var supportsCompletionRefresh: Bool { true }
+
     @MainActor
     func completionSuggestionsRequested(
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
+        guard let result = await requestCompletions(textView: textView, cursorPosition: cursorPosition) else {
+            return nil
+        }
+        return (cursorPosition, result.items)
+    }
+
+    @MainActor
+    func completionResultRequested(
+        textView: TextViewController,
+        cursorPosition: CursorPosition
+    ) async -> CompletionResult? {
+        await requestCompletions(textView: textView, cursorPosition: cursorPosition)
+    }
+
+    @MainActor
+    func completionRefreshRequested(
+        textView: TextViewController,
+        cursorPosition: CursorPosition
+    ) async -> CompletionResult? {
+        await requestCompletions(textView: textView, cursorPosition: cursorPosition)
+    }
+
+    @MainActor
+    private func requestCompletions(
+        textView: TextViewController,
+        cursorPosition: CursorPosition
+    ) async -> CompletionResult? {
         let source = textView.textView.string
         let offset = cursorPosition.range.location
         let context = zoneContext(at: offset, in: textView)
@@ -461,11 +509,16 @@ final class ExtensionLanguageProvider: LanguageProvider {
                 label: $0.label,
                 detail: $0.detail,
                 documentation: $0.documentation,
-                insertText: $0.insertText ?? $0.label
+                insertText: $0.insertText ?? $0.label,
+                kind: Self.kind(from: $0.kind),
+                filterText: $0.filterText,
+                sortText: $0.sortText,
+                preselect: $0.preselect ?? false,
+                isSnippet: $0.snippet ?? false
             )
         }
         lastItemsPrefix = Self.prefix(in: source, before: offset)
-        return (cursorPosition, lastItems)
+        return CompletionResult(items: lastItems)
     }
 
     @MainActor
@@ -488,9 +541,15 @@ final class ExtensionLanguageProvider: LanguageProvider {
         guard let cursorPosition else { return }
         let source = textView.textView.string
         let offset = cursorPosition.range.location
-        let insertText = (item as? ExtensionCompletionItem)?.insertText ?? item.label
+        let entry = item as? ExtensionCompletionItem
+        let insertText = entry?.insertText ?? item.label
         let start = offset - Self.prefix(in: source, before: offset).count
-        textView.textView.replaceCharacters(in: NSRange(location: start, length: offset - start), with: insertText)
+        let range = NSRange(location: start, length: offset - start)
+        if entry?.isSnippet == true {
+            textView.insertSnippet(insertText, replacing: range)
+        } else {
+            textView.textView.replaceCharacters(in: range, with: insertText)
+        }
     }
 
     // MARK: Helpers
@@ -508,6 +567,39 @@ final class ExtensionLanguageProvider: LanguageProvider {
             index -= 1
         }
         return nsString.substring(with: NSRange(location: index, length: safeOffset - index))
+    }
+
+    private static let kindNames: [String: CompletionItemKind] = [
+        "keyword": .keyword,
+        "type": .type,
+        "class": .classType,
+        "classtype": .classType,
+        "struct": .structType,
+        "structtype": .structType,
+        "interface": .interface,
+        "enum": .enumType,
+        "enumtype": .enumType,
+        "enumcase": .enumCase,
+        "enum_case": .enumCase,
+        "case": .enumCase,
+        "method": .method,
+        "property": .property,
+        "variable": .variable,
+        "constant": .constant,
+        "function": .function,
+        "constructor": .initializer,
+        "initializer": .initializer,
+        "module": .module,
+        "package": .module,
+        "snippet": .snippet,
+        "widget": .widget,
+        "event": .event,
+        "operator": .operatorSymbol
+    ]
+
+    private static func kind(from string: String?) -> CompletionItemKind {
+        guard let string else { return .unknown }
+        return kindNames[string.lowercased()] ?? .unknown
     }
 
     private static func severity(from string: String?) -> EditorDiagnosticSeverity {

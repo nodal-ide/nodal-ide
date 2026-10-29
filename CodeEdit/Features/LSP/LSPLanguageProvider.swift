@@ -21,13 +21,26 @@ struct LSPCompletionEntry: CodeSuggestionEntry {
     let detail: String?
     let documentation: String?
     let insertText: String
+    let kind: CodeEditSourceEditor.CompletionItemKind
+    let filterText: String?
+    let sortText: String?
+    let preselect: Bool
+    let isSnippet: Bool
+    let deprecated: Bool
 
     var pathComponents: [String]? { nil }
     var targetPosition: CursorPosition? { nil }
     var sourcePreview: String? { nil }
-    var image: Image { Image(systemName: "text.alignleft") }
-    var imageColor: SwiftUI.Color { SwiftUI.Color(NSColor.systemTeal) }
-    var deprecated: Bool { false }
+    var image: Image {
+        kind == .unknown
+            ? Image(systemName: "text.alignleft")
+            : CompletionItemIcon.image(for: kind)
+    }
+    var imageColor: SwiftUI.Color {
+        kind == .unknown
+            ? SwiftUI.Color(NSColor.systemTeal)
+            : CompletionItemIcon.color(for: kind)
+    }
 }
 
 /// A language provider backed by an LSP server.
@@ -305,8 +318,38 @@ final class LSPLanguageProvider: LanguageProvider {
             label: item.label,
             detail: item.detail,
             documentation: item.documentation.map(plainText),
-            insertText: item.insertText ?? item.label
+            insertText: item.insertText ?? item.label,
+            kind: completionKind(item.kind),
+            filterText: item.filterText,
+            sortText: item.sortText,
+            preselect: item.preselect ?? false,
+            isSnippet: item.insertTextFormat == .snippet,
+            deprecated: item.deprecated ?? false
         )
+    }
+
+    static func completionKind(
+        _ kind: LanguageServerProtocol.CompletionItemKind?
+    ) -> CodeEditSourceEditor.CompletionItemKind {
+        guard let kind else { return .unknown }
+        switch kind {
+        case .method: return .method
+        case .function: return .function
+        case .constructor: return .initializer
+        case .field, .property: return .property
+        case .variable: return .variable
+        case .class: return .classType
+        case .interface: return .interface
+        case .module: return .module
+        case .enum: return .enumType
+        case .keyword: return .keyword
+        case .snippet: return .snippet
+        case .constant: return .constant
+        case .struct: return .structType
+        case .event: return .event
+        case .operator: return .operatorSymbol
+        default: return .type
+        }
     }
 
     static func plainText(_ option: TwoTypeOption<String, MarkupContent>) -> String {
