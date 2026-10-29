@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CodeEditSourceEditor
 
 struct FindCommands: Commands {
 
@@ -49,7 +50,7 @@ struct FindCommands: Commands {
                 .keyboardShortcut("e")
 
                 Button("Jump to Selection") {
-                    NSApp.sendAction(#selector(NSTextView.centerSelectionInVisibleArea(_:)), to: nil, from: nil)
+                    NSApp.sendAction(#selector(TextViewController.centerSelectionInViewport(_:)), to: nil, from: nil)
                 }
                 .keyboardShortcut("j")
             }

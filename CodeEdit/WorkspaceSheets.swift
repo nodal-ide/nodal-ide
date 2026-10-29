@@ -29,7 +29,11 @@ private struct RepositorySheets: View {
     @ObservedObject var sourceControlManager: SourceControlManager
 
     var body: some View {
-        EmptyView()
+        // A sheet needs a real view to present from; presentation modifiers attached to `EmptyView` never fire,
+        // which left the sync buttons setting their flags with nothing to show. The anchor stays invisible.
+        Color.clear
+            .frame(width: 0, height: 0)
+            .allowsHitTesting(false)
             .sheet(isPresented: Binding<Bool>(
                 get: { sourceControlManager.pushSheetIsPresented &&
                        !sourceControlManager.addExistingRemoteSheetIsPresented },

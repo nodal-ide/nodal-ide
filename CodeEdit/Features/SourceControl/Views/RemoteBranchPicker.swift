@@ -63,8 +63,13 @@ struct RemoteBranchPicker: View {
             }
         }
         .onAppear {
+            // The remote is kept between presentations while the branch is reset, so both need re-validating:
+            // a stale remote with a nil branch used to make the push run without an explicit ref.
             if remote == nil {
                 updateRemote()
+            }
+            if branch == nil {
+                updateBranch()
             }
         }
         .onChange(of: remote) { _, newValue in
