@@ -30,6 +30,7 @@ extension SettingsData {
                 "Bracket Pair Emphasis",
                 "Bracket Pair Highlight",
                 "Show Gutter",
+                "Show Change Ribbon",
                 "Reformat at Column",
                 "Show Reformatting Guide",
                 "Invisibles",
@@ -108,6 +109,9 @@ extension SettingsData {
         /// Toggle the code folding ribbon.
         var showFoldingRibbon: Bool = true
 
+        /// Toggle the ribbon marking lines changed since the last commit.
+        var showChangeRibbon: Bool = true
+
         /// Toggle inline inlay hints (e.g. inferred types, parameter names) provided by the language server.
         var showInlayHints: Bool = true
 
@@ -184,6 +188,10 @@ extension SettingsData {
 
             self.showGutter = try container.decodeIfPresent(Bool.self, forKey: .showGutter) ?? true
             self.showFoldingRibbon = try container.decodeIfPresent(Bool.self, forKey: .showFoldingRibbon) ?? true
+            self.showChangeRibbon = try container.decodeIfPresent(
+                Bool.self,
+                forKey: .showChangeRibbon
+            ) ?? true
             self.showInlayHints = try container.decodeIfPresent(Bool.self, forKey: .showInlayHints) ?? true
             self.reformatAtColumn = try container.decodeIfPresent(Int.self, forKey: .reformatAtColumn) ?? 80
             self.showReformattingGuide = try container.decodeIfPresent(

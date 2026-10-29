@@ -71,6 +71,8 @@ struct CodeFileView: View {
     var showGutter
     @AppSettings(\.textEditing.showFoldingRibbon)
     var showFoldingRibbon
+    @AppSettings(\.textEditing.showChangeRibbon)
+    var showChangeRibbon
     @AppSettings(\.textEditing.reformatAtColumn)
     var reformatAtColumn
     @AppSettings(\.textEditing.showReformattingGuide)
@@ -98,6 +100,9 @@ struct CodeFileView: View {
 
     /// Owns the document-change tracking, symbol-index refresh, and language-server start (stable lifetime).
     @StateObject private var lifecycle = CodeFileLifecycleCoordinator()
+
+    /// Feeds uncommitted line changes into the gutter's change ribbon (stable lifetime).
+    @State private var changeRibbon = ChangeRibbonCoordinator()
 
     let isEditable: Bool
 
@@ -199,7 +204,7 @@ struct CodeFileView: View {
             highlightProviders: highlightProviders,
             catalog: catalog,
             undoManager: undoRegistration.manager(forFile: editorInstance.file),
-            coordinators: textViewCoordinators,
+            coordinators: isPreview ? textViewCoordinators : textViewCoordinators + [changeRibbon],
             completionDelegate: languageDelegate,
             jumpToDefinitionDelegate: languageDelegate,
             hoverDelegate: languageDelegate,
@@ -227,6 +232,13 @@ struct CodeFileView: View {
             observeEditorState()
             lifecycle.start(codeFile: codeFile, refreshSymbolIndex: nativeProvider != nil)
             lifecycle.ensureLanguageServerStarted(codeFile: codeFile)
+            if !isPreview {
+                changeRibbon.isEnabled = showChangeRibbon
+                changeRibbon.start(codeFile: codeFile, workspace: workspace)
+            }
+        }
+        .onChange(of: showChangeRibbon) { _, isEnabled in
+            changeRibbon.isEnabled = isEnabled
         }
         .background {
             if colorScheme == .dark {

@@ -40,7 +40,8 @@ extension CodeFileView {
                 showReformattingGuide: showReformattingGuide,
                 showFoldingRibbon: showFoldingRibbon,
                 invisibleCharactersConfiguration: invisibleCharactersConfiguration.textViewOption(),
-                warningCharacters: Set(warningCharacters.characters.keys)
+                warningCharacters: Set(warningCharacters.characters.keys),
+                showChangeRibbon: showChangeRibbon && !isPreview
             )
         )
     }

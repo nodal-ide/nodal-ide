@@ -333,7 +333,7 @@ extension SourceControlManager {
     }
 
     /// Builds a diff showing the whole file as additions (for untracked files).
-    private func untrackedDiff(for url: URL) -> FileDiff? {
+    func untrackedDiff(for url: URL) -> FileDiff? {
         guard let content = try? String(contentsOf: url, encoding: .utf8) else { return nil }
         var rawLines = content.components(separatedBy: "\n")
         if rawLines.last == "" {

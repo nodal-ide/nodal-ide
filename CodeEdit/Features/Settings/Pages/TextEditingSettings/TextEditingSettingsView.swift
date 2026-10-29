@@ -27,6 +27,7 @@ struct TextEditingSettingsView: View {
             Section {
                 showGutter
                 showFoldingRibbon
+                showChangeRibbon
                 showInlayHints
                 reformatSettings
             }
@@ -243,6 +244,13 @@ private extension TextEditingSettingsView {
             .disabled(!textEditing.showGutter) // Disabled when the gutter is disabled
             // swiftlint:disable:next line_length
             .help("The code folding ribbon lets you fold regions of code. When the gutter is disabled, the folding ribbon is disabled.")
+    }
+
+    @ViewBuilder private var showChangeRibbon: some View {
+        Toggle("Show Change Ribbon", isOn: $textEditing.showChangeRibbon)
+            .disabled(!textEditing.showGutter)
+            // swiftlint:disable:next line_length
+            .help("Marks lines that differ from the last commit in the gutter. Requires a git repository and the file to be saved.")
     }
 
     @ViewBuilder private var showInlayHints: some View {
