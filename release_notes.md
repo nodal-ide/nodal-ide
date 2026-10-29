@@ -1,17 +1,22 @@
 ---
-version: 0.23.3
-build: 85
+version: 0.24.0
+build: 86
 ---
-# Nodal IDE V0.23.3 (build 85)
+# Nodal IDE V0.24.0 (build 86)
+
+## New: Change Ribbon
+
+- The editor gutter now marks every line that differs from the last commit: green for added lines, blue for modified blocks, and a red wedge where lines were removed. No more switching to the source control navigator to see what is still pending.
+- Colors are derived from the system and adapt to light and dark themes, so the ribbon stays subtle in every theme without needing per-theme configuration.
+- The ribbon only draws the lines currently on screen, so scrolling a large file costs the same as scrolling a small one.
+- Diffs run off the main thread with one request per file. Results are debounced and generation checked, so a slow diff can never overwrite a newer one, and a file whose content and git status have not changed costs nothing at all.
+- Submodules and multi-repo workspaces attribute each open file to the repository that actually owns it.
+- Toggle it in Settings → Text Editing → Show Change Ribbon.
 
 ## Fixes & Improvements
 
-- CompletionSession.swift owns one session per request: the initial async request, instant fuzzy filtering of the snapshot on every keystroke, and a 50 ms debounced refresh with generation-based stale-response rejection, cancellation on close, and a .pending state so the window doesn't die while a refresh is in flight.
-- CompletionMatcher.swift is the single matcher for all providers: prefix → word boundary → substring → subsequence, with stable ties, sortText support, preselect, and a cap. Candidate characters and boundary flags are precomputed once per item, so no nested rescans.
-- CompletionItemKind.swift plus defaulted kind/filterText/sortText/preselect/isSnippet on CodeSuggestionEntry — additive, so every existing provider still compiles.
-- SuggestionViewModel/SuggestionViewController now drive the session and keep the selected row across refreshes instead of resetting to row 0.
-- CompletionMerge.swift holds the tier policy: built-in engine → language server → extension by default, so an enabled PHP native engine stays primary even with Intelephense installed. Language server first and Extension first are selectable.
-- LanguageProviderAggregator.swift now queries every routed provider concurrently with a 400 ms per-provider deadline and in-flight coalescing, merges by tier with duplicate suppression and caps, and routes an accepted item back to the provider that produced it (wrapped as AttributedCompletionEntry) rather than routing per session.
+- Push now works again. Three separate problems were fixed: the push dialog had no view to present from, so the button did nothing; reopening the dialog lost the selected branch and pushed an unnamed ref; and the `--set-upstream`, `--force` and `--tags` flags were silently dropped whenever a remote or branch was unset. Branches without an upstream — the usual case in a submodule — now set their upstream on the first push, and failures surface as an alert instead of returning silently.
+- Find: next and previous match, the case-sensitivity toggle, and the other buttons in the find bar are wired to the editor, and the Find menu commands now reach the editor through the responder chain. "Find and Replace" also sends the correct action instead of a hardcoded tag.
 
 ## Notes
 
