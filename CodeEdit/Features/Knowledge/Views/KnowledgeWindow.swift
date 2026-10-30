@@ -12,6 +12,7 @@ struct KnowledgeWindow: Scene {
     var body: some Scene {
         Window("Knowledge", id: SceneID.knowledge.rawValue) {
             KnowledgeView(model: model)
+                .themeScope()
         }
     }
 }

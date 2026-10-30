@@ -9,8 +9,8 @@ import SwiftUI
 
 /// The vertical divider between tab bar items.
 struct EditorTabDivider: View {
-    @Environment(\.colorScheme)
-    var colorScheme
+    @Environment(\.theme)
+    private var palette
 
     let width: CGFloat = 1
 
@@ -18,6 +18,6 @@ struct EditorTabDivider: View {
         Rectangle()
             .frame(width: width)
             .padding(.vertical, 8)
-            .foregroundColor(CodeEditDividerColor.forScheme(colorScheme))
+            .foregroundColor(palette.separator.opacity(0.8))
     }
 }

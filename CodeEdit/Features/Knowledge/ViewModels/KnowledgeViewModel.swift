@@ -142,10 +142,9 @@ final class KnowledgeViewModel: ObservableObject {
         searchText.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// The rendered HTML for the current page.
-    var currentHTML: String? {
+    func currentHTML(palette: ThemePalette) -> String? {
         guard let source = selectedSource, let path = currentPath else { return nil }
-        return KnowledgeRenderer.html(forPath: path, source: source)
+        return KnowledgeRenderer.html(forPath: path, source: source, palette: palette)
     }
 
     // MARK: - Private

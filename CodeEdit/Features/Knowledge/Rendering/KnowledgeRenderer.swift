@@ -9,9 +9,10 @@ import Foundation
 
 enum KnowledgeRenderer {
     /// Renders a full HTML document for a page.
-    static func html(forPath path: String, source: KnowledgeSource) -> String {
+    static func html(forPath path: String, source: KnowledgeSource, palette: ThemePalette? = nil) -> String {
         guard let markdown = source.content(for: path) else {
             return document(
+                palette: palette,
                 title: "Not found",
                 body: "<h1>Page not found</h1><p><code>\(escape(path))</code>",
                 source: source
@@ -20,14 +21,14 @@ enum KnowledgeRenderer {
         let title = title(forPath: path, source: source)
         // HTML pages (e.g. imported docsets) are passed through untouched.
         if isHTMLPage(path) {
-            return document(title: title, body: markdown, source: source)
+            return document(palette: palette, title: title, body: markdown, source: source)
         }
-        return document(title: title, body: renderMarkdown(markdown, currentPath: path), source: source)
-    }
-
-    static func isHTMLPage(_ path: String) -> Bool {
-        let ext = (path as NSString).pathExtension.lowercased()
-        return ext == "html" || ext == "htm"
+        return document(
+            palette: palette,
+            title: title,
+            body: renderMarkdown(markdown, currentPath: path),
+            source: source
+        )
     }
 
     private static func title(forPath path: String, source: KnowledgeSource) -> String {
@@ -321,7 +322,12 @@ enum KnowledgeRenderer {
 // MARK: - Document
 
 extension KnowledgeRenderer {
-    private static func document(title: String, body: String, source: KnowledgeSource) -> String {
+    private static func document(
+        palette: ThemePalette?,
+        title: String,
+        body: String,
+        source: KnowledgeSource
+    ) -> String {
         """
         <!doctype html>
         <html>
@@ -330,7 +336,8 @@ extension KnowledgeRenderer {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>\(escape(title))</title>
         <style>
-        \(css)
+        \(palette.map(ThemeCSSVariables.css(for:)) ?? "")
+        \(stylesheet)
         </style>
         </head>
         <body>
@@ -342,44 +349,4 @@ extension KnowledgeRenderer {
         """
     }
 
-    private static let css = """
-    :root { color-scheme: light dark; }
-    body {
-        font: -apple-system-body;
-        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-        margin: 0; padding: 24px 28px 64px;
-        color: -apple-system-label;
-        line-height: 1.55;
-    }
-    article { max-width: 720px; margin: 0 auto; }
-    h1, h2, h3, h4 { line-height: 1.25; margin: 1.4em 0 0.5em; }
-    h1 {
-        font-size: 1.9em;
-        border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
-        padding-bottom: .3em;
-    }
-    h2 { font-size: 1.4em; }
-    a { color: -apple-system-control-accent; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    code {
-        font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .9em;
-        background: color-mix(in srgb, currentColor 8%, transparent);
-        padding: .12em .35em; border-radius: 4px;
-    }
-    pre {
-        background: color-mix(in srgb, currentColor 6%, transparent);
-        padding: 12px 14px; border-radius: 8px; overflow-x: auto;
-    }
-    pre code { background: none; padding: 0; }
-    blockquote {
-        margin: 1em 0; padding: .2em 1em; color: -apple-system-secondary-label;
-        border-left: 3px solid color-mix(in srgb, currentColor 20%, transparent);
-    }
-    table { border-collapse: collapse; width: 100%; margin: 1em 0; }
-    th, td { text-align: left; padding: 6px 10px; border: 1px solid color-mix(in srgb, currentColor 15%, transparent); }
-    th { background: color-mix(in srgb, currentColor 5%, transparent); }
-    hr { border: none; border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent); margin: 2em 0; }
-    img { max-width: 100%; }
-    mark.kh { background: rgba(255, 214, 0, 0.45); border-radius: 2px; }
-    """
 }

@@ -136,6 +136,20 @@ struct ThemeResolverTests {
     }
 
     @Test
+    func cssVariablesExposeResolvedTokens() {
+        let palette = ThemeResolver.resolve(
+            document(interface: ThemeDocument.InterfaceColors(accent: "#112233")),
+            themeID: "user:test"
+        )
+        let css = ThemeCSSVariables.css(for: palette)
+
+        #expect(css.contains("color-scheme: dark;"))
+        #expect(css.contains("--theme-bg: #101418;"))
+        #expect(css.contains("--theme-accent: #112233;"))
+        #expect(css.contains("--theme-text: #e6e9f2;"))
+    }
+
+    @Test
     func colorParsingRejectsInvalidHex() {
         #expect(ThemeRGB(hex: "#123") != nil)
         #expect(ThemeRGB(hex: "#112233") != nil)

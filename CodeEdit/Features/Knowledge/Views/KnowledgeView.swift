@@ -10,6 +10,9 @@ import AppKit
 struct KnowledgeView: View {
     @ObservedObject var model: KnowledgeViewModel
 
+    @Environment(\.theme)
+    private var palette
+
     @State private var importError: String?
 
     var body: some View {
@@ -187,7 +190,7 @@ struct KnowledgeView: View {
     }
 
     @ViewBuilder private var detail: some View {
-        if let html = model.currentHTML {
+        if let html = model.currentHTML(palette: palette) {
             KnowledgeWebView(
                 html: html,
                 baseURL: model.selectedSource?.baseURL,

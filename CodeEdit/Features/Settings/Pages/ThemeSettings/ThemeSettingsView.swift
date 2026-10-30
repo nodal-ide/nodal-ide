@@ -5,12 +5,11 @@
 //  Created by Lukas Pistrol on 30.03.22.
 //
 
+import AppKit
 import SwiftUI
 
 /// A view that implements the `Theme` preference section
 struct ThemeSettingsView: View {
-    @Environment(\.colorScheme)
-    var colorScheme
     @ObservedObject private var themeModel: ThemeModel = AppServices.themeModel
     @AppSettings(\.theme)
     var settings
@@ -122,20 +121,18 @@ struct ThemeSettingsView: View {
                 .onChange(of: themeModel.themes) { _, _ in
                     updateFilteredThemes()
                 }
-                .onChange(of: colorScheme) { _, newColorScheme in
-                    updateFilteredThemes(overrideColorScheme: newColorScheme)
-                }
             }
         }
     }
 
     /// Sorts themes by `colorScheme` and `themeSearchQuery`.
     /// Dark mode themes appear before light themes if in dark mode, and vice versa.
-    private func updateFilteredThemes(overrideColorScheme: ColorScheme? = nil) {
-        // This check is necessary because, when calling `updateFilteredThemes` from within the
-        // `onChange` handler that monitors the `colorScheme`, there are cases where the function
-        // is invoked with outdated values of `colorScheme`.
-        let isDarkScheme = overrideColorScheme ?? colorScheme == .dark
+    private var appColorScheme: ColorScheme {
+        NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .dark : .light
+    }
+
+    private func updateFilteredThemes() {
+        let isDarkScheme = appColorScheme == .dark
 
         let themes: [Theme] = isDarkScheme
         ? (themeModel.darkThemes + themeModel.lightThemes)
@@ -167,7 +164,7 @@ private extension ThemeSettingsView {
         )
         .onChange(of: settings.matchAppearance) { _, value in
             if value {
-                if colorScheme == .dark {
+                if appColorScheme == .dark {
                     themeModel.selectedTheme = themeModel.selectedDarkTheme
                 } else {
                     themeModel.selectedTheme = themeModel.selectedLightTheme

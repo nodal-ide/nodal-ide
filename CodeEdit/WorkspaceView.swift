@@ -133,6 +133,7 @@ struct WorkspaceView: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel("workspace area")
             .focusedValue(\.activeWorkspace, workspace)
+            .background(ThemeAppKitBridge())
             .themeScope()
         }
     }
