@@ -53,7 +53,7 @@ struct ThemeSettingsView: View {
                                 } label: {
                                     Text("Export All Custom Themes...")
                                 }
-                                .disabled(themeModel.themes.filter { !$0.isBundled }.isEmpty)
+                                .disabled(themeModel.themes.filter { $0.isEditable }.isEmpty)
                             }
                         })
                         .padding(.horizontal, 5)
@@ -105,7 +105,7 @@ struct ThemeSettingsView: View {
                                 if themeModel.detailsIsPresented {
                                     themeModel.themes[index] = newValue
                                     themeModel.save(newValue)
-                                    if settings.selectedTheme == theme.name {
+                                    if settings.selectedThemeID == theme.id {
                                         themeModel.activateTheme(newValue)
                                     }
                                 }
@@ -173,9 +173,8 @@ private extension ThemeSettingsView {
                     themeModel.selectedTheme = themeModel.selectedLightTheme
                 }
             } else {
-                themeModel.selectedTheme = themeModel.themes.first {
-                    $0.name == settings.selectedTheme
-                }
+                themeModel.selectedTheme = themeModel.theme(matching: settings.selectedThemeID)
+                    ?? themeModel.theme(matching: settings.selectedTheme)
             }
         }
     }

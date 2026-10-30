@@ -1,10 +1,3 @@
-//
-//  FocusedValues.swift
-//  CodeEdit
-//
-//  Created by Wouter Hennen on 18/06/2023.
-//
-
 import SwiftUI
 
 extension FocusedValues {
@@ -18,11 +11,20 @@ extension FocusedValues {
         set { self[InspectorVisibilityFocusedValueKey.self] = newValue }
     }
 
+    var activeWorkspace: WorkspaceDocument? {
+        get { self[ActiveWorkspaceFocusedValueKey.self] }
+        set { self[ActiveWorkspaceFocusedValueKey.self] = newValue }
+    }
+
     private struct NavSplitViewVisibilityFocusedValueKey: FocusedValueKey {
         typealias Value = Binding<NavigationSplitViewVisibility>
     }
 
     private struct InspectorVisibilityFocusedValueKey: FocusedValueKey {
         typealias Value = Binding<Bool>
+    }
+
+    private struct ActiveWorkspaceFocusedValueKey: FocusedValueKey {
+        typealias Value = WorkspaceDocument
     }
 }

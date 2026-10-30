@@ -6,7 +6,7 @@ struct CertificateAuthorityPaths: Equatable, Sendable {
 
     static var `default`: CertificateAuthorityPaths {
         let proxy = FileManager.default.homeDirectoryForCurrentUser
-            .appending(path: ".codeedit", directoryHint: .isDirectory)
+            .appending(path: ".nodalide", directoryHint: .isDirectory)
             .appending(path: "proxy", directoryHint: .isDirectory)
         return CertificateAuthorityPaths(
             root: proxy.appending(path: "ca", directoryHint: .isDirectory),

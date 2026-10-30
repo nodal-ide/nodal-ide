@@ -19,7 +19,12 @@ final class BreakpointStore: ObservableObject {
 
     init(workspaceURL: URL?) {
         if let workspaceURL {
-            fileURL = workspaceURL.appending(path: ".codeedit").appending(path: "breakpoints.json")
+            let nodalFolder = workspaceURL.appending(path: ".nodalide")
+            let legacyFolder = workspaceURL.appending(path: ".codeedit")
+            let folder = FileManager.default.fileExists(atPath: nodalFolder.path) || !FileManager.default.fileExists(atPath: legacyFolder.path)
+                ? nodalFolder
+                : legacyFolder
+            fileURL = folder.appending(path: "breakpoints.json")
         } else {
             fileURL = URL(filePath: "/dev/null")
         }

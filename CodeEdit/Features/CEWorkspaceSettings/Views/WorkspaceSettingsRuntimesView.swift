@@ -1,10 +1,3 @@
-//
-//  WorkspaceSettingsRuntimesView.swift
-//  CodeEdit
-//
-//  The "Runtimes" page of the Project Settings window (PHP/Node pins + Node package manager).
-//
-
 import SwiftUI
 
 struct WorkspaceSettingsRuntimesView: View {
@@ -49,6 +42,9 @@ struct WorkspaceSettingsRuntimesView: View {
         }
         .formStyle(.grouped)
         .task { await loadInstalled() }
+        .onReceive(AppServices.runtimeManager.runtimesDidChange) { _ in
+            Task { await loadInstalled() }
+        }
     }
 
     // MARK: - Pickers
@@ -121,7 +117,6 @@ struct WorkspaceSettingsRuntimesView: View {
     }
 
     private func setVersion(_ version: String?, kind: RuntimeKind) {
-        // Assign the whole `runtimes` value so `@Published` always fires.
         var runtimes = workspaceSettingsManager.settings.runtimes
         var selection = runtimes.selection(for: kind)
         selection.version = version

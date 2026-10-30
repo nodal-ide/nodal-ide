@@ -25,7 +25,13 @@ final class CEWorkspaceSettings: ObservableObject {
     }
 
     init(workspaceURL: URL) {
-        folderURL = workspaceURL.appending(path: ".codeedit", directoryHint: .isDirectory)
+        let nodalFolder = workspaceURL.appending(path: ".nodalide", directoryHint: .isDirectory)
+        let legacyFolder = workspaceURL.appending(path: ".codeedit", directoryHint: .isDirectory)
+        if FileManager.default.fileExists(atPath: nodalFolder.path) || !FileManager.default.fileExists(atPath: legacyFolder.path) {
+            folderURL = nodalFolder
+        } else {
+            folderURL = legacyFolder
+        }
         loadSettings()
 
         storeTask = $settings

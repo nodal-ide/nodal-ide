@@ -58,6 +58,15 @@ extension SettingsData {
         /// The name of the currently selected theme
         var selectedTheme: String?
 
+        /// The source-qualified id of the currently selected dark theme
+        var selectedDarkThemeID: String?
+
+        /// The source-qualified id of the currently selected light theme
+        var selectedLightThemeID: String?
+
+        /// The source-qualified id of the currently selected theme
+        var selectedThemeID: String?
+
         /// Use the system background that matches the appearance setting
         var useThemeBackground: Bool = true
 
@@ -104,6 +113,13 @@ extension SettingsData {
                 String.self, forKey: .selectedLightTheme
             ) ?? selectedLightTheme
             self.selectedTheme = try container.decodeIfPresent(String.self, forKey: .selectedTheme)
+            self.selectedThemeID = try container.decodeIfPresent(String.self, forKey: .selectedThemeID)
+            self.selectedDarkThemeID = try container.decodeIfPresent(
+                String.self, forKey: .selectedDarkThemeID
+            )
+            self.selectedLightThemeID = try container.decodeIfPresent(
+                String.self, forKey: .selectedLightThemeID
+            )
             self.useThemeBackground = try container.decodeIfPresent(Bool.self, forKey: .useThemeBackground) ?? true
             self.matchAppearance = try container.decodeIfPresent(
                 Bool.self, forKey: .matchAppearance

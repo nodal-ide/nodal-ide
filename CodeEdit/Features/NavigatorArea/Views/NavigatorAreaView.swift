@@ -51,6 +51,7 @@ struct NavigatorAreaView: View {
             }
         )
         .listStyle(.inset)
+        .themeSurface(.sidebar)
         .environmentObject(workspace)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("navigator")

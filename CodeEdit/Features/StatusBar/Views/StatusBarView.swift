@@ -82,7 +82,7 @@ struct StatusBarView: View {
                 .contentShape(Rectangle())
                 .gesture(dragGesture)
         }
-        .background(.bar)
+        .themeSurface(.toolbar)
         .padding(.top, 1)
         .overlay(alignment: .top) {
             Divider()

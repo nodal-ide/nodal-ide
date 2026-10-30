@@ -45,7 +45,7 @@ enum RuntimeKind: String, CaseIterable, Identifiable, Codable {
 
 /// Where an installed runtime came from.
 enum RuntimeVersionSource: String, Codable {
-    /// Installed by CodeEdit under `~/.codeedit/runtimes`.
+    /// Installed by Nodal under `~/.nodalide/runtimes`.
     case managed
     case brew
     case system

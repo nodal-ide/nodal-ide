@@ -9,10 +9,6 @@ import SwiftUI
 import Cocoa
 
 struct UtilityAreaTerminalView: View {
-    @AppSettings(\.theme.matchAppearance)
-    private var matchAppearance
-    @AppSettings(\.terminal.darkAppearance)
-    private var darkAppearance
     @AppSettings(\.theme.useThemeBackground)
     private var useThemeBackground
     @AppSettings(\.textEditing.font)
@@ -43,13 +39,8 @@ struct UtilityAreaTerminalView: View {
 
     /// Returns the `background` color of the selected theme
     private var backgroundColor: NSColor {
-        if let selectedTheme = matchAppearance && darkAppearance
-            ? themeModel.selectedDarkTheme
-            : themeModel.selectedTheme,
-           let index = themeModel.themes.firstIndex(of: selectedTheme) {
-            return NSColor(themeModel.themes[index].terminal.background.swiftColor)
-        }
-        return .windowBackgroundColor
+        themeModel.activeTerminalTheme.map { NSColor($0.terminal.background.swiftColor) }
+            ?? .windowBackgroundColor
     }
 
     /// Decides the color scheme used in the terminal.
@@ -59,13 +50,10 @@ struct UtilityAreaTerminalView: View {
     /// - If the match appearance and dark appearance settings are true, return dark if the selected dark theme is dark.
     /// - Otherwise, return dark if the selected theme is dark.
     private var terminalColorScheme: ColorScheme {
-        return if utilityAreaViewModel.selectedTerminals.isEmpty {
-            colorScheme
-        } else if matchAppearance && darkAppearance {
-            themeModel.selectedDarkTheme?.appearance == .dark ? .dark : .light
-        } else {
-            themeModel.selectedTheme?.appearance == .dark ? .dark : .light
+        if utilityAreaViewModel.selectedTerminals.isEmpty {
+            return colorScheme
         }
+        return themeModel.activeTerminalTheme?.appearance == .dark ? .dark : .light
     }
 
     /// Finds the selected terminal.

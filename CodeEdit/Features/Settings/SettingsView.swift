@@ -264,6 +264,7 @@ struct SettingsView: View {
         .onDisappear {
             model.removeKeyDownMonitor()
         }
+        .themeScope()
     }
 }
 

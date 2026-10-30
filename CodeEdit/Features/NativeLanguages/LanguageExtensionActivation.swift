@@ -237,8 +237,9 @@ enum LanguageExtensionActivation {
 
     private static func snapshot(for root: URL) -> SettingsSnapshot {
         let rootKey = root.standardizedFileURL.path(percentEncoded: false)
-        let url = URL(filePath: rootKey, directoryHint: .isDirectory)
-            .appending(path: ".codeedit/settings.json")
+        let nodalSettings = URL(filePath: rootKey, directoryHint: .isDirectory).appending(path: ".nodalide/settings.json")
+        let legacySettings = URL(filePath: rootKey, directoryHint: .isDirectory).appending(path: ".codeedit/settings.json")
+        let url = FileManager.default.fileExists(atPath: nodalSettings.path) ? nodalSettings : legacySettings
         let revision = settingsRevision(at: url)
         return cache.snapshot(rootKey: rootKey, revision: revision) {
             guard let data = try? Data(contentsOf: url),

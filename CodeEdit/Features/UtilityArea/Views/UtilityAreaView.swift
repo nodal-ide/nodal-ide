@@ -20,6 +20,7 @@ struct UtilityAreaView: View {
 //            padSideItemVertically: true
 //        )
         utilityAreaViewModel.selectedTab
+            .themeSurface(.panel)
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Utility Area")
             .accessibilityIdentifier("UtilityArea")

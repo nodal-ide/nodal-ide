@@ -34,7 +34,7 @@ enum LocalProxyLockError: Error, Equatable, LocalizedError {
 final class LocalProxyLock {
     static var defaultDirectory: URL {
         FileManager.default.homeDirectoryForCurrentUser
-            .appending(path: ".codeedit", directoryHint: .isDirectory)
+            .appending(path: ".nodalide", directoryHint: .isDirectory)
             .appending(path: "proxy", directoryHint: .isDirectory)
     }
 

@@ -53,6 +53,7 @@ struct InspectorAreaView: View {
             sideOnTrailing: true
         )
         .formStyle(.grouped)
+        .themeSurface(.sidebar)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("inspector")
         .onChange(of: showInternalDevelopmentInspector) { _, _ in

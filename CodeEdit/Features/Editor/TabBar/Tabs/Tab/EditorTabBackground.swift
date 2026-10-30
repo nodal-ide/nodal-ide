@@ -15,6 +15,9 @@ struct EditorTabBackground: View {
     @Environment(\.colorScheme)
     private var colorScheme
 
+    @Environment(\.theme)
+    private var palette
+
     @Environment(\.controlActiveState)
     private var activeState
 
@@ -28,15 +31,19 @@ struct EditorTabBackground: View {
     var body: some View {
         ZStack {
             if isActive {
-                // Content background (visible if active)
-                if #available(macOS 26, *) {
-                    GlassEffectView()
+                if palette.isSolid {
+                    palette.tabActiveBackground
                 } else {
-                    EffectView(.contentBackground)
+                    if #available(macOS 26, *) {
+                        GlassEffectView()
+                    } else {
+                        EffectView(.contentBackground)
+                    }
+                    palette.tabActiveBackground
+                        .opacity(0.45)
                 }
 
-                // Accent color (visible if active)
-                Color(.controlAccentColor)
+                palette.accent
                     .hueRotation(.degrees(-5))
                     .opacity(
                         colorScheme == .dark
@@ -44,6 +51,8 @@ struct EditorTabBackground: View {
                         : activeState == .inactive ? 0.1 : inHoldingState ? 0.27 : 0.2
                     )
                     .saturation(isActiveEditor ? 1.0 : 0.0)
+            } else if palette.isSolid {
+                palette.tabInactiveBackground
             }
 
             if colorScheme == .dark {

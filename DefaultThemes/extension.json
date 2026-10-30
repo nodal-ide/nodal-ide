@@ -1,0 +1,39 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nodal-ide/CodeEditLang/master/Schema/language-extension.schema.json",
+  "schemaVersion": 2,
+  "id": "com.nodal.default-themes",
+  "name": "Nodal Default Themes",
+  "version": "1.0.0",
+  "type": "theme",
+  "description": "Themes bundled with Nodal IDE.",
+  "author": "Nodal IDE",
+  "url": "https://nodalide.app",
+  "engines": {
+    "codeedit": ">=0.24.0"
+  },
+  "capabilities": [
+    "themes"
+  ],
+  "contributes": {
+    "themes": [
+      { "id": "basic", "path": "themes/Basic.cetheme" },
+      { "id": "civic", "path": "themes/Civic.cetheme" },
+      { "id": "classic.dark", "path": "themes/Classic (Dark).cetheme" },
+      { "id": "classic.light", "path": "themes/Classic (Light).cetheme" },
+      { "id": "default.dark", "path": "themes/Default (Dark).cetheme" },
+      { "id": "default.light", "path": "themes/Default (Light).cetheme" },
+      { "id": "dusk", "path": "themes/Dusk.cetheme" },
+      { "id": "github.dark", "path": "themes/GitHub (Dark).cetheme" },
+      { "id": "github.light", "path": "themes/GitHub (Light).cetheme" },
+      { "id": "high.contrast.dark", "path": "themes/High Contrast (Dark).cetheme" },
+      { "id": "high.contrast.light", "path": "themes/High Contrast (Light).cetheme" },
+      { "id": "low.key", "path": "themes/Low Key.cetheme" },
+      { "id": "midnight", "path": "themes/Midnight.cetheme" },
+      { "id": "presentation.dark", "path": "themes/Presentation (Dark).cetheme" },
+      { "id": "presentation.light", "path": "themes/Presentation (Light).cetheme" },
+      { "id": "solarized.dark", "path": "themes/Solarized (Dark).cetheme" },
+      { "id": "solarized.light", "path": "themes/Solarized (Light).cetheme" },
+      { "id": "sunset", "path": "themes/Sunset.cetheme" }
+    ]
+  }
+}

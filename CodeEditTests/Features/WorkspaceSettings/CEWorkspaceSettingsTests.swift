@@ -14,7 +14,7 @@ struct CEWorkspaceSettingsTests {
 
     @Test
     func settingsURLNoSpace() async throws {
-        #expect(settings.folderURL.lastPathComponent == ".codeedit")
+        #expect(settings.folderURL.lastPathComponent == ".nodalide")
         #expect(settings.settingsURL.lastPathComponent == "settings.json")
     }
 }

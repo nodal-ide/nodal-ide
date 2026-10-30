@@ -121,7 +121,7 @@ struct WorkspaceView: View {
                     }
                 }
             }
-            .background(EffectView(.contentBackground))
+            .themeSurface(.window)
             .background {
                 WorkspaceSheets()
                     .environmentObject(workspace)
@@ -132,6 +132,8 @@ struct WorkspaceView: View {
             }
             .accessibilityElement(children: .contain)
             .accessibilityLabel("workspace area")
+            .focusedValue(\.activeWorkspace, workspace)
+            .themeScope()
         }
     }
 

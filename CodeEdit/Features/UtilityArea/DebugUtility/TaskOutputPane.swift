@@ -9,11 +9,6 @@ import SwiftUI
 
 struct TaskOutputPane: View {
     @EnvironmentObject private var taskManager: TaskManager
-
-    @AppSettings(\.theme.matchAppearance)
-    private var matchAppearance
-    @AppSettings(\.terminal.darkAppearance)
-    private var darkAppearance
     @AppSettings(\.theme.useThemeBackground)
     private var useThemeBackground
     @AppSettings(\.textEditing.font)
@@ -96,13 +91,8 @@ struct TaskOutputPane: View {
     }
 
     private var backgroundColor: NSColor {
-        if let selectedTheme = matchAppearance && darkAppearance
-            ? themeModel.selectedDarkTheme
-            : themeModel.selectedTheme,
-           let index = themeModel.themes.firstIndex(of: selectedTheme) {
-            return NSColor(themeModel.themes[index].terminal.background.swiftColor)
-        }
-        return .windowBackgroundColor
+        themeModel.activeTerminalTheme.map { NSColor($0.terminal.background.swiftColor) }
+            ?? .windowBackgroundColor
     }
 
     private func fontTotalHeight(nsFont: NSFont) -> CGFloat {

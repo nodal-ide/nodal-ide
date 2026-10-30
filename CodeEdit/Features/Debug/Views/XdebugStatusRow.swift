@@ -1,14 +1,11 @@
-//
-//  XdebugStatusRow.swift
-//  CodeEdit
-//
-//  Developer settings row: Xdebug detection + install guidance.
-//
-
 import SwiftUI
 
 struct XdebugStatusRow: View {
-    @ObservedObject private var detector = AppServices.xdebugDetector
+    @ObservedObject
+    private var detector = AppServices.xdebugDetector
+
+    @FocusedValue(\.activeWorkspace)
+    private var activeWorkspace
 
     var body: some View {
         HStack(spacing: 8) {
@@ -23,7 +20,9 @@ struct XdebugStatusRow: View {
             Spacer(minLength: 8)
             trailing
         }
-        .task { await detector.refresh() }
+        .task(id: activeWorkspace?.fileURL) {
+            await detector.refresh(workspace: activeWorkspace)
+        }
     }
 
     private var trailing: some View {
@@ -50,7 +49,10 @@ struct XdebugStatusRow: View {
         case .noPHP: return "No PHP runtime found."
         case .notInstalled(let php):
             return "Not loaded for \(php). Install with `pecl install xdebug` (or Homebrew), then restart PHP."
-        case let .loaded(_, version, mode):
+        case let .loaded(_, version, mode, workspaceName):
+            if let workspaceName {
+                return "Xdebug \(version) loaded · mode: \(mode) (\(workspaceName))"
+            }
             return "Xdebug \(version) loaded · mode: \(mode)"
         }
     }

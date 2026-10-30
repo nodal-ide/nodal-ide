@@ -63,7 +63,7 @@ struct LocalSiteSettings: Codable, Hashable {
     var handler: LocalSiteHandler = .phpFPM
     var https: Bool = true
     var documentRoot: String = ""
-    var routing: LocalSiteRouting = .directory
+    var routing: LocalSiteRouting = .frontController
     var entryFile: String = "index.php"
     var phpVersion: String?
     var openInBrowser: Bool = true
@@ -84,7 +84,7 @@ struct LocalSiteSettings: Codable, Hashable {
         self.handler = handler.flatMap(LocalSiteHandler.init(rawValue:)) ?? .phpFPM
 
         let routing = try container.decodeIfPresent(String.self, forKey: .routing)
-        self.routing = routing.flatMap(LocalSiteRouting.init(rawValue:)) ?? .directory
+        self.routing = routing.flatMap(LocalSiteRouting.init(rawValue:)) ?? .frontController
 
         self.openInBrowser = try container.decodeIfPresent(Bool.self, forKey: .openInBrowser) ?? true
         self.proxy = try container.decodeIfPresent(LocalSiteProxySettings.self, forKey: .proxy) ?? .init()
@@ -99,7 +99,7 @@ struct LocalSiteSettings: Codable, Hashable {
             && handler == .phpFPM
             && https
             && documentRoot.isEmpty
-            && routing == .directory
+            && routing == .frontController
             && entryFile == "index.php"
             && (phpVersion?.isEmpty ?? true)
             && openInBrowser

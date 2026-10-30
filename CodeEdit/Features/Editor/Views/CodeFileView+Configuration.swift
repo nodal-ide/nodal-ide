@@ -47,7 +47,7 @@ extension CodeFileView {
     }
 
     var currentTheme: Theme {
-        themeModel.selectedTheme ?? themeModel.themes.first!
+        themeModel.selectedTheme ?? Theme.fallback
     }
 
     /// The bracket-pair emphasis style derived from the setting and current theme.

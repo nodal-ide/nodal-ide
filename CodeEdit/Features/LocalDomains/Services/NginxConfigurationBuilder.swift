@@ -332,7 +332,10 @@ enum NginxConfigurationBuilder {
             "fastcgi_param SERVER_PORT $server_port;",
             "fastcgi_param SERVER_NAME $server_name;",
             "fastcgi_param REDIRECT_STATUS 200;",
-            "fastcgi_param HTTPS $https if_not_empty;"
+            "fastcgi_param HTTPS $https if_not_empty;",
+            "fastcgi_param XDEBUG_SESSION \"1\";",
+            "fastcgi_param XDEBUG_MODE \"debug\";",
+            "fastcgi_param PHP_VALUE \"xdebug.mode=debug\\nxdebug.start_with_request=yes\";"
         ]
     }
 }

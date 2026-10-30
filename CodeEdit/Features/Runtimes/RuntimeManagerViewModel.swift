@@ -35,6 +35,8 @@ final class RuntimeManagerViewModel: ObservableObject {
     @Published private(set) var packageManagers: [String: String] = [:]
     @Published private(set) var isLoadingPackages = false
     @Published var packageManagerInput = ""
+    @Published var installXdebug: Bool = true
+    @Published private(set) var xdebugStatuses: [String: Bool] = [:]
     @Published private(set) var jobs: [RuntimeJob] = []
     /// php-fpm availability for installed PHP runtimes, keyed by ``InstalledRuntime/id``.
     @Published private(set) var fpmStatuses: [String: PHPFPMStatus] = [:]
@@ -67,6 +69,12 @@ final class RuntimeManagerViewModel: ObservableObject {
     /// The running install/uninstall job for a version (in the selected kind), if any.
     func runningJob(for version: String) -> RuntimeJob? {
         jobs.first { $0.kind == selectedKind && $0.version == version && $0.status == .running }
+    }
+
+    func runningXdebugJob(for row: Row) -> RuntimeJob? {
+        guard let runtime = row.installed else { return nil }
+        let key = "xdebug@\(runtime.version)"
+        return jobs.first { $0.kind == .php && $0.version == key && $0.status == .running }
     }
 
     func cancel(_ job: RuntimeJob) {
@@ -120,6 +128,7 @@ final class RuntimeManagerViewModel: ObservableObject {
         rows[kind] = Self.merge(available: availableList, installed: installedList)
         if kind == .php {
             await loadFPMStatuses(for: installedList)
+            await refreshXdebugStatuses()
         }
         loading.remove(kind)
         await loadDiskUsage(for: installedList)
@@ -176,11 +185,40 @@ final class RuntimeManagerViewModel: ObservableObject {
     func install(_ rows: [Row]) async {
         let versions = rows.compactMap(\.available)
         guard !versions.isEmpty else { return }
+        let options = PHPInstallOptions(installXdebug: installXdebug)
         for version in versions {
-            await manager.install(kind: selectedKind, version: version)
+            await manager.install(kind: selectedKind, version: version, phpOptions: options)
         }
         selection.removeAll()
         await load(selectedKind)
+    }
+
+    func installXdebug(for row: Row) async {
+        guard let runtime = row.installed else { return }
+        await manager.installXdebug(for: runtime)
+        await load(selectedKind)
+        await refreshXdebugStatuses()
+    }
+
+    func removeXdebug(from row: Row) async {
+        guard let runtime = row.installed else { return }
+        await manager.removeXdebug(from: runtime)
+        await load(selectedKind)
+        await refreshXdebugStatuses()
+    }
+
+    func xdebugProvisioned(for row: Row) -> Bool {
+        guard let runtime = row.installed else { return false }
+        return xdebugStatuses[runtime.id] ?? false
+    }
+
+    func refreshXdebugStatuses() async {
+        let installed = (rows[.php] ?? []).compactMap(\.installed)
+        var statuses: [String: Bool] = [:]
+        for runtime in installed {
+            statuses[runtime.id] = PHPXdebugProvisioner.shared.isProvisioned(runtime: runtime)
+        }
+        xdebugStatuses = statuses
     }
 
     func uninstall(_ rows: [Row]) async {

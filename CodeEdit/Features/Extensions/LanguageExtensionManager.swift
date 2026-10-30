@@ -13,14 +13,14 @@ import CodeEditLanguages
 @MainActor
 final class LanguageExtensionManager: ObservableObject {
     static let shared = LanguageExtensionManager()
-    static let didChangeNotification = Notification.Name("CodeEdit.LanguageExtensionsDidChange")
-    static let didChangeWorkspaceNotification = Notification.Name(
+    nonisolated static let didChangeNotification = Notification.Name("CodeEdit.LanguageExtensionsDidChange")
+    nonisolated static let didChangeWorkspaceNotification = Notification.Name(
         "CodeEdit.LanguageExtensionsDidChangeWorkspace"
     )
-    static let didRemoveExtensionNotification = Notification.Name(
+    nonisolated static let didRemoveExtensionNotification = Notification.Name(
         "CodeEdit.LanguageExtensionDidRemove"
     )
-    static let removedExtensionIDKey = "extensionID"
+    nonisolated static let removedExtensionIDKey = "extensionID"
 
     /// Globally installed packs (Application Support/CodeEdit/Extensions).
     @Published var extensions: [InstalledLanguageExtension] = []

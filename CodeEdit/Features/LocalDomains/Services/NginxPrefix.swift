@@ -8,7 +8,7 @@ struct NginxPrefix {
     static var `default`: NginxPrefix {
         NginxPrefix(
             root: FileManager.default.homeDirectoryForCurrentUser
-                .appending(path: ".codeedit", directoryHint: .isDirectory)
+                .appending(path: ".nodalide", directoryHint: .isDirectory)
                 .appending(path: "proxy", directoryHint: .isDirectory)
                 .appending(path: defaultRootName, directoryHint: .isDirectory)
         )

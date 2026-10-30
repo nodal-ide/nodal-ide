@@ -17,6 +17,13 @@ struct ThemeSettingsThemeRow: View {
 
     @State private var deleteConfirmationIsPresented = false
 
+    private var themeSubtitle: String {
+        guard let packID = theme.source.packID, !packID.isEmpty else {
+            return theme.author
+        }
+        return "\(theme.author) · \(theme.source.displayName)"
+    }
+
     var body: some View {
         HStack {
             Image(systemName: "checkmark")
@@ -24,7 +31,7 @@ struct ThemeSettingsThemeRow: View {
                 .font(.system(size: 10.5, weight: .bold))
             VStack(alignment: .leading) {
                 Text(theme.displayName)
-                Text(theme.author)
+                Text(themeSubtitle)
                     .foregroundColor(.secondary)
                     .font(.footnote)
             }
@@ -52,12 +59,12 @@ struct ThemeSettingsThemeRow: View {
                 Button("Export...") {
                     ThemeFilePanels.export(theme, from: themeModel)
                 }
-                .disabled(theme.isBundled)
+                .disabled(!theme.isEditable)
                 Divider()
                 Button("Delete...") {
                     deleteConfirmationIsPresented = true
                 }
-                .disabled(theme.isBundled)
+                .disabled(!theme.isEditable)
             } label: {
                 Image(systemName: "ellipsis.circle")
                     .font(.system(size: 16))

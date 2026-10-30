@@ -157,12 +157,12 @@ struct ThemeSettingsThemeDetails: View {
                         )
                     }
                 }
-                .disabled(theme.isBundled)
+                .disabled(!theme.isEditable)
             }
             .formStyle(.grouped)
             Divider()
             HStack {
-                if theme.isBundled {
+                if !theme.isEditable {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.body)
@@ -171,10 +171,10 @@ struct ThemeSettingsThemeDetails: View {
                             .font(.subheadline)
                             .lineLimit(2)
                     }
-                    .help("Bundled themes must be duplicated to make changes.")
+                    .help("This theme is read-only. Duplicate it to make changes.")
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("Warning: Duplicate this theme to make changes.")
-                } else if !themeModel.isAdding {
+                } else if !themeModel.isAdding, theme.isEditable {
                     Button(role: .destructive) {
                         deleteConfirmationIsPresented = true
                     } label: {
@@ -193,7 +193,7 @@ struct ThemeSettingsThemeDetails: View {
                     }
                 }
                 Spacer()
-                if !themeModel.isAdding && theme.isBundled {
+                if !themeModel.isAdding && !theme.isEditable {
                     Button {
                         if let fileURL = theme.fileURL {
                             duplicatingTheme = theme
@@ -235,7 +235,7 @@ struct ThemeSettingsThemeDetails: View {
                     .buttonStyle(.bordered)
                 }
                 Button {
-                    if !theme.isBundled {
+                    if theme.isEditable {
                         themeModel.rename(to: theme.displayName, theme: theme)
                     }
                     dismiss()

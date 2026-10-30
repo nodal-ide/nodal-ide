@@ -47,12 +47,22 @@ extension LocalSitePipeline {
         tls: NginxTLSSiteConfiguration?
     ) -> NginxSiteConfiguration {
         let logs = nginx.prefix.logsDirectory
+        var routing = site.routing
+        if routing == .directory {
+            let docRoot = safeRoot.path(percentEncoded: false)
+            let isPublic = docRoot.hasSuffix("/public") || site.documentRoot == "public" || site.documentRoot.hasSuffix("/public")
+            let hasHtaccess = fileManager.fileExists(atPath: safeRoot.appending(path: ".htaccess").path(percentEncoded: false))
+            let hasEntryFile = fileManager.fileExists(atPath: safeRoot.appending(path: site.entryFile).path(percentEncoded: false))
+            if (isPublic || hasHtaccess) && hasEntryFile {
+                routing = .frontController
+            }
+        }
         return NginxSiteConfiguration(
             serverName: domain.value,
             listenPort: httpPort,
             documentRootPath: safeRoot.path(percentEncoded: false),
             upstream: prepared.upstream,
-            routing: site.routing,
+            routing: routing,
             entryFile: site.entryFile,
             accessLogPath: logs.appending(path: "\(domain.value).access.log").path(percentEncoded: false),
             errorLogPath: logs.appending(path: "\(domain.value).error.log").path(percentEncoded: false),
@@ -81,6 +91,10 @@ extension LocalSitePipeline {
         }
         let base = tempPath + "/ce-fpm-\(shortID)"
         let socketPath = base + ".sock"
+        var extraEnv: [String: String] = [:]
+        if let scanDir = PHPXdebugProvisioner.shared.iniScanDir(for: runtime.runtime) {
+            extraEnv["PHP_INI_SCAN_DIR"] = scanDir
+        }
         let pool = PHPFPMPoolConfiguration(
             socketPath: socketPath,
             documentRootPath: documentRoot.path(percentEncoded: false),
@@ -88,7 +102,8 @@ extension LocalSitePipeline {
             pidPath: base + ".pid",
             environment: PHPFPMEnvironment.allowlist(
                 runtimeBinPath: runtime.runtime.executableDirectory.path(percentEncoded: false),
-                from: ProcessInfo.processInfo.environment
+                from: ProcessInfo.processInfo.environment,
+                extraEnvironment: extraEnv
             )
         )
 

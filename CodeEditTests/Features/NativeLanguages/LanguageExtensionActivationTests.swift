@@ -147,7 +147,7 @@ struct LanguageExtensionActivationTests {
         frameworks: [String] = [],
         overrides: [String: ExtensionActivationOverride] = [:]
     ) throws {
-        let directory = root.appending(path: ".codeedit", directoryHint: .isDirectory)
+        let directory = root.appending(path: ".nodalide", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var project: [String: Any] = ["frameworks": frameworks]
         if !overrides.isEmpty {

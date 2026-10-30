@@ -37,6 +37,7 @@ final class LanguageExtensionStore: @unchecked Sendable {
         lock.unlock()
 
         var result = globalExtensions()
+        result.append(contentsOf: discover(in: root.appending(path: ".nodalide/extensions"), scope: .workspace))
         result.append(contentsOf: discover(in: root.appending(path: ".codeedit/extensions"), scope: .workspace))
 
         lock.lock()

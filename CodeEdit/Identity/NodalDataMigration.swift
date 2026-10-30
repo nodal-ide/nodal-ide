@@ -61,6 +61,28 @@ enum NodalDataMigration {
                 failures.append("Editor restoration: \(error.localizedDescription)")
             }
 
+            let oldRuntimes = FileManager.default.homeDirectoryForCurrentUser.appending(path: ".codeedit/runtimes")
+            let newRuntimes = FileManager.default.homeDirectoryForCurrentUser.appending(path: ".nodalide/runtimes")
+            if FileManager.default.fileExists(atPath: oldRuntimes.path) && !FileManager.default.fileExists(atPath: newRuntimes.path) {
+                do {
+                    try FileManager.default.createDirectory(at: newRuntimes.deletingLastPathComponent(), withIntermediateDirectories: true)
+                    try FileManager.default.moveItem(at: oldRuntimes, to: newRuntimes)
+                } catch {
+                    failures.append("Runtimes directory: \(error.localizedDescription)")
+                }
+            }
+
+            let oldProxy = FileManager.default.homeDirectoryForCurrentUser.appending(path: ".codeedit/proxy")
+            let newProxy = FileManager.default.homeDirectoryForCurrentUser.appending(path: ".nodalide/proxy")
+            if FileManager.default.fileExists(atPath: oldProxy.path) && !FileManager.default.fileExists(atPath: newProxy.path) {
+                do {
+                    try FileManager.default.createDirectory(at: newProxy.deletingLastPathComponent(), withIntermediateDirectories: true)
+                    try FileManager.default.moveItem(at: oldProxy, to: newProxy)
+                } catch {
+                    failures.append("Proxy directory: \(error.localizedDescription)")
+                }
+            }
+
             let oldDefaults = UserDefaults(suiteName: oldDefaultsDomain)
             for key in ["recentFiles", "lastFileExtension"] {
                 if let value = oldDefaults?.object(forKey: key), defaults.object(forKey: key) == nil {

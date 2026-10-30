@@ -83,6 +83,11 @@ final class RunController: ObservableObject {
         let command = configuration.command.trimmingCharacters(in: .whitespaces)
         let args = (configuration.arguments ?? "").split(separator: " ").map(String.init)
 
+        if configuration.kind == .site {
+            startSiteDebug(configuration)
+            return
+        }
+
         // No program: run the command as the app/server and listen for Xdebug (one-click web debugging).
         if program.isEmpty, !command.isEmpty {
             startWebServerDebug(configuration)
@@ -181,6 +186,36 @@ final class RunController: ObservableObject {
     /// This is the "run my app and debug the requests" flow: the adapter waits on the client port
     /// while the command runs (in the task runner) with `XDEBUG_MODE=debug`, so requests stopped at
     /// breakpoints appear in the Debug tab — no manual terminal or listen step.
+    private func startSiteDebug(_ configuration: RunConfiguration) {
+        guard let workspace, let debugController = workspace.debugController else { return }
+        let port = configuration.clientPort
+            ?? AppServices.settings.preferences.developerSettings.phpDebugClientPort
+
+        Task { [weak self] in
+            guard let self, let workspace = self.workspace else { return }
+            await AppServices.runtimeEnvironment.refresh(workspace: workspace)
+            guard let options = await DebuggerAutoWiring.listenOptions(workspace: workspace, port: port) else {
+                DebuggerAutoWiring.reportUnavailable(kind: .php)
+                return
+            }
+            self.runningConfigurationID = configuration.id
+            self.runningSiteConfigurationID = configuration.id
+            workspace.utilityAreaModel?.open(tab: .debug)
+            debugController.start(options)
+
+            if let coordinator = workspace.localSiteCoordinator {
+                if self.boundSiteCoordinator !== coordinator,
+                   let settingsManager = workspace.workspaceSettingsManager {
+                    self.bindLocalSite(coordinator, settingsManager: settingsManager)
+                }
+                _ = await coordinator.startSite()
+            }
+            if workspace.workspaceSettingsManager?.settings.site.openInBrowser == true {
+                self.openLocalSite()
+            }
+        }
+    }
+
     private func startWebServerDebug(_ configuration: RunConfiguration) {
         guard let workspace, let debugController = workspace.debugController else { return }
         let port = configuration.clientPort

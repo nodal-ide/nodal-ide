@@ -47,13 +47,12 @@ struct AssistantCodeBlockView: View {
         .task(id: highlightRequest) {
             highlighted = nil
             guard !isStreaming,
-                  let codeLanguage = AssistantCodeSyntaxHighlighter.language(for: language),
-                  let theme = themeModel.selectedTheme?.editor.editorTheme
+                  let codeLanguage = AssistantCodeSyntaxHighlighter.language(for: language)
             else { return }
             highlighted = AssistantCodeSyntaxHighlighter.highlight(
                 content,
                 language: codeLanguage,
-                theme: theme,
+                theme: themeModel.activeEditorTheme,
                 font: NSFont.monospacedSystemFont(ofSize: 11.5, weight: .regular)
             )
         }
@@ -69,7 +68,7 @@ struct AssistantCodeBlockView: View {
         HighlightRequest(
             content: content,
             language: language,
-            themeName: themeModel.selectedTheme?.name ?? "",
+            themeName: themeModel.selectedTheme?.id ?? "",
             isStreaming: isStreaming
         )
     }

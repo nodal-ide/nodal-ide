@@ -22,9 +22,12 @@ final class RunConfigurationStore: ObservableObject {
 
     init(workspaceURL: URL?) {
         if let workspaceURL {
-            fileURL = workspaceURL
-                .appending(path: ".codeedit")
-                .appending(path: "launch.json")
+            let nodalFolder = workspaceURL.appending(path: ".nodalide")
+            let legacyFolder = workspaceURL.appending(path: ".codeedit")
+            let folder = FileManager.default.fileExists(atPath: nodalFolder.path) || !FileManager.default.fileExists(atPath: legacyFolder.path)
+                ? nodalFolder
+                : legacyFolder
+            fileURL = folder.appending(path: "launch.json")
         } else {
             fileURL = URL(filePath: "/dev/null")
         }

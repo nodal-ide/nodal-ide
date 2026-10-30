@@ -108,6 +108,12 @@ struct RuntimeManagerView: View {
             }
             Spacer()
             Text("\(model.selection.count) selected").font(.callout).foregroundStyle(.secondary)
+            if model.selectedKind == .php {
+                Toggle("Xdebug", isOn: $model.installXdebug)
+                    .toggleStyle(.checkbox)
+                    .help("Also install Xdebug when installing a PHP runtime")
+                    .controlSize(.small)
+            }
             Button("Uninstall") {
                 confirmingUninstall = true
             }
@@ -250,11 +256,16 @@ struct RuntimeVersionRowView: View {
                     .controlSize(.small)
                 }
             } else if row.isInstalled {
-                Button(model.isDefault(row) ? "Default" : "Set Default") {
-                    model.setDefault(model.isDefault(row) ? nil : row.version, kind: model.selectedKind)
+                HStack(spacing: 8) {
+                    if model.selectedKind == .php {
+                        xdebugButton(row)
+                    }
+                    Button(model.isDefault(row) ? "Default" : "Set Default") {
+                        model.setDefault(model.isDefault(row) ? nil : row.version, kind: model.selectedKind)
+                    }
+                    .disabled(model.isDefault(row))
+                    .controlSize(.small)
                 }
-                .disabled(model.isDefault(row))
-                .controlSize(.small)
             } else {
                 Button("Install") {
                     Task { await model.install([row]) }
@@ -289,6 +300,27 @@ struct RuntimeVersionRowView: View {
             model.selection.remove(row.id)
         } else {
             model.selection.insert(row.id)
+        }
+    }
+
+    @ViewBuilder
+    private func xdebugButton(_ row: RuntimeManagerViewModel.Row) -> some View {
+        let provisioned = model.xdebugProvisioned(for: row)
+        let xdebugJob = model.runningXdebugJob(for: row)
+        HStack(spacing: 6) {
+            if xdebugJob != nil {
+                ProgressView().controlSize(.small)
+            }
+            Button(provisioned ? "Uninstall Xdebug" : "Install Xdebug") {
+                if provisioned {
+                    Task { await model.removeXdebug(from: row) }
+                } else {
+                    Task { await model.installXdebug(for: row) }
+                }
+            }
+            .disabled(xdebugJob != nil)
+            .controlSize(.small)
+            .help(provisioned ? "Remove app-managed Xdebug for this runtime" : "Install and configure Xdebug for this runtime")
         }
     }
 }

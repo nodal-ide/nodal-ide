@@ -129,7 +129,7 @@ enum RuntimeCatalog {
 
     private static var cacheDirectory: URL {
         let base = FileManager.default.homeDirectoryForCurrentUser
-            .appending(path: ".codeedit")
+            .appending(path: ".nodalide")
             .appending(path: "cache")
             .appending(path: "runtimes")
         do {

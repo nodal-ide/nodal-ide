@@ -109,55 +109,29 @@ struct TerminalEmulatorView: NSViewRepresentable {
         terminalSettings.optionAsMeta
     }
 
-    /// Whether the terminal should use the dark theme (theme follows system appearance and terminal is dark).
-    private var usesDarkTerminalTheme: Bool {
-        AppServices.settings[\.theme].matchAppearance && AppServices.settings[\.terminal].darkAppearance
-    }
-
     /// Returns the mapped array of `SwiftTerm.Color` objects of ANSI Colors
     private var colors: [SwiftTerm.Color] {
-        if let selectedTheme = usesDarkTerminalTheme
-            ? themeModel.selectedDarkTheme
-            : themeModel.selectedTheme,
-           let index = themeModel.themes.firstIndex(of: selectedTheme) {
-            return themeModel.themes[index].terminal.ansiColors.map { color in
-                SwiftTerm.Color(hex: color)
-            }
-        }
-        return []
+        themeModel.activeTerminalTheme?.terminal.ansiColors.map { color in
+            SwiftTerm.Color(hex: color)
+        } ?? []
     }
 
     /// Returns the `cursor` color of the selected theme
     private var cursorColor: NSColor {
-        if let selectedTheme = usesDarkTerminalTheme
-            ? themeModel.selectedDarkTheme
-            : themeModel.selectedTheme,
-           let index = themeModel.themes.firstIndex(of: selectedTheme) {
-            return NSColor(themeModel.themes[index].terminal.cursor.swiftColor)
-        }
-        return NSColor(.accentColor)
+        themeModel.activeTerminalTheme.map { NSColor($0.terminal.cursor.swiftColor) }
+            ?? NSColor(.accentColor)
     }
 
     /// Returns the `selection` color of the selected theme
     private var selectionColor: NSColor {
-        if let selectedTheme = usesDarkTerminalTheme
-            ? themeModel.selectedDarkTheme
-            : themeModel.selectedTheme,
-           let index = themeModel.themes.firstIndex(of: selectedTheme) {
-            return NSColor(themeModel.themes[index].terminal.selection.swiftColor)
-        }
-        return NSColor(.accentColor)
+        themeModel.activeTerminalTheme.map { NSColor($0.terminal.selection.swiftColor) }
+            ?? NSColor(.accentColor)
     }
 
     /// Returns the `text` color of the selected theme
     private var textColor: NSColor {
-        if let selectedTheme = usesDarkTerminalTheme
-            ? themeModel.selectedDarkTheme
-            : themeModel.selectedTheme,
-           let index = themeModel.themes.firstIndex(of: selectedTheme) {
-            return NSColor(themeModel.themes[index].terminal.text.swiftColor)
-        }
-        return NSColor(.primary)
+        themeModel.activeTerminalTheme.map { NSColor($0.terminal.text.swiftColor) }
+            ?? NSColor(.primary)
     }
 
     /// Returns the `background` color of the selected theme

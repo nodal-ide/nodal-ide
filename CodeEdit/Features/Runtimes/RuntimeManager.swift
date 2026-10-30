@@ -1,31 +1,22 @@
-//
-//  RuntimeManager.swift
-//  CodeEdit
-//
-//  Registers runtime providers and resolves versions for projects.
-//
-
+import Combine
 import Foundation
 
-/// Holds the registered ``RuntimeProvider``s and app-level runtime state.
 @MainActor
 final class RuntimeManager: ObservableObject {
     static let shared = RuntimeManager()
 
-    /// The managed install root: `~/.codeedit/runtimes`.
     static var runtimesRoot: URL {
         let base = FileManager.default.homeDirectoryForCurrentUser
-            .appending(path: ".codeedit")
+            .appending(path: ".nodalide")
             .appending(path: "runtimes")
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         return base
     }
 
-    /// Running/finished install & uninstall jobs (surfaced in the activity area).
     let jobs = RuntimeJobCenter()
-
-    /// Detected host tooling (Homebrew, developer tools, network).
     let tooling = RuntimeTooling()
+
+    let runtimesDidChange = PassthroughSubject<RuntimeKind, Never>()
 
     private(set) var providers: [RuntimeKind: any RuntimeProvider] = [:]
 
@@ -35,7 +26,6 @@ final class RuntimeManager: ObservableObject {
         RuntimeCatalog.pruneStaleCache()
     }
 
-    /// Whether a path is inside the managed runtimes root (`~/.codeedit/runtimes`).
     static func isManagedPath(_ url: URL) -> Bool {
         let root = runtimesRoot.standardizedFileURL.path(percentEncoded: false)
         let path = url.standardizedFileURL.path(percentEncoded: false)
@@ -44,11 +34,16 @@ final class RuntimeManager: ObservableObject {
 
     // MARK: - Install / uninstall
 
-    func install(kind: RuntimeKind, version: RuntimeVersion) async {
+    func install(kind: RuntimeKind, version: RuntimeVersion, phpOptions: PHPInstallOptions = .default) async {
         guard let provider = provider(for: kind) else { return }
         await jobs.run(kind: kind, version: version.version, operation: .install) { progress in
-            try await provider.install(version, progress: progress)
+            if kind == .php, let phpProvider = provider as? PHPRuntimeProvider {
+                try await phpProvider.install(version, options: phpOptions, progress: progress)
+            } else {
+                try await provider.install(version, progress: progress)
+            }
         }
+        runtimesDidChange.send(kind)
     }
 
     func uninstall(_ runtime: InstalledRuntime) async {
@@ -56,16 +51,29 @@ final class RuntimeManager: ObservableObject {
         await jobs.run(kind: runtime.kind, version: runtime.version, operation: .uninstall) { _ in
             try await provider.uninstall(runtime)
         }
+        runtimesDidChange.send(runtime.kind)
+    }
+
+    func installXdebug(for runtime: InstalledRuntime) async {
+        await jobs.run(kind: .php, version: "xdebug@\(runtime.version)", operation: .install) { progress in
+            try await PHPXdebugProvisioner.shared.provision(runtime: runtime, progress: progress)
+        }
+        runtimesDidChange.send(.php)
+    }
+
+    func removeXdebug(from runtime: InstalledRuntime) async {
+        await jobs.run(kind: .php, version: "xdebug@\(runtime.version)", operation: .uninstall) { _ in
+            try await PHPXdebugProvisioner.shared.remove(runtime: runtime)
+        }
+        runtimesDidChange.send(.php)
     }
 
     // MARK: - Node package managers
 
-    /// Installed package managers and versions for a Node runtime.
     func nodePackageManagers(for runtime: InstalledRuntime) async -> [String: String] {
         await NodePackageManagerService.installed(in: runtime)
     }
 
-    /// Downloads and activates a package manager version for a Node runtime (via corepack).
     func activateNodePackageManager(_ name: String, version: String, runtime: InstalledRuntime) async {
         await jobs.run(kind: runtime.kind, version: "\(name)@\(version)", operation: .install) { progress in
             try await NodePackageManagerService.prepare(name, version: version, in: runtime, progress: progress)

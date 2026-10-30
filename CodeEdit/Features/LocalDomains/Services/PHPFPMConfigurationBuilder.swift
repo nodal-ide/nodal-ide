@@ -63,17 +63,21 @@ struct PHPFPMPoolConfiguration: Equatable, Sendable {
 /// Builds the explicit allowlist a pool worker sees. Only a fixed set of harmless variables plus the
 /// runtime's `bin` directory are forwarded, so app secrets in the process environment never leak in.
 enum PHPFPMEnvironment {
-    static let allowedKeys = ["HOME", "TMPDIR", "LANG"]
+    static let allowedKeys = ["HOME", "TMPDIR", "LANG", "PHP_INI_SCAN_DIR"]
 
     static func allowlist(
         runtimeBinPath: String,
-        from environment: [String: String]
+        from environment: [String: String],
+        extraEnvironment: [String: String] = [:]
     ) -> [String: String] {
         var allowlist: [String: String] = [:]
         for key in allowedKeys {
             if let value = environment[key], !value.isEmpty {
                 allowlist[key] = value
             }
+        }
+        for (key, value) in extraEnvironment where !value.isEmpty {
+            allowlist[key] = value
         }
         let systemPath = environment["PATH"].flatMap { $0.isEmpty ? nil : $0 } ?? "/usr/bin:/bin:/usr/sbin:/sbin"
         allowlist["PATH"] = runtimeBinPath + ":" + systemPath
@@ -136,7 +140,11 @@ enum PHPFPMConfigurationBuilder {
             "php_admin_flag[opcache.enable] = on",
             "php_admin_flag[opcache.enable_cli] = on",
             "php_admin_flag[opcache.validate_timestamps] = on",
-            "php_admin_value[opcache.revalidate_freq] = 0"
+            "php_admin_value[opcache.revalidate_freq] = 0",
+            "php_admin_value[xdebug.mode] = debug",
+            "php_admin_value[xdebug.start_with_request] = yes",
+            "php_admin_value[xdebug.client_port] = 9003",
+            "php_admin_value[xdebug.client_host] = 127.0.0.1"
         ]
     }
 
